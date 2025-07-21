@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "assureqai"
+location: "asia-south1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fdcdb"
+      cloudSql:
+        instanceId: "assureqai-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
