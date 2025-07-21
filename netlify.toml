@@ -1,0 +1,8 @@
+[build]
+  # Install with legacy peer deps to avoid dependency conflicts
+  command = "npm install --legacy-peer-deps && npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Ensure npm uses legacy-peer-deps on install
+  NPM_FLAGS = "--legacy-peer-deps"
