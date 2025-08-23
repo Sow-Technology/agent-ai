@@ -74,7 +74,7 @@ export default function UserManagementContent() {
       }
     };
     loadUsers();
-  }, []);
+  }, [toast]);
 
   const openFormForNew = () => {
     setEditingUser(null);
@@ -272,7 +272,7 @@ export default function UserManagementContent() {
             </Table>
           </div>
            {users.length === 0 && !isFormOpen && (
-              <p className="text-center text-muted-foreground py-8">No users created yet. Click "Add New User" to get started.</p>
+              <p className="text-center text-muted-foreground py-8">No users created yet. Click &ldquo;Add New User&rdquo; to get started.</p>
            )}
         </CardContent>
       </Card>

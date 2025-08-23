@@ -190,7 +190,7 @@ function DashboardPageContent() {
     };
 
     loadData();
-  }, [isClient]);
+  }, [isClient, dateRange?.from]);
 
   const openAuditDetailsModal = (audit: SavedAuditItem) => {
     setModalTitle(`Audit Details - ${audit.agentName} (${format(new Date(audit.auditDate), 'PPp')})`);

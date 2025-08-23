@@ -227,7 +227,7 @@ export function HomePageContent() {
       {/* Testimonial Section */}
       <section className="bg-muted py-20 px-4">
          <div className="max-w-3xl mx-auto text-center">
-            <h3 className="text-2xl font-semibold mb-4">"AssureQAI has transformed our QA process. We're now auditing 100% of our calls with more accuracy than ever before, and our agent coaching is far more effective."</h3>
+            <h3 className="text-2xl font-semibold mb-4">&ldquo;AssureQAI has transformed our QA process. We&rsquo;re now auditing 100% of our calls with more accuracy than ever before, and our agent coaching is far more effective.&rdquo;</h3>
             <div className="flex items-center justify-center gap-4 mt-6">
                 <Avatar>
                     <AvatarImage src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80" alt="Testimonial avatar" data-ai-hint="smiling person" />

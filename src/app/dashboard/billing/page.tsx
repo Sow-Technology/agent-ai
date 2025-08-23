@@ -111,7 +111,7 @@ function BillingContent() {
         </Card>
 
         <div className="text-center">
-          <h2 className="text-3xl font-bold">Find the plan that's right for you</h2>
+          <h2 className="text-3xl font-bold">Find the plan that&rsquo;s right for you</h2>
           <p className="text-muted-foreground mt-2">Start with a free trial and scale as you grow.</p>
         </div>
 
