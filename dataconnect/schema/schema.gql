@@ -1,0 +1,48 @@
+type User @table {
+  authId: String!
+  displayName: String!
+  email: String!
+  role: String!
+  organization: Organization
+}
+
+type Organization @table {
+  name: String!
+  createdAt: Timestamp!
+  description: String
+}
+
+type Agent @table {
+  name: String!
+  organization: Organization!
+  employeeId: String
+  email: String
+}
+
+type CallRecord @table {
+  callId: String!
+  organization: Organization!
+  agent: Agent!
+  callDate: Timestamp!
+  durationSeconds: Int!
+  status: String!
+  customerName: String
+  customerPhoneNumber: String
+  audioFileUrl: String
+}
+
+type CallTranscript @table {
+  callRecord: CallRecord!
+  fullText: String!
+  speakerSegments: String
+}
+
+type CallAnalysis @table {
+  callRecord: CallRecord!
+  sentimentScore: Float!
+  complianceStatus: String!
+  keywordsDetected: [String!]!
+  summary: String
+  identifiedIssues: [String!]
+  riskLevel: String
+}

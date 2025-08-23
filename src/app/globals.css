@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Inter, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 240 10% 99%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 249 81% 67%; /* Soft Purple */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 249 81% 97%; /* Light purple for hover */
+    --accent-foreground: 249 81% 60%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 249 81% 67%;
+    --radius: 0.75rem; /* More rounded corners */
+    --shadow: 220 3% 89%;
+    
+    /* Chart Colors */
+    --chart-1: hsl(142.1 76.2% 36.3%); /* green */
+    --chart-2: hsl(47.9 95.8% 53.1%); /* yellow */
+    --chart-3: hsl(0 84.2% 60.2%); /* red */
+    --chart-4: hsl(215.2 79.8% 59.8%); /* blue */
+    --chart-5: hsl(249 81% 67%); /* purple */
+    
+    /* Sidebar Light Theme */
+    --sidebar-background: 240 10% 99%; /* Very light lavender-white */
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-accent: 249 81% 67%; /* Purple for active state bg */
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 249 81% 67%;
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47.4% 11.2%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 249 81% 72%; /* Lighter Purple for dark mode */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 249 81% 72%;
+    --shadow: 220 3% 10%;
+    
+    /* Chart Colors */
+    --chart-1: hsl(142.1 70.6% 45.3%);
+    --chart-2: hsl(47.9 95.8% 53.1%);
+    --chart-3: hsl(0 72.2% 50.6%);
+    --chart-4: hsl(215.2 79.8% 69.8%);
+    --chart-5: hsl(249 81% 72%);
+
+    /* Sidebar Dark Theme */
+    --sidebar-background: 222.2 47.4% 11.2%; /* Dark Blue */
+    --sidebar-foreground: 210 40% 98%; /* White text */
+    --sidebar-accent: 249 81% 72%; /* Purple for active bg */
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 249 81% 72%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+  }
+  html {
+    height: 100%;
+  }
+}
+
+/* Splash Screen Animation */
+.splash-logo-wrapper .logo-icon-group {
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: opacity 500ms ease-out, transform 500ms ease-out;
+}
+
+.splash-logo-wrapper .logo-text-group {
+    opacity: 0;
+    transition: opacity 700ms ease-in;
+    transition-delay: 200ms;
+}
+
+.splash-logo-wrapper.animate-state-icon .logo-icon-group,
+.splash-logo-wrapper.animate-state-text .logo-icon-group {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.splash-logo-wrapper.animate-state-text .logo-text-group {
+    opacity: 1;
+}
+
+@layer utilities {
+    .animate-fade-in {
+        animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+}
