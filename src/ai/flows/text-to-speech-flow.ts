@@ -62,7 +62,7 @@ const textToSpeechFlow = ai.defineFlow(
       .replace(/Customer.*?:/g, 'Speaker 2:');
 
     const { media } = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
+      model: 'googleai/gemini-2.0-flash-exp',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
