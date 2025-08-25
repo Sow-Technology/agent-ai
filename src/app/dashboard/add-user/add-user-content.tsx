@@ -26,6 +26,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+import { getAuthHeaders } from '@/lib/authUtils';
+
 const userSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters.").max(50, "Full name is too long."),
   email: z.string().email("Invalid email address."),
@@ -56,7 +58,9 @@ export default function UserManagementContent() {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const response = await fetch('/api/users/managed');
+        const response = await fetch('/api/users/managed', {
+          headers: getAuthHeaders()
+        });
         const data = await response.json();
         
         if (response.ok && data.success) {
@@ -103,7 +107,7 @@ export default function UserManagementContent() {
         }
         const response = await fetch('/api/users/managed', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(updatedData)
         });
         const result = await response.json();
@@ -121,7 +125,7 @@ export default function UserManagementContent() {
         }
         const response = await fetch('/api/users/managed', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(data)
         });
         const result = await response.json();
@@ -143,7 +147,8 @@ export default function UserManagementContent() {
   const handleDeleteUser = async (userId: string) => {
     try {
       const response = await fetch(`/api/users/managed?id=${userId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       const result = await response.json();
       

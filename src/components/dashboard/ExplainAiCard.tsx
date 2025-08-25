@@ -16,6 +16,7 @@ export interface ExplainConceptOutput {
   [key: string]: any;
 }
 import { Loader2, Brain } from 'lucide-react';
+import { getAuthHeaders } from '@/lib/authUtils';
 
 export function ExplainAiCard() {
   const [prompt, setPrompt] = useState<string>('Explain how AI works in a few words');
@@ -40,7 +41,7 @@ export function ExplainAiCard() {
       const input: ExplainConceptInput = { prompt };
       const response = await fetch('/api/ai/explain-concept', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(input)
       });
       

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { UserNav } from "@/components/dashboard/UserNav";
 import { getAuthToken, clientLogout } from "../../lib/clientAuthService";
+import { getAuthHeaders } from "@/lib/authUtils";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { AssureQaiLogo } from "@/components/common/SakshiQaiLogo";
@@ -63,10 +64,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         const response = await fetch("/api/user/profile", {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
         });
         if (response.ok) {
           const userData = await response.json();

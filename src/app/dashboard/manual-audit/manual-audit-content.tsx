@@ -28,6 +28,8 @@ import { AudioUploadDropzone, type AudioUploadDropzoneRef } from '@/components/d
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { AuditChatbot } from "@/components/dashboard/AuditChatbot";
+
+import { getAuthHeaders } from '@/lib/authUtils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -49,17 +51,43 @@ const DEFAULT_CALL_LANGUAGE = "Hindi";
 
 // Helper function to convert QAParameterDocument to QAParameter
 function convertQAParameterDocumentToQAParameter(doc: QAParameterDocument): QAParameter {
+  let lastModified: string;
+  if (doc.updatedAt) {
+    if (typeof doc.updatedAt === 'string') {
+      lastModified = doc.updatedAt;
+    } else if (doc.updatedAt instanceof Date) {
+      lastModified = doc.updatedAt.toISOString();
+    } else {
+      lastModified = new Date(doc.updatedAt).toISOString();
+    }
+  } else {
+    lastModified = new Date().toISOString();
+  }
+  
   return {
     ...doc,
-    lastModified: doc.updatedAt.toISOString()
+    lastModified
   };
 }
 
 // Helper function to convert AuditDocument to SavedAuditItem
 function convertAuditDocumentToSavedAuditItem(doc: AuditDocument): SavedAuditItem {
+  let auditDate: string;
+  if (doc.createdAt) {
+    if (typeof doc.createdAt === 'string') {
+      auditDate = doc.createdAt;
+    } else if (doc.createdAt instanceof Date) {
+      auditDate = doc.createdAt.toISOString();
+    } else {
+      auditDate = new Date(doc.createdAt).toISOString();
+    }
+  } else {
+    auditDate = new Date().toISOString();
+  }
+  
   return {
     id: doc.id,
-    auditDate: doc.createdAt.toISOString(),
+    auditDate,
     agentName: doc.agentName,
     agentUserId: doc.agentName, // Using agentName as fallback for agentUserId
     campaignName: doc.campaignName,
@@ -140,8 +168,8 @@ export default function ManualAuditContent() {
         const loadData = async () => {
             try {
                 const [parametersResponse, auditsResponse] = await Promise.all([
-                    fetch('/api/qa-parameters'),
-                    fetch('/api/audits')
+                    fetch('/api/qa-parameters', { headers: getAuthHeaders() }),
+                    fetch('/api/audits', { headers: getAuthHeaders() })
                 ]);
                 
                 if (parametersResponse.ok) {
@@ -219,9 +247,7 @@ export default function ManualAuditContent() {
         try {
             const response = await fetch('/api/ai/grammar-check', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ text }),
             });
             
@@ -263,9 +289,7 @@ export default function ManualAuditContent() {
 
             const response = await fetch('/api/ai/qa-audit', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(dummyParamsForTranscription),
             });
             
@@ -297,9 +321,7 @@ export default function ManualAuditContent() {
         try {
             const response = await fetch('/api/ai/text-to-speech', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ text }),
             });
             
@@ -358,7 +380,9 @@ export default function ManualAuditContent() {
         const newSavedAudit: SavedAuditItem = { id: `audit_${Date.now()}`, auditDate: new Date().toISOString(), agentName: manualAuditForSaving.identifiedAgentName || manualAgentUserId, agentUserId: manualAgentUserId, campaignName: manualCampaignName, overallScore: manualOverallScore, auditData: manualAuditForSaving, auditType: 'manual' };
         
         try {
-            const userResponse = await fetch('/api/user/profile');
+            const userResponse = await fetch('/api/user/profile', {
+                headers: getAuthHeaders()
+            });
             let auditedBy = 'unknown';
             if (userResponse.ok) {
                 const userData = await userResponse.json();
@@ -371,9 +395,7 @@ export default function ManualAuditContent() {
             
             const response = await fetch('/api/audits', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(createAuditData),
             });
             

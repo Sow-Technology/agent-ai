@@ -29,6 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+import { getAuthHeaders } from '@/lib/authUtils';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -39,22 +41,48 @@ import { QAParameterDocument } from '@/lib/models';
 
 // Helper function to convert QAParameterDocument to QAParameter
 function convertQAParameterDocumentToQAParameter(doc: QAParameterDocument): QAParameter {
+  let lastModified: string;
+  if (doc.updatedAt) {
+    if (typeof doc.updatedAt === 'string') {
+      lastModified = doc.updatedAt;
+    } else if (doc.updatedAt instanceof Date) {
+      lastModified = doc.updatedAt.toISOString();
+    } else {
+      lastModified = new Date(doc.updatedAt).toISOString();
+    }
+  } else {
+    lastModified = new Date().toISOString();
+  }
+  
   return {
     id: doc.id,
     name: doc.name,
     description: doc.description,
     parameters: doc.parameters,
     isActive: doc.isActive,
-    lastModified: doc.updatedAt.toISOString(),
+    lastModified,
     linkedSopId: doc.linkedSopId
   };
 }
 
 // Helper function to convert SOPDocument to SOP
 function convertSOPDocumentToSOP(doc: SOPDocument): SOP {
+  let lastModified: string;
+  if (doc.updatedAt) {
+    if (typeof doc.updatedAt === 'string') {
+      lastModified = doc.updatedAt;
+    } else if (doc.updatedAt instanceof Date) {
+      lastModified = doc.updatedAt.toISOString();
+    } else {
+      lastModified = new Date(doc.updatedAt).toISOString();
+    }
+  } else {
+    lastModified = new Date().toISOString();
+  }
+  
   return {
     ...doc,
-    lastModified: doc.updatedAt.toISOString()
+    lastModified
   };
 }
 
@@ -156,8 +184,8 @@ export default function ParameterManagementPage() {
     const loadData = async () => {
       try {
         const [parametersResponse, sopsResponse] = await Promise.all([
-          fetch('/api/qa-parameters'),
-          fetch('/api/sops')
+          fetch('/api/qa-parameters', { headers: getAuthHeaders() }),
+          fetch('/api/sops', { headers: getAuthHeaders() })
         ]);
         
         if (!parametersResponse.ok || !sopsResponse.ok) {
@@ -234,7 +262,7 @@ export default function ParameterManagementPage() {
       if (editingCampaign) {
         const response = await fetch(`/api/qa-parameters/${editingCampaign.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(submissionData)
         });
         
@@ -248,7 +276,9 @@ export default function ParameterManagementPage() {
         ));
         toast({ title: 'Campaign Updated', description: `Campaign "${submissionData.name}" has been updated.` });
       } else {
-        const userResponse = await fetch('/api/user/profile');
+        const userResponse = await fetch('/api/user/profile', {
+          headers: getAuthHeaders()
+        });
         if (!userResponse.ok) {
           throw new Error('Failed to get user details');
         }
@@ -256,7 +286,7 @@ export default function ParameterManagementPage() {
         
         const response = await fetch('/api/qa-parameters', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             ...submissionData,
             createdBy: currentUser?.id || 'unknown'
@@ -285,7 +315,8 @@ export default function ParameterManagementPage() {
   const handleDeleteCampaign = async (campaignId: string) => {
     try {
       const response = await fetch(`/api/qa-parameters/${campaignId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (!response.ok) {
@@ -306,9 +337,9 @@ export default function ParameterManagementPage() {
   };
 
   const filteredCampaigns = campaigns.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.parameters.some(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.subParameters.some(sp => sp.name.toLowerCase().includes(searchTerm.toLowerCase())))
+    (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.parameters || []).some(p => (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (p.subParameters || []).some(sp => (sp.name || '').toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
   return (

@@ -35,27 +35,59 @@ import { Label } from '@/components/ui/label';
 // Removed direct service imports - using API routes instead
 import type { SOPDocument, QAParameterDocument } from '@/lib/models';
 
-// Helper function to convert SOPDocument to SOP
-const convertSOPDocumentToSOP = (sopDoc: SOPDocument): SOP => ({
-  id: sopDoc.id,
-  title: sopDoc.title,
-  content: sopDoc.content,
-  category: sopDoc.category,
-  version: sopDoc.version,
-  status: sopDoc.status,
-  linkedParameterSetId: sopDoc.linkedParameterSetId,
-  lastModified: sopDoc.updatedAt.toISOString()
-});
+import { getAuthHeaders } from '@/lib/authUtils';
 
-const convertQAParameterDocumentToQAParameter = (doc: QAParameterDocument): QAParameter => ({
-  id: doc.id,
-  name: doc.name,
-  description: doc.description,
-  parameters: doc.parameters,
-  isActive: doc.isActive,
-  lastModified: doc.updatedAt.toISOString(),
-  linkedSopId: doc.linkedSopId
-});
+// Helper function to convert SOPDocument to SOP
+const convertSOPDocumentToSOP = (sopDoc: SOPDocument): SOP => {
+  let lastModified: string;
+  if (sopDoc.updatedAt) {
+    if (typeof sopDoc.updatedAt === 'string') {
+      lastModified = sopDoc.updatedAt;
+    } else if (sopDoc.updatedAt instanceof Date) {
+      lastModified = sopDoc.updatedAt.toISOString();
+    } else {
+      lastModified = new Date(sopDoc.updatedAt).toISOString();
+    }
+  } else {
+    lastModified = new Date().toISOString();
+  }
+  
+  return {
+    id: sopDoc.id,
+    title: sopDoc.title,
+    content: sopDoc.content,
+    category: sopDoc.category,
+    version: sopDoc.version,
+    status: sopDoc.status,
+    linkedParameterSetId: sopDoc.linkedParameterSetId,
+    lastModified
+  };
+};
+
+const convertQAParameterDocumentToQAParameter = (doc: QAParameterDocument): QAParameter => {
+  let lastModified: string;
+  if (doc.updatedAt) {
+    if (typeof doc.updatedAt === 'string') {
+      lastModified = doc.updatedAt;
+    } else if (doc.updatedAt instanceof Date) {
+      lastModified = doc.updatedAt.toISOString();
+    } else {
+      lastModified = new Date(doc.updatedAt).toISOString();
+    }
+  } else {
+    lastModified = new Date().toISOString();
+  }
+  
+  return {
+    id: doc.id,
+    name: doc.name,
+    description: doc.description,
+    parameters: doc.parameters,
+    isActive: doc.isActive,
+    lastModified,
+    linkedSopId: doc.linkedSopId
+  };
+};
 
 const sopSchema = z.object({
 
@@ -82,15 +114,6 @@ const defaultFormValues: SopFormValues = {
 
 import { Suspense } from 'react';
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
-
 export default function SopManagementPage() {
 
   const { toast } = useToast();
@@ -112,8 +135,8 @@ export default function SopManagementPage() {
     const loadData = async () => {
       try {
         const [sopsResponse, parametersResponse] = await Promise.all([
-          fetch('/api/sops'),
-          fetch('/api/qa-parameters')
+          fetch('/api/sops', { headers: getAuthHeaders() }),
+          fetch('/api/qa-parameters', { headers: getAuthHeaders() })
         ]);
         
         if (!sopsResponse.ok || !parametersResponse.ok) {
@@ -192,7 +215,7 @@ export default function SopManagementPage() {
       if (editingSop) {
         const response = await fetch(`/api/sops/${editingSop.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(submissionData)
         });
         
@@ -215,7 +238,7 @@ export default function SopManagementPage() {
         
         const response = await fetch('/api/sops', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             ...submissionData,
             createdBy: currentUser?.id || 'unknown'
@@ -244,7 +267,8 @@ export default function SopManagementPage() {
   const handleDeleteSop = async (sopId: string) => {
     try {
       const response = await fetch(`/api/sops/${sopId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (!response.ok) {
@@ -269,7 +293,7 @@ export default function SopManagementPage() {
     try {
       const generateResponse = await fetch('/api/ai/generate-parameters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           title: sopToProcess.title,
           content: sopToProcess.content,
@@ -313,7 +337,7 @@ export default function SopManagementPage() {
       
       const campaignResponse = await fetch('/api/qa-parameters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           ...newCampaignData,
           createdBy: currentUser?.id || 'unknown'
@@ -330,7 +354,7 @@ export default function SopManagementPage() {
       // Update the SOP to be linked to the new campaign
       const sopUpdateResponse = await fetch(`/api/sops/${sopToProcess.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ linkedParameterSetId: newCampaign.id })
       });
       
@@ -362,9 +386,9 @@ export default function SopManagementPage() {
 
 
   const filteredSops = sops.filter(sop => 
-    sop.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sop.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sop.status.toLowerCase().includes(searchTerm.toLowerCase())
+    (sop.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (sop.category?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (sop.status?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   return (

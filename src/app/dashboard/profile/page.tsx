@@ -14,6 +14,8 @@ import { Upload, KeyRound } from "lucide-react";
 import type { User } from '@/types/auth';
 // Removed direct service import - using API route instead
 
+import { getAuthHeaders } from '@/lib/authUtils';
+
 
 const placeholderAvatars = [
   "https://picsum.photos/seed/avatar1/100/100",
@@ -56,7 +58,9 @@ export default function ProfilePage() {
     if (isClient) {
       const loadUserDetails = async () => {
         try {
-          const response = await fetch('/api/auth/user');
+          const response = await fetch('/api/auth/user', {
+            headers: getAuthHeaders()
+          });
           const data = await response.json();
           
           let finalFullName = DEFAULT_FULL_NAME;

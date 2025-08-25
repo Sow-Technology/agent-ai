@@ -51,19 +51,46 @@ import type { AuditDocument } from '@/lib/auditService';
 import type { AuditResultDocument } from '@/lib/models';
 
 import { Suspense } from 'react';
+import { getAuthHeaders } from '@/lib/authUtils';
 
 // Helper function to convert AuditDocument to SavedAuditItem
 function convertQAParameterDocumentToQAParameter(doc: QAParameterDocument): QAParameter {
+  let lastModified: string;
+  if (doc.updatedAt) {
+    if (typeof doc.updatedAt === 'string') {
+      lastModified = doc.updatedAt;
+    } else if (doc.updatedAt instanceof Date) {
+      lastModified = doc.updatedAt.toISOString();
+    } else {
+      lastModified = new Date(doc.updatedAt).toISOString();
+    }
+  } else {
+    lastModified = new Date().toISOString();
+  }
+  
   return {
     ...doc,
-    lastModified: doc.updatedAt.toISOString()
+    lastModified
   };
 }
 
 function convertAuditDocumentToSavedAuditItem(doc: AuditDocument): SavedAuditItem {
+  let auditDate: string;
+  if (doc.createdAt) {
+    if (typeof doc.createdAt === 'string') {
+      auditDate = doc.createdAt;
+    } else if (doc.createdAt instanceof Date) {
+      auditDate = doc.createdAt.toISOString();
+    } else {
+      auditDate = new Date(doc.createdAt).toISOString();
+    }
+  } else {
+    auditDate = new Date().toISOString();
+  }
+  
   return {
     id: doc.id,
-    auditDate: doc.createdAt.toISOString(),
+    auditDate,
     agentName: doc.agentName,
     agentUserId: doc.agentName, // Using agentName as fallback for agentUserId
     campaignName: doc.campaignName,
@@ -132,8 +159,12 @@ function DashboardPageContent() {
     const loadData = async () => {
       // Load user details
       try {
-        const userResponse = await fetch('/api/auth/user');
+        const userResponse = await fetch('/api/auth/user', {
+          headers: getAuthHeaders()
+        });
+        
         const userData = await userResponse.json();
+        console.log(userData)
         if (userResponse.ok && userData.success) {
           setCurrentUser(userData.user);
         }
@@ -150,7 +181,9 @@ function DashboardPageContent() {
 
       try {
         // Load QA Parameters from database
-        const qaResponse = await fetch('/api/qa-parameters');
+        const qaResponse = await fetch('/api/qa-parameters', {
+          headers: getAuthHeaders()
+        });
         const qaData = await qaResponse.json();
         if (qaResponse.ok && qaData.success) {
           const activeCampaigns = qaData.data.filter((p: QAParameterDocument) => p.isActive);
@@ -164,7 +197,9 @@ function DashboardPageContent() {
 
       try {
         // Load SOPs from database
-        const sopResponse = await fetch('/api/sops');
+        const sopResponse = await fetch('/api/sops', {
+          headers: getAuthHeaders()
+        });
         const sopData = await sopResponse.json();
         if (sopResponse.ok && sopData.success) {
           // setAvailableSops(sopData.data);
@@ -175,7 +210,9 @@ function DashboardPageContent() {
 
       try {
         // Load saved audits from API
-        const response = await fetch('/api/audits');
+        const response = await fetch('/api/audits', {
+          headers: getAuthHeaders()
+        });
         if (response.ok) {
           const auditData = await response.json();
           if (auditData.success && auditData.data) {

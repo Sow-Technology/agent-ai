@@ -22,6 +22,7 @@ export interface ChatMessage {
 }
 import { Loader2, Send, Bot, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getAuthHeaders } from '@/lib/authUtils';
 
 interface AuditChatbotProps {
   auditSummary: string;
@@ -72,7 +73,7 @@ export function AuditChatbot({ auditSummary, auditTranscription, className }: Au
       };
       const response = await fetch('/api/ai/audit-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(flowInput)
       });
       

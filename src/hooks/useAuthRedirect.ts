@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuthToken, clientLogout } from '@/lib/clientAuthService';
+import { getAuthHeaders } from '@/lib/authUtils';
 
 export function useAuthRedirect(redirectTo = '/login') {
   const router = useRouter();
@@ -25,10 +26,7 @@ export function useAuthRedirect(redirectTo = '/login') {
 
           const response = await fetch('/api/auth/status', {
             method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
+            headers: getAuthHeaders(),
           });
           const data = await response.json();
           

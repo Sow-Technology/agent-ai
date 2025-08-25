@@ -16,7 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { CreditCard, LogOut, Settings2, User } from 'lucide-react';
-// Removed direct import of server-side function
+import { getAuthHeaders } from '@/lib/authUtils';
 
 interface UserNavProps {
   handleLogout: () => void;
@@ -44,15 +44,21 @@ export const UserNav: FC<UserNavProps> = ({ handleLogout }) => {
     if (isClient) {
       const fetchUserDetails = async () => {
         try {
-          const response = await fetch('/api/auth/user');
+          const response = await fetch('/api/auth/user', {
+            headers: getAuthHeaders()
+          });
           if (response.ok) {
             const data = await response.json();
             const userDetails = data.user;
             if (userDetails) {
+              const fullName = userDetails.fullName || 'AssureQAI User';
+              const emailOrUsername = userDetails.email || userDetails.username || 'user@example.com';
+              const username = userDetails.username || 'AQ';
+              
               setDisplayUser({
-                fullName: userDetails.fullName,
-                emailOrUsername: userDetails.email || userDetails.username,
-                avatarFallback: userDetails.fullName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || userDetails.username.substring(0, 2).toUpperCase()
+                fullName,
+                emailOrUsername,
+                avatarFallback: fullName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || username.substring(0, 2).toUpperCase()
               });
             }
           }
