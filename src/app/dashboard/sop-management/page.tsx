@@ -81,6 +81,16 @@ const defaultFormValues: SopFormValues = {
 };
 
 import { Suspense } from 'react';
+
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
 export default function SopManagementPage() {
 
   const { toast } = useToast();
@@ -194,11 +204,14 @@ export default function SopManagementPage() {
         setSops(sops.map((sop) => sop.id === editingSop.id ? convertSOPDocumentToSOP(updatedSop) : sop));
         toast({ title: 'SOP Updated', description: `SOP "${submissionData.title}" has been updated.` });
       } else {
-        const userResponse = await fetch('/api/user/profile');
+        const userResponse = await fetch('/api/user/profile', {
+          headers: getAuthHeaders()
+        });
         if (!userResponse.ok) {
           throw new Error('Failed to get user details');
         }
-        const currentUser = await userResponse.json();
+        const currentUserResponse = await userResponse.json();
+        const currentUser = currentUserResponse.data;
         
         const response = await fetch('/api/sops', {
           method: 'POST',
@@ -289,11 +302,14 @@ export default function SopManagementPage() {
       };
 
       // Create the campaign in database
-      const userResponse = await fetch('/api/user/profile');
+      const userResponse = await fetch('/api/user/profile', {
+        headers: getAuthHeaders()
+      });
       if (!userResponse.ok) {
         throw new Error('Failed to get user details');
       }
-      const currentUser = await userResponse.json();
+      const currentUserResponse = await userResponse.json();
+      const currentUser = currentUserResponse.data;
       
       const campaignResponse = await fetch('/api/qa-parameters', {
         method: 'POST',
