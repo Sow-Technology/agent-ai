@@ -3,6 +3,7 @@
 ## 🚀 Quick Deploy to Netlify
 
 ### Step 1: Connect Repository
+
 1. Go to [Netlify](https://netlify.com)
 2. Click "New site from Git"
 3. Connect your GitHub repository
@@ -12,6 +13,7 @@
    - **Node version:** 18.x or later
 
 ### Step 2: Environment Variables
+
 In Netlify dashboard → Site settings → Environment variables:
 
 ```
@@ -21,7 +23,9 @@ JWT_SECRET=your_jwt_secret_key
 ```
 
 ### Step 3: Function Settings
+
 The `netlify.toml` file configures:
+
 - ✅ 15-minute function timeout (for AI processing)
 - ✅ API route redirects
 - ✅ Build settings
@@ -29,11 +33,13 @@ The `netlify.toml` file configures:
 ## 🔧 Netlify Compatibility Solutions
 
 ### Issue 1: Audio File Size (6MB Limit)
+
 **Problem:** Direct audio uploads exceed Netlify's 6MB payload limit.
 
 **Solutions:**
 
 #### Option A: Cloud Storage Upload (Recommended)
+
 ```javascript
 // 1. Upload audio to cloud storage first
 const uploadToCloud = async (file) => {
@@ -67,6 +73,7 @@ const processAudit = async (audioUrl) => {
 ```
 
 #### Option B: Client-Side Chunking
+
 ```javascript
 // Split large files and upload in chunks
 const uploadInChunks = async (file) => {
@@ -84,15 +91,20 @@ const uploadInChunks = async (file) => {
 ```
 
 ### Issue 2: Function Timeout (10s → 15min)
+
 **Solution:** Already configured in `netlify.toml`:
+
 ```toml
 [functions]
   max_age = 86400  # 24 hours cache
 ```
+
 AI processing (30-60s) now works within Netlify's 15-minute limit.
 
 ### Issue 3: Memory Usage
+
 **Optimization:** Process audio in streaming fashion:
+
 ```typescript
 // Instead of loading entire file into memory
 const audioResponse = await fetch(audioUrl);
@@ -102,17 +114,18 @@ const audioBuffer = await audioResponse.arrayBuffer();
 
 ## 📊 Netlify Limits & Solutions
 
-| Limit | Netlify Default | Our Solution |
-|-------|----------------|--------------|
-| **Function Timeout** | 10 seconds | ✅ 15 minutes (netlify.toml) |
-| **Request Payload** | 6MB | ✅ Cloud storage API route |
-| **Response Payload** | 6MB | ✅ Streaming/chunked responses |
-| **Memory** | 1024MB | ✅ Optimized processing |
-| **Function Size** | 50MB | ✅ Within limits |
+| Limit                | Netlify Default | Our Solution                   |
+| -------------------- | --------------- | ------------------------------ |
+| **Function Timeout** | 10 seconds      | ✅ 15 minutes (netlify.toml)   |
+| **Request Payload**  | 6MB             | ✅ Cloud storage API route     |
+| **Response Payload** | 6MB             | ✅ Streaming/chunked responses |
+| **Memory**           | 1024MB          | ✅ Optimized processing        |
+| **Function Size**    | 50MB            | ✅ Within limits               |
 
 ## 🛠️ Implementation Options
 
 ### Option 1: Hybrid Approach (Recommended)
+
 - **Small files (< 6MB):** Direct upload to `/api/ai/qa-audit`
 - **Large files (> 6MB):** Upload to cloud storage, then `/api/ai/qa-audit-cloud`
 
@@ -124,30 +137,31 @@ const handleAudioUpload = async (file) => {
     // Direct upload for small files
     const reader = new FileReader();
     reader.onload = async (e) => {
-      await fetch('/api/ai/qa-audit', {
-        method: 'POST',
+      await fetch("/api/ai/qa-audit", {
+        method: "POST",
         body: JSON.stringify({
           audioDataUri: e.target.result,
           // ... other params
-        })
+        }),
       });
     };
     reader.readAsDataURL(file);
   } else {
     // Cloud storage for large files
     const audioUrl = await uploadToCloudStorage(file);
-    await fetch('/api/ai/qa-audit-cloud', {
-      method: 'POST',
+    await fetch("/api/ai/qa-audit-cloud", {
+      method: "POST",
       body: JSON.stringify({
         audioUrl: audioUrl,
         // ... other params
-      })
+      }),
     });
   }
 };
 ```
 
 ### Option 2: Cloud Storage Only
+
 - Always upload to cloud storage first
 - Simpler but requires storage setup
 - Better for consistency
@@ -155,8 +169,9 @@ const handleAudioUpload = async (file) => {
 ## ☁️ Cloud Storage Setup
 
 ### Firebase Storage (Easiest)
+
 ```javascript
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const uploadAudio = async (file) => {
   const storage = getStorage();
@@ -170,20 +185,23 @@ const uploadAudio = async (file) => {
 ```
 
 ### AWS S3
-```javascript
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-const s3Client = new S3Client({ region: 'us-east-1' });
+```javascript
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+
+const s3Client = new S3Client({ region: "us-east-1" });
 
 const uploadAudio = async (file) => {
   const key = `audios/${Date.now()}-${file.name}`;
 
-  await s3Client.send(new PutObjectCommand({
-    Bucket: 'your-bucket',
-    Key: key,
-    Body: file,
-    ContentType: file.type
-  }));
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: "your-bucket",
+      Key: key,
+      Body: file,
+      ContentType: file.type,
+    })
+  );
 
   return `https://your-bucket.s3.amazonaws.com/${key}`;
 };
@@ -203,6 +221,7 @@ const uploadAudio = async (file) => {
 ## 🧪 Testing on Netlify
 
 ### Test Small Files
+
 ```bash
 # Test direct upload (should work)
 curl -X POST https://your-site.netlify.app/.netlify/functions/api/ai/qa-audit \
@@ -211,6 +230,7 @@ curl -X POST https://your-site.netlify.app/.netlify/functions/api/ai/qa-audit \
 ```
 
 ### Test Large Files
+
 ```bash
 # Test cloud storage approach
 curl -X POST https://your-site.netlify.app/.netlify/functions/api/ai/qa-audit-cloud \
@@ -228,16 +248,19 @@ curl -X POST https://your-site.netlify.app/.netlify/functions/api/ai/qa-audit-cl
 ## 🔧 Troubleshooting
 
 ### Build Fails
+
 - Check Node.js version (18+ required)
 - Ensure all dependencies are in `package.json`
 - Check build logs in Netlify dashboard
 
 ### Function Times Out
+
 - Verify `netlify.toml` is committed
 - Check function duration in Netlify logs
 - Consider upgrading to paid plan for longer timeouts
 
 ### Audio Processing Fails
+
 - Verify `GOOGLE_GENAI_API_KEY` is set
 - Check audio file format (WAV, MP3, FLAC, OGG)
 - Ensure file size is within limits
@@ -245,10 +268,12 @@ curl -X POST https://your-site.netlify.app/.netlify/functions/api/ai/qa-audit-cl
 ## 📈 Scaling Considerations
 
 ### Paid Plans
+
 - **Pro Plan:** Higher function limits, longer timeouts
 - **Enterprise:** Custom configurations, higher limits
 
 ### Alternatives if Netlify Limits Too Restrictive
+
 - **Vercel:** Similar Next.js hosting, potentially better for large files
 - **Railway:** More flexible compute resources
 - **AWS Lambda + API Gateway:** Maximum control over limits
@@ -258,6 +283,7 @@ curl -X POST https://your-site.netlify.app/.netlify/functions/api/ai/qa-audit-cl
 **✅ YES, it will work on Netlify!**
 
 With the configurations and solutions provided:
+
 - ✅ Function timeouts extended to 15 minutes
 - ✅ Audio size limits handled via cloud storage
 - ✅ Memory usage optimized

@@ -24,16 +24,18 @@ export async function POST(request: NextRequest) {
 
     // Convert to base64 for processing
     const arrayBuffer = await audioResponse.arrayBuffer();
-    const base64Audio = Buffer.from(arrayBuffer).toString('base64');
+    const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
     // Get content type from response
-    const contentType = audioResponse.headers.get('content-type') || 'audio/wav';
+    const contentType =
+      audioResponse.headers.get("content-type") || "audio/wav";
 
     // Create data URI
     const audioDataUri = `data:${contentType};base64,${base64Audio}`;
 
     // Check size after fetching
-    if (audioDataUri.length > 6 * 1024 * 1024) { // 6MB limit
+    if (audioDataUri.length > 6 * 1024 * 1024) {
+      // 6MB limit
       return NextResponse.json(
         { success: false, error: "Audio file too large even after fetching" },
         { status: 413 }
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     const { qaAuditCall } = await import("@/ai/flows/qa-audit-flow");
     const auditBody = {
       ...body,
-      audioDataUri: audioDataUri
+      audioDataUri: audioDataUri,
     };
 
     const result = await qaAuditCall(auditBody);
@@ -53,7 +55,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Cloud QA Audit API error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to process QA audit from cloud storage" },
+      {
+        success: false,
+        error: "Failed to process QA audit from cloud storage",
+      },
       { status: 500 }
     );
   }

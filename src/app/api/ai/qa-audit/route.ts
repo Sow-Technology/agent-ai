@@ -5,12 +5,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Check if audio is too large for direct processing
-    if (body.audioDataUri && body.audioDataUri.length > 6 * 1024 * 1024) { // 6MB limit
+    if (body.audioDataUri && body.audioDataUri.length > 6 * 1024 * 1024) {
+      // 6MB limit
       return NextResponse.json(
         {
           success: false,
-          error: "Audio file too large for direct processing. Please use cloud storage upload.",
-          solution: "Upload audio to cloud storage first, then provide the URL"
+          error:
+            "Audio file too large for direct processing. Please use cloud storage upload.",
+          solution: "Upload audio to cloud storage first, then provide the URL",
         },
         { status: 413 }
       );

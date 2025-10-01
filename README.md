@@ -219,9 +219,11 @@ The app uses JWT-based authentication with the following endpoints:
 ## � Deployment
 
 ### Netlify (Recommended)
+
 AssureQAI is fully compatible with Netlify's serverless functions!
 
 **Quick Deploy:**
+
 1. Connect your GitHub repo to Netlify
 2. Set build command: `npm run build`
 3. Set publish directory: `.next`
@@ -229,6 +231,7 @@ AssureQAI is fully compatible with Netlify's serverless functions!
 5. Deploy!
 
 **Netlify Configuration:**
+
 - ✅ 15-minute function timeout for AI processing
 - ✅ Handles audio files via cloud storage integration
 - ✅ Optimized for serverless architecture
@@ -236,6 +239,7 @@ AssureQAI is fully compatible with Netlify's serverless functions!
 **See full guide:** [`docs/NETLIFY_DEPLOYMENT.md`](docs/NETLIFY_DEPLOYMENT.md)
 
 ### Other Platforms
+
 - **Vercel:** Standard Next.js deployment
 - **Railway:** Full control over compute resources
 - **AWS:** Maximum scalability and customization
