@@ -216,7 +216,31 @@ The app uses JWT-based authentication with the following endpoints:
 - [AI Flows Documentation](./src/ai/flows/README.md) - Detailed guide on AI flows
 - [Blueprint](./docs/blueprint.md) - Project architecture and design
 
-## 🚧 Build & Deploy
+## � Deployment
+
+### Netlify (Recommended)
+AssureQAI is fully compatible with Netlify's serverless functions!
+
+**Quick Deploy:**
+1. Connect your GitHub repo to Netlify
+2. Set build command: `npm run build`
+3. Set publish directory: `.next`
+4. Add environment variables in Netlify dashboard
+5. Deploy!
+
+**Netlify Configuration:**
+- ✅ 15-minute function timeout for AI processing
+- ✅ Handles audio files via cloud storage integration
+- ✅ Optimized for serverless architecture
+
+**See full guide:** [`docs/NETLIFY_DEPLOYMENT.md`](docs/NETLIFY_DEPLOYMENT.md)
+
+### Other Platforms
+- **Vercel:** Standard Next.js deployment
+- **Railway:** Full control over compute resources
+- **AWS:** Maximum scalability and customization
+
+## �🚧 Build & Deploy
 
 **Build for production:**
 
