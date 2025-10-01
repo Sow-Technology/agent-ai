@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview An AI flow to check and correct the grammar of a given text.
@@ -8,7 +9,6 @@
  * - GrammarCheckOutput - The return type for the flow.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
 const GrammarCheckInputSchema = z.object({
@@ -22,41 +22,38 @@ const GrammarCheckOutputSchema = z.object({
 export type GrammarCheckOutput = z.infer<typeof GrammarCheckOutputSchema>;
 
 export async function grammarCheck(input: GrammarCheckInput): Promise<GrammarCheckOutput> {
-  return grammarCheckFlow(input);
-}
+  // If input text is empty or very short, no need to call the model.
+  if (!input.text || input.text.trim().length < 2) {
+    return { correctedText: input.text };
+  }
 
-const grammarCheckPrompt = ai.definePrompt({
-  name: 'grammarCheckPrompt',
-  input: {schema: GrammarCheckInputSchema},
-  output: {schema: GrammarCheckOutputSchema},
-  prompt: `You are an expert in English grammar and style.
+  const { getModel } = await import('@/ai/genkit');
+  const model = getModel();
+
+  const prompt = `You are an expert in English grammar and style.
 Your task is to correct the grammar and spelling mistakes in the following text.
 Do not change the meaning of the text. Only correct errors.
 If the text is already grammatically correct, return the original text.
 
 Input Text:
-"{{{text}}}"
+"${input.text}"
 
-Corrected Text:
-`,
-});
+Respond ONLY with valid JSON in this exact format:
+{
+  "correctedText": "your corrected text here"
+}`;
 
-const grammarCheckFlow = ai.defineFlow(
-  {
-    name: 'grammarCheckFlow',
-    inputSchema: GrammarCheckInputSchema,
-    outputSchema: GrammarCheckOutputSchema,
-  },
-  async (input) => {
-    // If input text is empty or very short, no need to call the model.
-    if (!input.text || input.text.trim().length < 2) {
-      return { correctedText: input.text };
-    }
-
-    const {output} = await grammarCheckPrompt(input);
-    if (!output) {
-      throw new Error('The AI model did not return a valid grammar correction.');
-    }
-    return output;
+  const result = await model.generateContent(prompt);
+  const responseText = result.response.text().trim();
+  
+  // Extract JSON from the response
+  let jsonText = responseText;
+  if (jsonText.startsWith('```json')) {
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  } else if (jsonText.startsWith('```')) {
+    jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
-);
+  
+  const output = JSON.parse(jsonText) as GrammarCheckOutput;
+  return output;
+}

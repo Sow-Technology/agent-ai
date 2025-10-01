@@ -1,17 +1,18 @@
 
 'use server';
 /**
- * @fileOverview A Genkit flow to convert text into speech with multiple speakers.
+ * @fileOverview A flow to convert text into speech with multiple speakers.
+ *
+ * NOTE: This is currently a placeholder implementation. The Google AI SDK does not
+ * have built-in TTS support like Genkit does. You'll need to integrate a dedicated
+ * TTS service (e.g., Google Cloud Text-to-Speech API, ElevenLabs, etc.) to make this functional.
  *
  * - textToSpeech - A function that takes text and returns a Data URI for the audio.
  * - TextToSpeechInput - The input type for the textToSpeech function.
  * - TextToSpeechOutput - The return type for the textToSpeech function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'zod';
-import wav from 'wav';
-import {googleAI} from '@genkit-ai/google-genai';
 
 // Define the input and output schemas
 const TextToSpeechInputSchema = z.object({
@@ -25,70 +26,50 @@ const TextToSpeechOutputSchema = z.object({
 export type TextToSpeechOutput = z.infer<typeof TextToSpeechOutputSchema>;
 
 export async function textToSpeech(input: TextToSpeechInput): Promise<TextToSpeechOutput> {
-  return textToSpeechFlow(input);
+  // TODO: Implement actual TTS functionality using a dedicated service
+  // Options include:
+  // 1. Google Cloud Text-to-Speech API
+  // 2. ElevenLabs API
+  // 3. Amazon Polly
+  // 4. Microsoft Azure Speech Service
+  
+  console.warn('textToSpeech: Returning placeholder. TTS not yet implemented with Google AI SDK.');
+  
+  // Return a minimal WAV file as a placeholder (1 second of silence)
+  // WAV header for 1 second of silence at 24kHz, mono, 16-bit
+  const sampleRate = 24000;
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const duration = 1; // 1 second
+  const numSamples = sampleRate * duration;
+  const dataSize = numSamples * numChannels * (bitsPerSample / 8);
+  const fileSize = 44 + dataSize; // WAV header is 44 bytes
+  
+  const buffer = Buffer.alloc(fileSize);
+  
+  // RIFF header
+  buffer.write('RIFF', 0);
+  buffer.writeUInt32LE(fileSize - 8, 4);
+  buffer.write('WAVE', 8);
+  
+  // fmt chunk
+  buffer.write('fmt ', 12);
+  buffer.writeUInt32LE(16, 16); // Chunk size
+  buffer.writeUInt16LE(1, 20); // Audio format (1 = PCM)
+  buffer.writeUInt16LE(numChannels, 22);
+  buffer.writeUInt32LE(sampleRate, 24);
+  buffer.writeUInt32LE(sampleRate * numChannels * (bitsPerSample / 8), 28); // Byte rate
+  buffer.writeUInt16LE(numChannels * (bitsPerSample / 8), 32); // Block align
+  buffer.writeUInt16LE(bitsPerSample, 34);
+  
+  // data chunk
+  buffer.write('data', 36);
+  buffer.writeUInt32LE(dataSize, 40);
+  // Remaining bytes are already 0 (silence)
+  
+  const wavBase64 = buffer.toString('base64');
+  
+  return {
+    audioDataUri: `data:audio/wav;base64,${wavBase64}`,
+  };
 }
-
-// Helper function to convert raw PCM audio buffer to a Base64-encoded WAV string
-async function toWav(pcmData: Buffer): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels: 1,
-      sampleRate: 24000,
-      bitDepth: 16,
-    });
-
-    const chunks: Buffer[] = [];
-    writer.on('data', (chunk) => chunks.push(chunk));
-    writer.on('end', () => resolve(Buffer.concat(chunks).toString('base64')));
-    writer.on('error', reject);
-
-    writer.write(pcmData);
-    writer.end();
-  });
-}
-
-// Main Genkit flow
-const textToSpeechFlow = ai.defineFlow(
-  {
-    name: 'textToSpeechFlow',
-    inputSchema: TextToSpeechInputSchema,
-    outputSchema: TextToSpeechOutputSchema,
-  },
-  async ({ text }) => {
-    // Modify the text to fit the multi-speaker format expected by the model.
-    // The model expects speakers to be labeled like "Speaker 1:", "Speaker 2:", etc.
-    const ttsPrompt = text
-      .replace(/Agent.*?:\s/g, 'Speaker 1: ')
-      .replace(/Customer.*?:/g, 'Speaker 2:');
-
-    const { media } = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-exp',
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          multiSpeakerVoiceConfig: {
-            speakerVoiceConfigs: [
-              { speaker: 'Speaker 1', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Onyx' } } }, // Agent voice (Male)
-              { speaker: 'Speaker 2', voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Nova' } } },  // Customer voice (Female)
-            ],
-          },
-        },
-      },
-      prompt: ttsPrompt,
-    });
-
-    if (!media || !media.url) {
-      throw new Error('No audio media was returned from the AI model.');
-    }
-
-    // The returned URL is a data URI with base64 encoded PCM data
-    const pcmBuffer = Buffer.from(media.url.substring(media.url.indexOf(',') + 1), 'base64');
-    
-    // Convert the PCM buffer to a WAV base64 string
-    const wavBase64 = await toWav(pcmBuffer);
-
-    return {
-      audioDataUri: `data:audio/wav;base64,${wavBase64}`,
-    };
-  }
-);

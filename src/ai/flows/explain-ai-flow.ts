@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview An AI flow to explain concepts.
@@ -8,7 +9,6 @@
  * - ExplainConceptOutput - The return type for the explainConcept function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
 const ExplainConceptInputSchema = z.object({
@@ -22,31 +22,29 @@ const ExplainConceptOutputSchema = z.object({
 export type ExplainConceptOutput = z.infer<typeof ExplainConceptOutputSchema>;
 
 export async function explainConcept(input: ExplainConceptInput): Promise<ExplainConceptOutput> {
-  return explainConceptFlow(input);
-}
+  const { getModel } = await import('@/ai/genkit');
+  const model = getModel();
+  
+  const prompt = `Explain the following concept or answer the question concisely:
 
-const explainPrompt = ai.definePrompt({
-  name: 'explainConceptPrompt',
-  input: {schema: ExplainConceptInputSchema},
-  output: {schema: ExplainConceptOutputSchema},
-  prompt: `Explain the following concept or answer the question concisely:
+"${input.prompt}"
 
-"{{{prompt}}}"
+Respond ONLY with valid JSON in this exact format:
+{
+  "explanation": "your detailed explanation here"
+}`;
 
-Provide the explanation directly.`,
-});
-
-const explainConceptFlow = ai.defineFlow(
-  {
-    name: 'explainConceptFlow',
-    inputSchema: ExplainConceptInputSchema,
-    outputSchema: ExplainConceptOutputSchema,
-  },
-  async (input) => {
-    const {output} = await explainPrompt(input);
-    if (!output) {
-      throw new Error('The AI model did not return a valid explanation.');
-    }
-    return output;
+  const result = await model.generateContent(prompt);
+  const responseText = result.response.text().trim();
+  
+  // Extract JSON from the response
+  let jsonText = responseText;
+  if (jsonText.startsWith('```json')) {
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  } else if (jsonText.startsWith('```')) {
+    jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
-);
+  
+  const output = JSON.parse(jsonText) as ExplainConceptOutput;
+  return output;
+}

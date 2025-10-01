@@ -8,7 +8,6 @@
  * - AuditChatOutput - The return type for the chatAboutAudit function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
 const ChatMessageSchema = z.object({
@@ -31,50 +30,45 @@ const AuditChatOutputSchema = z.object({
 export type AuditChatOutput = z.infer<typeof AuditChatOutputSchema>;
 
 export async function chatAboutAudit(input: AuditChatInput): Promise<AuditChatOutput> {
-  return auditChatFlow(input);
-}
+  const { getModel } = await import('@/ai/genkit');
+  const model = getModel();
+  
+  let chatHistoryText = '';
+  if (input.chatHistory && input.chatHistory.length > 0) {
+    chatHistoryText = 'Chat History:\n' + input.chatHistory.map(msg => 
+      `${msg.role}: ${msg.content}`
+    ).join('\n') + '\n\n';
+  }
 
-const chatPrompt = ai.definePrompt({
-  name: 'auditChatPrompt',
-  input: {schema: AuditChatInputSchema},
-  output: {schema: AuditChatOutputSchema},
-  prompt: `You are a helpful AI assistant specializing in analyzing call center audit data.
+  const prompt = `You are a helpful AI assistant specializing in analyzing call center audit data.
 You will be provided with a summary of a call audit, the full transcription of the call, and the ongoing chat history.
 Your task is to answer the user's questions based on this information. Be concise and focus on the provided context.
 
 Call Audit Summary:
-{{{auditSummary}}}
+${input.auditSummary}
 
 Call Transcription:
-{{{auditTranscription}}}
+${input.auditTranscription}
 
-{{#if chatHistory}}
-Chat History:
-{{#each chatHistory}}
-{{this.role}}: {{{this.content}}}
-{{/each}}
-{{/if}}
+${chatHistoryText}User's Current Question:
+${input.userMessage}
 
-User's Current Question:
-{{{userMessage}}}
+Respond ONLY with valid JSON in this exact format:
+{
+  "response": "your detailed answer here"
+}`;
 
-Your Answer:
-`,
-});
-
-const auditChatFlow = ai.defineFlow(
-  {
-    name: 'auditChatFlow',
-    inputSchema: AuditChatInputSchema,
-    outputSchema: AuditChatOutputSchema,
-  },
-  async (input) => {
-    const {output} = await chatPrompt(input);
-    if (!output) {
-      throw new Error('The AI model did not return a valid response for the chat.');
-    }
-    return output;
+  const result = await model.generateContent(prompt);
+  const responseText = result.response.text().trim();
+  
+  // Extract JSON from the response
+  let jsonText = responseText;
+  if (jsonText.startsWith('```json')) {
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  } else if (jsonText.startsWith('```')) {
+    jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
-);
-
-
+  
+  const output = JSON.parse(jsonText) as AuditChatOutput;
+  return output;
+}

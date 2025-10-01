@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview An AI flow to generate a QA Parameter Campaign from an SOP.
@@ -8,7 +9,6 @@
  * - GenerateParametersFromSopOutput - The return type for the flow.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
 const IndividualParameterItemSchema = z.object({
@@ -30,14 +30,10 @@ const GenerateParametersFromSopOutputSchema = z.object({
 export type GenerateParametersFromSopOutput = z.infer<typeof GenerateParametersFromSopOutputSchema>;
 
 export async function generateParametersFromSop(input: GenerateParametersFromSopInput): Promise<GenerateParametersFromSopOutput> {
-  return generateParametersFromSopFlow(input);
-}
+  const { getModel } = await import('@/ai/genkit');
+  const model = getModel();
 
-const generationPrompt = ai.definePrompt({
-  name: 'generateParametersFromSopPrompt',
-  input: {schema: GenerateParametersFromSopInputSchema},
-  output: {schema: GenerateParametersFromSopOutputSchema},
-  prompt: `You are an expert QA Manager responsible for creating effective audit campaigns.
+  const prompt = `You are an expert QA Manager responsible for creating effective audit campaigns.
 Based on the provided Standard Operating Procedure (SOP) title and content, your task is to generate a complete QA Parameter Campaign.
 
 **Instructions:**
@@ -50,40 +46,48 @@ Based on the provided Standard Operating Procedure (SOP) title and content, your
 7.  **Crucially, the sum of all 'weight' values in the 'items' array MUST equal exactly 100.** Distribute the weights logically.
 
 **SOP Title:**
-{{{title}}}
+${input.title}
 
 **SOP Content:**
-{{{content}}}
+${input.content}
 
-Now, generate the QA Parameter Campaign in the required JSON format.
-`,
-});
-
-const generateParametersFromSopFlow = ai.defineFlow(
-  {
-    name: 'generateParametersFromSopFlow',
-    inputSchema: GenerateParametersFromSopInputSchema,
-    outputSchema: GenerateParametersFromSopOutputSchema,
-  },
-  async (input) => {
-    const {output} = await generationPrompt(input);
-    if (!output) {
-      throw new Error('The AI model did not return a valid QA campaign.');
+Respond ONLY with valid JSON in this exact format:
+{
+  "name": "campaign name here",
+  "description": "campaign description here",
+  "items": [
+    {
+      "name": "parameter name",
+      "weight": number (0-100)
     }
+  ]
+}`;
 
-    // Post-processing to ensure weights sum to 100, as the model can sometimes be slightly off.
-    const totalWeight = output.items.reduce((sum, item) => sum + item.weight, 0);
-    if (Math.abs(totalWeight - 100) > 0.01 && output.items.length > 0) {
-        const adjustmentFactor = 100 / totalWeight;
-        let runningTotal = 0;
-        for (let i = 0; i < output.items.length - 1; i++) {
-            const adjustedWeight = Math.round(output.items[i].weight * adjustmentFactor);
-            output.items[i].weight = adjustedWeight;
-            runningTotal += adjustedWeight;
-        }
-        output.items[output.items.length - 1].weight = 100 - runningTotal;
-    }
-
-    return output;
+  const result = await model.generateContent(prompt);
+  const responseText = result.response.text().trim();
+  
+  // Extract JSON from the response
+  let jsonText = responseText;
+  if (jsonText.startsWith('```json')) {
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  } else if (jsonText.startsWith('```')) {
+    jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
-);
+  
+  const output = JSON.parse(jsonText) as GenerateParametersFromSopOutput;
+
+  // Post-processing to ensure weights sum to 100, as the model can sometimes be slightly off.
+  const totalWeight = output.items.reduce((sum, item) => sum + item.weight, 0);
+  if (Math.abs(totalWeight - 100) > 0.01 && output.items.length > 0) {
+      const adjustmentFactor = 100 / totalWeight;
+      let runningTotal = 0;
+      for (let i = 0; i < output.items.length - 1; i++) {
+          const adjustedWeight = Math.round(output.items[i].weight * adjustmentFactor);
+          output.items[i].weight = adjustedWeight;
+          runningTotal += adjustedWeight;
+      }
+      output.items[output.items.length - 1].weight = 100 - runningTotal;
+  }
+
+  return output;
+}

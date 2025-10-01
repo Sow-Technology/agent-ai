@@ -8,7 +8,6 @@
  * - QaAuditOutput - The return type for the qaAuditCall function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'zod'; 
 
 // A mock/placeholder for a very short silent WAV audio data URI.
@@ -83,147 +82,128 @@ export type QaAuditOutput = z.infer<typeof QaAuditOutputSchema>;
 
 
 export async function qaAuditCall(input: QaAuditInput): Promise<QaAuditOutput> {
+  const { getModel } = await import('@/ai/genkit');
+  const model = getModel();
+
   const effectiveInput = {
     ...input,
     audioDataUri: input.audioDataUri || MOCK_AUDIO_DATA_URI,
   };
-  const result = await qaAuditCallFlow(effectiveInput);
-  // Add the callLanguage to the output for easier access in the UI if it's not already there.
-  if (result && !result.callLanguage) {
-    result.callLanguage = input.callLanguage;
-  }
-  return result;
-}
 
-const qaAuditPrompt = ai.definePrompt({
-  name: 'qaAuditPrompt',
-  input: { schema: QaAuditInputSchema },
-  output: { schema: QaAuditOutputSchema },
-  prompt: `You are an expert QA auditor for call centers. You are tasked with auditing a call recording.
+  // Extract the base64 audio data and mime type from the data URI
+  let audioBase64 = '';
+  let mimeType = 'audio/wav';
+  
+  if (effectiveInput.audioDataUri && effectiveInput.audioDataUri.startsWith('data:')) {
+    const matches = effectiveInput.audioDataUri.match(/^data:([^;]+);base64,(.+)$/);
+    if (matches) {
+      mimeType = matches[1];
+      audioBase64 = matches[2];
+    }
+  }
+
+  // Build the audit parameters description
+  const parametersDesc = effectiveInput.auditParameters.map(group => {
+    const subParams = group.subParameters.map(sp => 
+      `    - "${sp.name}" - ${sp.weight}% (${sp.type})`
+    ).join('\n');
+    return `  - **Group: "${group.name}"**\n${subParams}`;
+  }).join('\n');
+
+  const textPrompt = `You are an expert QA auditor for call centers. You are tasked with auditing the attached audio call recording.
 
 **Your Goal: Maximum Accuracy**
-Your primary goal is to provide the most accurate and detailed audit possible. Engage your full analytical capabilities, as if calling on a powerful model like Google Gemini for help. Your output must always match the required JSON schema, with the highest level of detail and precision in every field.
+Your primary goal is to provide the most accurate and detailed audit possible. Engage your full analytical capabilities. Your output must be valid JSON matching the specified schema.
 
 **Audit Context:**
-*   Agent User ID: {{agentUserId}}
-*   Campaign Name: {{#if campaignName}}{{campaignName}}{{else}}N/A{{/if}}
+- Agent User ID: ${effectiveInput.agentUserId}
+- Campaign Name: ${effectiveInput.campaignName || 'N/A'}
+- Original Call Language: ${effectiveInput.callLanguage}
+${effectiveInput.transcriptionLanguage ? `- Requested Transcription Language: ${effectiveInput.transcriptionLanguage}` : ''}
 
-**Input Details:**
-*   Audio Media URI: {{media url=audioDataUri}}
-*   Original Call Language: {{callLanguage}}
-{{#if transcriptionLanguage}}
-*   Optional Requested Transcription Language (for non-English, non-original version): {{transcriptionLanguage}}
-{{/if}}
-*   Audit Parameters (Parameter Name - Weight%):
-    {{#each auditParameters}}
-    *   **Group: "{{this.name}}"**
-        {{#each this.subParameters}}
-        *   Sub: "{{this.name}}" - Weight: {{this.weight}}% - Type: {{this.type}}
-        {{/each}}
-    {{/each}}
+**Audit Parameters (Parameter Name - Weight%):**
+${parametersDesc}
 
-**Your Tasks:**
+**Audit Instructions:**
+1. **Transcription**: Provide accurate transcriptions in the original language, English (if different), and requested language (if specified). Use clear speaker labels like "Agent (Male): [AgentName]" and "Customer (Female):".
+2. **Audit Scoring**: Evaluate each parameter based on the call content. Be precise and fair in your scoring.
+3. **Root Cause Analysis**: If issues are found, provide thoughtful analysis of why they occurred.
+4. **Summary**: Give constructive feedback highlighting strengths and areas for improvement.
 
-**0. Agent Identification and Consistent Naming:**
-    *   You MUST analyze the call audio/transcription to identify the primary agent's name. Listen for phrases like 'My name is...', 'This is [Agent Name] from...', etc.
-    *   Set the \`identifiedAgentName\` field in the output to this name.
-    *   If no name can be confidently inferred from the audio, set \`identifiedAgentName\` to "Unknown Agent".
-    *   **IMPORTANT: Throughout ALL subsequent tasks (Transcription, Translation, Auditing, Summaries), whenever referring to the agent being audited or their name, you MUST use the value that will be populated in the \`identifiedAgentName\` output field. For speaker labels, use "Agent: [value of identifiedAgentName] ({{agentUserId}})".**
+**Output Requirements:**
+- Ensure all transcriptions are accurate and properly formatted
+- Calculate weighted scores correctly (score × weight ÷ 100)
+- Overall score should be the sum of all weighted scores
+- Provide detailed, actionable feedback
+- Use the identified agent name in the summary
 
-**Speaker Labeling Guidance (applies to all transcriptions):**
-Format transcriptions clearly identifying speakers and their gender.
-*   For the agent being audited: Analyze their voice to determine if it is Male or Female. The label MUST be in the format: "Agent ([Gender]): [value determined for identifiedAgentName] ({{agentUserId}}): [dialogue]". Example: "Agent (Male): John (AGENT007): Hello..."
-*   For other speakers (e.g., Customer): Analyze their voice to determine if it is Male or Female. The label MUST be in the format: "Customer ([Gender]): [dialogue]". Example: "Customer (Female): Hi, I have a problem."
-*   If gender cannot be determined for a speaker, omit the gender part. Example: "Speaker 1: [dialogue]".
-
-**1. Audio Enhancement and Verbatim Transcription:**
-    *   First, perform an internal, simulated audio enhancement process on the provided audio from \`audioDataUri\`. This involves noise reduction and voice clarification. Your goal is to achieve the highest possible fidelity before transcription.
-    *   After enhancing the audio, you MUST provide a precise, verbatim (word-for-word) transcription of the entire conversation in its original language: {{callLanguage}}.
-    *   Capture every detail accurately. Do not summarize or paraphrase. The transcription must be an exact record of what was said.
-    *   Apply speaker labeling as per the guidance above.
-    *   Place this highly accurate and detailed transcription into the \`transcriptionInOriginalLanguage\` output field.
-
-**2. English Translation (Conditional):**
-    *   **Condition:** Only perform this task if {{callLanguage}} is NOT "English" (be case-insensitive for "English").
-    *   If the condition is met (original language is not English):
-        *   Translate the original transcription (from Task 1) into English.
-        *   Apply speaker labeling using simple, concise labels including gender, as per the guidance above.
-        *   Place this English translation into the \`englishTranslation\` output field.
-    *   If the condition is NOT met (i.e., {{callLanguage}} is already "English"), then the \`englishTranslation\` field should be omitted (left empty/null).
-
-**3. Requested Language Transcription (Conditional):**
-    {{#if transcriptionLanguage}}
-        *   An optional transcription language requested is {{transcriptionLanguage}}.
-        *   **Condition for this task:** Perform this task ONLY IF {{transcriptionLanguage}} is different from {{callLanguage}} AND {{transcriptionLanguage}} is NOT "English" (be case-insensitive for both language checks).
-        *   If this condition is met:
-            *   Translate the original transcription (from Task 1) into {{transcriptionLanguage}}.
-            *   Apply speaker labeling as per the guidance above, using the determined agent name and gender.
-            *   Place this translation into the \`transcriptionInRequestedLanguage\` output field.
-        *   If this condition is NOT met, then the \`transcriptionInRequestedLanguage\` field should be omitted (left empty/null).
-    {{else}}
-        *   No optional \`transcriptionLanguage\` was specified. Therefore, the \`transcriptionInRequestedLanguage\` field should be omitted (left empty/null).
-    {{/if}}
-
-**4. Handling Audio Processing Issues:**
-    *   If direct transcription from \`audioDataUri\` is not possible (e.g., it is a placeholder, there's a format issue, or it's too long):
-        *   For \`identifiedAgentName\`: Set to "Unknown Agent (Audio Issue)".
-        *   For \`transcriptionInOriginalLanguage\`: State "Transcription from audio URI was not possible. Proceeding with an assumed call scenario for agent [value of identifiedAgentName] ({{agentUserId}})." followed by a plausible, brief, sample customer service dialogue in {{callLanguage}}, with speaker labels (using "Agent (Male): [value of identifiedAgentName] ({{agentUserId}})" and "Customer (Female):" for the speakers).
-        *   For \`englishTranslation\` (if {{callLanguage}} is not English): State "Transcription from audio URI was not possible. Proceeding with an assumed call scenario for agent [value of identifiedAgentName] ({{agentUserId}})." followed by a translation of the imagined dialogue into English, with speaker labels. If {{callLanguage}} is English, this field is omitted.
-        {{#if transcriptionLanguage}}
-        *   For \`transcriptionInRequestedLanguage\` (if the conditions in Task 3 would have been met): State "Transcription from audio URI was not possible. Proceeding with an assumed call scenario for agent [value of identifiedAgentName] ({{agentUserId}})." followed by a translation of the imagined dialogue into {{transcriptionLanguage}}, with speaker labels. Otherwise, this field is omitted.
-        {{/if}}
-
-**5. Call Summary:**
-    *   Based on the available transcription (either actual or assumed), provide a concise summary of the entire call conversation in the \`callSummary\` field. This summary should capture the main purpose of the call, key discussion points, and any resolutions or outcomes. Refer to the agent as "[value of identifiedAgentName]".
-
-**6. Auditing from Audio:** You MUST evaluate the agent's performance by directly analyzing the provided audio from \`audioDataUri\`. The transcription serves as a reference for your comments, but your scoring must be based on what you "hear" in the call (tone, pace, professionalism, etc.). The primary source for the audit is the audio content.
-
-**7. Scoring & Comments (For each sub-parameter in \`auditParameters\` input):**
-    For each sub-parameter within each parameter group, you must generate a result object.
-    *   \`parameter\`: A string combining the group name and sub-parameter name, formatted as "GroupName - SubParameterName". For example, for sub-parameter "Agent was professional and courteous" in the "Greeting and Professionalism" group, the value must be "Greeting and Professionalism - Agent was professional and courteous".
-    *   \`score\`: Your assessed performance score for this specific sub-parameter, on a scale of 0 (worst) to 100 (best). Base this on how well Agent [value of identifiedAgentName] ({{agentUserId}}) performed.
-    *   \`weightedScore\`: Calculate this as (\`score\` / 100) * \`weight_of_the_sub_parameter\`. Round to two decimal places if necessary.
-    *   \`comments\`: Brief justification for the score, referring to specific parts of the conversation if possible.
-    *   \`type\`: The type of the sub-parameter ('Fatal', 'Non-Fatal', or 'ZTP') exactly as it was provided in the input for that sub-parameter.
-    *   Populate one of these objects for each sub-parameter into the \`auditResults\` array.
-
-**8. Overall Assessment & Agent Summary:**
-    *   \`overallScore\`: Calculate this as the sum of all individual \`weightedScore\` values from the \`auditResults\` array. This score should be between 0 and 100. If the sum of input parameter weights is 100, this will naturally be capped at 100.
-    *   \`summary\`: Provide a concise summary of the audit focused specifically on Agent [value of identifiedAgentName]'s performance, highlighting key strengths and areas for improvement based on the weighted performance. This is the agent performance summary.
-    *   \`callLanguage\`: Populate this field with the original call language provided in the input: {{callLanguage}}.
-
-**9. Root Cause Analysis (RCA):**
-    *   If any significant issues, failures in process, or critical errors by the agent ([value of identifiedAgentName]) were identified during the audit (from Task 6), provide a root cause analysis in the \`rootCauseAnalysis\` field. 
-    *   This RCA should briefly explain the core reason(s) behind the identified issue(s). 
-    *   If no significant issues warranting an RCA are found, this field can be omitted or set to a brief statement like "No significant issues requiring RCA identified."
-
-Please ensure your output is strictly in the JSON format defined by the output schema. Provide thoughtful and constructive feedback.
-`,
-  config: {
-    safetySettings: [
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-    ],
-  },
-});
-
-const qaAuditCallFlow = ai.defineFlow(
-  {
-    name: 'qaAuditCallFlow',
-    inputSchema: QaAuditInputSchema,
-    outputSchema: QaAuditOutputSchema,
-  },
-  async (input) => {
-    const { output } = await qaAuditPrompt(input);
-    if (!output) {
-      throw new Error('The AI model did not return a valid audit.');
+**IMPORTANT**: Respond ONLY with valid JSON matching this exact structure:
+{
+  "agentUserId": "string (optional)",
+  "campaignName": "string (optional)",
+  "identifiedAgentName": "string (optional, e.g., 'John Doe' or 'Unknown Agent')",
+  "transcriptionInOriginalLanguage": "string (required, formatted with speaker labels)",
+  "englishTranslation": "string (optional, if original language is not English)",
+  "transcriptionInRequestedLanguage": "string (optional, if transcriptionLanguage was specified)",
+  "callSummary": "string (required, concise summary of the call)",
+  "rootCauseAnalysis": "string (optional, analysis of any significant issues)",
+  "auditResults": [
+    {
+      "parameter": "string (e.g., 'Greeting - Agent used standard greeting')",
+      "score": number (0-100),
+      "weightedScore": number (score * weight / 100),
+      "comments": "string",
+      "type": "Fatal" | "Non-Fatal" | "ZTP" (optional)
     }
-    // Fallback if the model fails to set the agent name
-    if (!output.identifiedAgentName) {
-      output.identifiedAgentName = "Unknown Agent (Fallback)";
+  ],
+  "overallScore": number (0-100, sum of weightedScore values),
+  "summary": "string (required, brief summary highlighting strengths and areas for improvement)",
+  "callLanguage": "string (optional)"
+}`;
+
+  // Prepare the content parts with audio
+  const parts: any[] = [
+    {
+      text: textPrompt
     }
-    return output;
+  ];
+
+  // Add audio if it's not the mock placeholder
+  if (audioBase64 && effectiveInput.audioDataUri !== MOCK_AUDIO_DATA_URI) {
+    parts.push({
+      inlineData: {
+        mimeType: mimeType,
+        data: audioBase64
+      }
+    });
+  } else {
+    // If using mock audio, add a note that this is a simulated audit
+    parts[0].text += '\n\n**NOTE**: No real audio provided. Please generate a realistic sample audit based on the parameters provided.';
   }
-);
+
+  const result = await model.generateContent({
+    contents: [{ role: 'user', parts }]
+  });
+  const response = result.response;
+  const text = response.text();
+  
+  // Extract JSON from the response (handle cases where model adds markdown formatting)
+  let jsonText = text.trim();
+  if (jsonText.startsWith('```json')) {
+    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  } else if (jsonText.startsWith('```')) {
+    jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  }
+  
+  const output = JSON.parse(jsonText) as QaAuditOutput;
+  
+  // Validate and set defaults
+  if (!output.identifiedAgentName) {
+    output.identifiedAgentName = "Unknown Agent";
+  }
+  if (!output.callLanguage) {
+    output.callLanguage = effectiveInput.callLanguage;
+  }
+  
+  return output;
+}
