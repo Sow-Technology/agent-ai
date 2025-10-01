@@ -1,6 +1,4 @@
-
-
-'use server';
+"use server";
 /**
  * @fileOverview An AI flow to generate a QA Parameter Campaign from an SOP.
  *
@@ -9,28 +7,53 @@
  * - GenerateParametersFromSopOutput - The return type for the flow.
  */
 
-import {z} from 'zod';
+import { z } from "zod";
 
 const IndividualParameterItemSchema = z.object({
-  name: z.string().describe('The name of the audit parameter.'),
-  weight: z.number().min(0).max(100).describe('The weight of this parameter (0-100).'),
+  name: z.string().describe("The name of the audit parameter."),
+  weight: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe("The weight of this parameter (0-100)."),
 });
 
 const GenerateParametersFromSopInputSchema = z.object({
-  title: z.string().describe("The title of the Standard Operating Procedure (SOP)."),
+  title: z
+    .string()
+    .describe("The title of the Standard Operating Procedure (SOP)."),
   content: z.string().min(10).describe("The full content of the SOP."),
 });
-export type GenerateParametersFromSopInput = z.infer<typeof GenerateParametersFromSopInputSchema>;
+export type GenerateParametersFromSopInput = z.infer<
+  typeof GenerateParametersFromSopInputSchema
+>;
 
 const GenerateParametersFromSopOutputSchema = z.object({
-  name: z.string().describe("A concise and relevant name for the generated QA Parameter Campaign, based on the SOP title."),
-  description: z.string().describe("A brief description of what this QA campaign audits, based on the SOP content."),
-  items: z.array(IndividualParameterItemSchema).min(1).describe("An array of parameter items. The sum of all weights MUST be exactly 100."),
+  name: z
+    .string()
+    .describe(
+      "A concise and relevant name for the generated QA Parameter Campaign, based on the SOP title."
+    ),
+  description: z
+    .string()
+    .describe(
+      "A brief description of what this QA campaign audits, based on the SOP content."
+    ),
+  items: z
+    .array(IndividualParameterItemSchema)
+    .min(1)
+    .describe(
+      "An array of parameter items. The sum of all weights MUST be exactly 100."
+    ),
 });
-export type GenerateParametersFromSopOutput = z.infer<typeof GenerateParametersFromSopOutputSchema>;
+export type GenerateParametersFromSopOutput = z.infer<
+  typeof GenerateParametersFromSopOutputSchema
+>;
 
-export async function generateParametersFromSop(input: GenerateParametersFromSopInput): Promise<GenerateParametersFromSopOutput> {
-  const { getModel } = await import('@/ai/genkit');
+export async function generateParametersFromSop(
+  input: GenerateParametersFromSopInput
+): Promise<GenerateParametersFromSopOutput> {
+  const { getModel } = await import("@/ai/genkit");
   const model = getModel();
 
   const prompt = `You are an expert QA Manager responsible for creating effective audit campaigns.
@@ -65,28 +88,30 @@ Respond ONLY with valid JSON in this exact format:
 
   const result = await model.generateContent(prompt);
   const responseText = result.response.text().trim();
-  
+
   // Extract JSON from the response
   let jsonText = responseText;
-  if (jsonText.startsWith('```json')) {
-    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (jsonText.startsWith('```')) {
-    jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  if (jsonText.startsWith("```json")) {
+    jsonText = jsonText.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+  } else if (jsonText.startsWith("```")) {
+    jsonText = jsonText.replace(/^```\s*/, "").replace(/\s*```$/, "");
   }
-  
+
   const output = JSON.parse(jsonText) as GenerateParametersFromSopOutput;
 
   // Post-processing to ensure weights sum to 100, as the model can sometimes be slightly off.
   const totalWeight = output.items.reduce((sum, item) => sum + item.weight, 0);
   if (Math.abs(totalWeight - 100) > 0.01 && output.items.length > 0) {
-      const adjustmentFactor = 100 / totalWeight;
-      let runningTotal = 0;
-      for (let i = 0; i < output.items.length - 1; i++) {
-          const adjustedWeight = Math.round(output.items[i].weight * adjustmentFactor);
-          output.items[i].weight = adjustedWeight;
-          runningTotal += adjustedWeight;
-      }
-      output.items[output.items.length - 1].weight = 100 - runningTotal;
+    const adjustmentFactor = 100 / totalWeight;
+    let runningTotal = 0;
+    for (let i = 0; i < output.items.length - 1; i++) {
+      const adjustedWeight = Math.round(
+        output.items[i].weight * adjustmentFactor
+      );
+      output.items[i].weight = adjustedWeight;
+      runningTotal += adjustedWeight;
+    }
+    output.items[output.items.length - 1].weight = 100 - runningTotal;
   }
 
   return output;

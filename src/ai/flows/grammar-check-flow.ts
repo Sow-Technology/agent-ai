@@ -1,6 +1,4 @@
-
-
-'use server';
+"use server";
 /**
  * @fileOverview An AI flow to check and correct the grammar of a given text.
  *
@@ -9,25 +7,29 @@
  * - GrammarCheckOutput - The return type for the flow.
  */
 
-import {z} from 'zod';
+import { z } from "zod";
 
 const GrammarCheckInputSchema = z.object({
-  text: z.string().describe('The text to be checked for grammar and spelling.'),
+  text: z.string().describe("The text to be checked for grammar and spelling."),
 });
 export type GrammarCheckInput = z.infer<typeof GrammarCheckInputSchema>;
 
 const GrammarCheckOutputSchema = z.object({
-  correctedText: z.string().describe('The grammatically corrected version of the input text.'),
+  correctedText: z
+    .string()
+    .describe("The grammatically corrected version of the input text."),
 });
 export type GrammarCheckOutput = z.infer<typeof GrammarCheckOutputSchema>;
 
-export async function grammarCheck(input: GrammarCheckInput): Promise<GrammarCheckOutput> {
+export async function grammarCheck(
+  input: GrammarCheckInput
+): Promise<GrammarCheckOutput> {
   // If input text is empty or very short, no need to call the model.
   if (!input.text || input.text.trim().length < 2) {
     return { correctedText: input.text };
   }
 
-  const { getModel } = await import('@/ai/genkit');
+  const { getModel } = await import("@/ai/genkit");
   const model = getModel();
 
   const prompt = `You are an expert in English grammar and style.
@@ -45,15 +47,15 @@ Respond ONLY with valid JSON in this exact format:
 
   const result = await model.generateContent(prompt);
   const responseText = result.response.text().trim();
-  
+
   // Extract JSON from the response
   let jsonText = responseText;
-  if (jsonText.startsWith('```json')) {
-    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (jsonText.startsWith('```')) {
-    jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  if (jsonText.startsWith("```json")) {
+    jsonText = jsonText.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+  } else if (jsonText.startsWith("```")) {
+    jsonText = jsonText.replace(/^```\s*/, "").replace(/\s*```$/, "");
   }
-  
+
   const output = JSON.parse(jsonText) as GrammarCheckOutput;
   return output;
 }

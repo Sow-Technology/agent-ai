@@ -14,38 +14,42 @@ AssureQAI is a Next.js application that uses Google's Gemini AI to automatically
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Google AI API Key ([Get one here](https://ai.google.dev/))
 
 ## 🛠️ Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd agent-ai
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Configure environment variables**
-   
+
    Create a `.env` file in the root directory:
+
    ```env
    # Google AI API Key (Required for AI features)
    GOOGLE_GENAI_API_KEY=your_api_key_here
-   
+
    # MongoDB (Required for user management and data storage)
    MONGODB_URI=your_mongodb_connection_string
-   
+
    # JWT Secret (Required for authentication)
    JWT_SECRET=your_secret_key_here
    ```
 
 4. **Run development server**
+
    ```bash
    npm run dev
    ```
@@ -96,32 +100,36 @@ The QA Audit flow now processes **real audio files**, not mock data. When you pr
 ### How to Use Real Audio
 
 **Option 1: File Upload**
+
 ```javascript
 // In your frontend component
 const handleFileUpload = async (file) => {
   const reader = new FileReader();
   reader.onload = async (e) => {
     const audioDataUri = e.target.result;
-    
-    const response = await fetch('/api/ai/qa-audit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+
+    const response = await fetch("/api/ai/qa-audit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         agentUserId: "AGENT001",
         audioDataUri: audioDataUri,
         callLanguage: "English",
-        auditParameters: [/* your parameters */]
-      })
+        auditParameters: [
+          /* your parameters */
+        ],
+      }),
     });
-    
+
     const result = await response.json();
-    console.log('Audit complete:', result);
+    console.log("Audit complete:", result);
   };
   reader.readAsDataURL(file);
 };
 ```
 
 **Option 2: Audio Recording**
+
 ```javascript
 // Record audio directly in the browser
 const mediaRecorder = new MediaRecorder(stream);
@@ -129,7 +137,7 @@ const chunks = [];
 
 mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
 mediaRecorder.onstop = async () => {
-  const blob = new Blob(chunks, { type: 'audio/wav' });
+  const blob = new Blob(chunks, { type: "audio/wav" });
   const reader = new FileReader();
   reader.onload = async (e) => {
     const audioDataUri = e.target.result;
@@ -147,39 +155,51 @@ mediaRecorder.onstop = async () => {
 ## 🔧 API Endpoints
 
 ### QA Audit
+
 ```
 POST /api/ai/qa-audit
 ```
+
 Analyzes call recordings and generates comprehensive audits.
 
 ### Audit Chat
+
 ```
 POST /api/ai/audit-chat
 ```
+
 Chat interface to ask questions about completed audits.
 
 ### Explain Concept
+
 ```
 POST /api/ai/explain-concept
 ```
+
 Explains AI/QA concepts in simple terms.
 
 ### Grammar Check
+
 ```
 POST /api/ai/grammar-check
 ```
+
 Corrects grammar and spelling in text.
 
 ### Generate Parameters
+
 ```
 POST /api/ai/generate-parameters
 ```
+
 Converts SOPs into QA audit parameters.
 
 ### Text-to-Speech
+
 ```
 POST /api/ai/text-to-speech
 ```
+
 ⚠️ Currently returns placeholder audio. Requires dedicated TTS service integration.
 
 ## 🔐 Authentication
@@ -199,11 +219,13 @@ The app uses JWT-based authentication with the following endpoints:
 ## 🚧 Build & Deploy
 
 **Build for production:**
+
 ```bash
 npm run build
 ```
 
 **Start production server:**
+
 ```bash
 npm start
 ```
@@ -211,15 +233,18 @@ npm start
 ## 🐛 Troubleshooting
 
 ### API Key Issues
+
 - Ensure `GOOGLE_GENAI_API_KEY` is set in `.env`
 - Restart the dev server after adding environment variables
 
 ### Audio Not Processing
+
 - Verify audio is properly encoded as base64
 - Check data URI format: `data:audio/wav;base64,...`
 - Ensure file size is under 10MB for optimal performance
 
 ### Build Errors
+
 - Clear `.next` folder: `rm -rf .next`
 - Reinstall dependencies: `rm -rf node_modules && npm install`
 

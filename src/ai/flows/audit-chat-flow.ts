@@ -1,5 +1,4 @@
-
-'use server';
+"use server";
 /**
  * @fileOverview A Genkit flow for a chatbot to discuss a call audit.
  *
@@ -8,36 +7,49 @@
  * - AuditChatOutput - The return type for the chatAboutAudit function.
  */
 
-import {z} from 'zod';
+import { z } from "zod";
 
 const ChatMessageSchema = z.object({
-  role: z.enum(['user', 'model']),
+  role: z.enum(["user", "model"]),
   content: z.string(),
 });
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 const AuditChatInputSchema = z.object({
-  auditSummary: z.string().describe('The summary of the call audit.'),
-  auditTranscription: z.string().describe('The transcription of the audited call.'),
-  userMessage: z.string().min(1).describe("The user's current message/question."),
-  chatHistory: z.array(ChatMessageSchema).optional().describe('The history of the conversation so far.'),
+  auditSummary: z.string().describe("The summary of the call audit."),
+  auditTranscription: z
+    .string()
+    .describe("The transcription of the audited call."),
+  userMessage: z
+    .string()
+    .min(1)
+    .describe("The user's current message/question."),
+  chatHistory: z
+    .array(ChatMessageSchema)
+    .optional()
+    .describe("The history of the conversation so far."),
 });
 export type AuditChatInput = z.infer<typeof AuditChatInputSchema>;
 
 const AuditChatOutputSchema = z.object({
-  response: z.string().describe('The AI-generated response to the user message.'),
+  response: z
+    .string()
+    .describe("The AI-generated response to the user message."),
 });
 export type AuditChatOutput = z.infer<typeof AuditChatOutputSchema>;
 
-export async function chatAboutAudit(input: AuditChatInput): Promise<AuditChatOutput> {
-  const { getModel } = await import('@/ai/genkit');
+export async function chatAboutAudit(
+  input: AuditChatInput
+): Promise<AuditChatOutput> {
+  const { getModel } = await import("@/ai/genkit");
   const model = getModel();
-  
-  let chatHistoryText = '';
+
+  let chatHistoryText = "";
   if (input.chatHistory && input.chatHistory.length > 0) {
-    chatHistoryText = 'Chat History:\n' + input.chatHistory.map(msg => 
-      `${msg.role}: ${msg.content}`
-    ).join('\n') + '\n\n';
+    chatHistoryText =
+      "Chat History:\n" +
+      input.chatHistory.map((msg) => `${msg.role}: ${msg.content}`).join("\n") +
+      "\n\n";
   }
 
   const prompt = `You are a helpful AI assistant specializing in analyzing call center audit data.
@@ -60,15 +72,15 @@ Respond ONLY with valid JSON in this exact format:
 
   const result = await model.generateContent(prompt);
   const responseText = result.response.text().trim();
-  
+
   // Extract JSON from the response
   let jsonText = responseText;
-  if (jsonText.startsWith('```json')) {
-    jsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (jsonText.startsWith('```')) {
-    jsonText = jsonText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  if (jsonText.startsWith("```json")) {
+    jsonText = jsonText.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+  } else if (jsonText.startsWith("```")) {
+    jsonText = jsonText.replace(/^```\s*/, "").replace(/\s*```$/, "");
   }
-  
+
   const output = JSON.parse(jsonText) as AuditChatOutput;
   return output;
 }
