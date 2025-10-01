@@ -4,11 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const { text } = await request.json();
     
-    // Mock response for now - replace with actual AI implementation when genkit issues are resolved
-    const result = {
-      audioUrl: 'mock-audio-url', // Placeholder for audio URL or base64 data
-      contentType: 'audio/mpeg'
-    };
+    const { textToSpeech } = await import('@/ai/flows/text-to-speech-flow');
+    const result = await textToSpeech({ text });
     
     return NextResponse.json(result);
   } catch (error) {

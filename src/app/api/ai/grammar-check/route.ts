@@ -4,10 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const { text } = await request.json();
     
-    // Mock response for now - replace with actual AI implementation when genkit issues are resolved
-    const result = {
-      correctedText: text // For now, return the original text as if it's already correct
-    };
+    const { grammarCheck } = await import('@/ai/flows/grammar-check-flow');
+    const result = await grammarCheck({ text });
     
     return NextResponse.json(result);
   } catch (error) {

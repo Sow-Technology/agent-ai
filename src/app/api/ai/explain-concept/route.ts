@@ -8,10 +8,8 @@ export async function POST(request: NextRequest) {
   try {
     const body: ExplainConceptInput = await request.json();
     
-    // Mock response for now - replace with actual AI implementation when genkit issues are resolved
-    const result = {
-      explanation: `Here's an explanation of "${body.prompt}": This is a concept that involves understanding the key principles and applications. The explanation would provide detailed insights, examples, and practical applications to help you better understand this topic.`
-    };
+    const { explainConcept } = await import('@/ai/flows/explain-ai-flow');
+    const result = await explainConcept(body);
     
     return NextResponse.json(result);
   } catch (error) {

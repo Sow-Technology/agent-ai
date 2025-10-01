@@ -4,18 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const { title, content } = await request.json();
     
-    // Mock response for now - replace with actual AI implementation when genkit issues are resolved
-    const result = {
-      name: `QA Parameters for ${title}`,
-      description: `Quality assurance parameters generated from the SOP: ${title}`,
-      items: [
-        { name: "Process Adherence", weight: 30 },
-        { name: "Communication Quality", weight: 25 },
-        { name: "Documentation Accuracy", weight: 20 },
-        { name: "Customer Satisfaction", weight: 15 },
-        { name: "Compliance Check", weight: 10 }
-      ]
-    };
+    const { generateParametersFromSop } = await import('@/ai/flows/generate-parameters-from-sop-flow');
+    const result = await generateParametersFromSop({ title, content });
     
     return NextResponse.json(result);
   } catch (error) {

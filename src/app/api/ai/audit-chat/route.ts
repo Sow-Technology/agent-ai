@@ -4,17 +4,15 @@ export interface AuditChatInput {
   auditSummary: string;
   auditTranscription: string;
   userMessage: string;
-  chatHistory: Array<{ role: string; content: string }>;
+  chatHistory: Array<{ role: "user" | "model"; content: string }>;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: AuditChatInput = await request.json();
     
-    // Mock response for now - replace with actual AI implementation when genkit issues are resolved
-    const result = {
-      response: `I understand you're asking about the audit. Based on the audit summary and transcription provided, I can help clarify any questions you have about the evaluation. What specific aspect would you like me to explain further?`
-    };
+    const { chatAboutAudit } = await import('@/ai/flows/audit-chat-flow');
+    const result = await chatAboutAudit(body);
     
     return NextResponse.json(result);
   } catch (error) {
