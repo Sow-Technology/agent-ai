@@ -8,7 +8,7 @@ export interface SecureAuditRequest {
     userId: string;
     timestamp: string;
     integrityHash: string;
-    dataType: 'audio' | 'text';
+    dataType: "audio" | "text";
   };
 }
 
@@ -45,8 +45,8 @@ export async function encryptAuditData(
       userId,
       timestamp: new Date().toISOString(),
       integrityHash,
-      dataType: auditData.audioDataUri ? 'audio' : 'text'
-    }
+      dataType: auditData.audioDataUri ? "audio" : "text",
+    },
   };
 }
 
@@ -58,18 +58,21 @@ export async function decryptAuditResult(
   originalKey: string
 ): Promise<any> {
   if (!response.success || !response.encryptedResult) {
-    throw new Error(response.error || 'Decryption failed');
+    throw new Error(response.error || "Decryption failed");
   }
 
   // Decrypt the result
-  const decryptedResult = await decryptData(response.encryptedResult, originalKey);
+  const decryptedResult = await decryptData(
+    response.encryptedResult,
+    originalKey
+  );
 
   // Verify integrity
   const expectedHash = response.metadata?.dataIntegrity;
   const actualHash = await generateIntegrityHash(decryptedResult);
 
   if (expectedHash !== actualHash) {
-    throw new Error('Result integrity check failed');
+    throw new Error("Result integrity check failed");
   }
 
   return JSON.parse(decryptedResult);
@@ -86,13 +89,13 @@ export async function callSecureQAAudit(
   const secureRequest = await encryptAuditData(auditData, userId);
 
   // Make secure API call
-  const response = await fetch('/api/ai/qa-audit-secure', {
-    method: 'POST',
+  const response = await fetch("/api/ai/qa-audit-secure", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'X-Security-Level': 'maximum'
+      "Content-Type": "application/json",
+      "X-Security-Level": "maximum",
     },
-    body: JSON.stringify(secureRequest)
+    body: JSON.stringify(secureRequest),
   });
 
   if (!response.ok) {
@@ -117,15 +120,19 @@ async function generateEncryptionKey(): Promise<string> {
 
 async function encryptData(data: string, key: string): Promise<string> {
   // Convert base64 key back to bytes
-  const keyBytes = new Uint8Array(atob(key).split('').map(c => c.charCodeAt(0)));
+  const keyBytes = new Uint8Array(
+    atob(key)
+      .split("")
+      .map((c) => c.charCodeAt(0))
+  );
 
   // Import key for Web Crypto API
   const cryptoKey = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     keyBytes,
-    { name: 'AES-GCM', length: 256 },
+    { name: "AES-GCM", length: 256 },
     false,
-    ['encrypt']
+    ["encrypt"]
   );
 
   // Generate random IV
@@ -133,7 +140,7 @@ async function encryptData(data: string, key: string): Promise<string> {
 
   // Encrypt data
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    { name: "AES-GCM", iv },
     cryptoKey,
     new TextEncoder().encode(data)
   );
@@ -146,12 +153,23 @@ async function encryptData(data: string, key: string): Promise<string> {
   return btoa(String.fromCharCode(...combined));
 }
 
-async function decryptData(encryptedData: string, key: string): Promise<string> {
+async function decryptData(
+  encryptedData: string,
+  key: string
+): Promise<string> {
   // Convert base64 key back to bytes
-  const keyBytes = new Uint8Array(atob(key).split('').map(c => c.charCodeAt(0)));
+  const keyBytes = new Uint8Array(
+    atob(key)
+      .split("")
+      .map((c) => c.charCodeAt(0))
+  );
 
   // Convert encrypted data back to bytes
-  const encryptedBytes = new Uint8Array(atob(encryptedData).split('').map(c => c.charCodeAt(0)));
+  const encryptedBytes = new Uint8Array(
+    atob(encryptedData)
+      .split("")
+      .map((c) => c.charCodeAt(0))
+  );
 
   // Extract IV (first 12 bytes) and encrypted data
   const iv = encryptedBytes.slice(0, 12);
@@ -159,16 +177,16 @@ async function decryptData(encryptedData: string, key: string): Promise<string> 
 
   // Import key for Web Crypto API
   const cryptoKey = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     keyBytes,
-    { name: 'AES-GCM', length: 256 },
+    { name: "AES-GCM", length: 256 },
     false,
-    ['decrypt']
+    ["decrypt"]
   );
 
   // Decrypt data
   const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
+    { name: "AES-GCM", iv },
     cryptoKey,
     data
   );
@@ -179,23 +197,25 @@ async function decryptData(encryptedData: string, key: string): Promise<string> 
 async function generateIntegrityHash(data: string): Promise<string> {
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", dataBuffer);
   const hashArray = new Uint8Array(hashBuffer);
 
   // Convert to hex string
   return Array.from(hashArray)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // Utility to check if Web Crypto API is available
 export function isSecureEncryptionAvailable(): boolean {
-  return typeof crypto !== 'undefined' &&
-         typeof crypto.subtle !== 'undefined' &&
-         typeof crypto.getRandomValues === 'function';
+  return (
+    typeof crypto !== "undefined" &&
+    typeof crypto.subtle !== "undefined" &&
+    typeof crypto.getRandomValues === "function"
+  );
 }
 
 // Fallback for environments without Web Crypto API
 export function getEncryptionFallback(): string {
-  return 'Web Crypto API not available. Please use a modern browser with HTTPS.';
+  return "Web Crypto API not available. Please use a modern browser with HTTPS.";
 }
