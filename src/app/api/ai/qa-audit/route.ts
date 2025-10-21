@@ -3,11 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Increase the API body parser limit so larger base64 audio payloads (data URIs)
 // can be accepted. Keep the route-level validation for a practical maximum.
 
-export const route = {
-  body: {
-    sizeLimit: "12mb",
-  },
-};
+// Body size controlled at reverse proxy (nginx) or use cloud upload flow
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const route = {
-  body: {
-    sizeLimit: "12mb",
-  },
-};
+// Body size controlled at reverse proxy (nginx) or use cloud upload flow
 
 export async function POST(request: NextRequest) {
   try {

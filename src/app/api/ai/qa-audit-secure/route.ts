@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
-export const route = {
-  body: {
-    sizeLimit: "12mb",
-  },
-};
+// Body size controlled at reverse proxy (nginx) or use cloud upload flow
 
 export async function POST(request: NextRequest) {
   try {
