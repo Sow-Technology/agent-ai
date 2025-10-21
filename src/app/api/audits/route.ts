@@ -20,23 +20,29 @@ const parameterResultSchema = z.object({
 });
 
 const createAuditSchema = z.object({
-  auditName: z.string().min(3, 'Audit name must be at least 3 characters').max(100, 'Audit name must be less than 100 characters'),
-  auditType: z.enum(['manual', 'ai'], { required_error: 'Audit type is required' }),
-  qaParameterSetId: z.string().min(1, 'QA parameter set ID is required'),
-  qaParameterSetName: z.string().min(1, 'QA parameter set name is required'),
+  auditName: z.string().min(1, 'Audit name is required').max(100, 'Audit name must be less than 100 characters').optional(),
+  auditType: z.enum(['manual', 'ai'], { required_error: 'Audit type is required' }).optional(),
+  qaParameterSetId: z.string().min(1, 'QA parameter set ID is required').optional(),
+  qaParameterSetName: z.string().min(1, 'QA parameter set name is required').optional(),
   sopId: z.string().optional(),
   sopTitle: z.string().optional(),
-  agentName: z.string().min(1, 'Agent name is required').max(100, 'Agent name must be less than 100 characters'),
-  customerName: z.string().min(1, 'Customer name is required').max(100, 'Customer name must be less than 100 characters'),
-  interactionId: z.string().min(1, 'Interaction ID is required').max(50, 'Interaction ID must be less than 50 characters'),
-  callTranscript: z.string().min(10, 'Call transcript must be at least 10 characters'),
-  parameters: z.array(parameterResultSchema).min(1, 'At least one parameter result is required'),
-  overallScore: z.number().min(0, 'Overall score must be non-negative').max(100, 'Overall score cannot exceed 100'),
+  agentName: z.string().min(1, 'Agent name is required').max(100, 'Agent name must be less than 100 characters').optional(),
+  customerName: z.string().min(1, 'Customer name is required').max(100, 'Customer name must be less than 100 characters').optional(),
+  interactionId: z.string().min(1, 'Interaction ID is required').max(50, 'Interaction ID must be less than 50 characters').optional(),
+  callTranscript: z.string().min(1, 'Call transcript is required').optional(),
+  parameters: z.array(parameterResultSchema).optional(),
+  overallScore: z.number().min(0, 'Overall score must be non-negative').max(100, 'Overall score cannot exceed 100').optional(),
   overallComments: z.string().optional(),
   auditDate: z.string().datetime().optional(),
   auditorId: z.string().optional(),
   auditorName: z.string().optional()
-});
+}).strict().refine(
+  (data) => {
+    // At least one required field must be present
+    return data.agentName || data.customerName || data.interactionId || data.callTranscript;
+  },
+  { message: 'At least one audit field is required' }
+);
 
 const updateAuditSchema = z.object({
   auditName: z.string().min(3, 'Audit name must be at least 3 characters').max(100, 'Audit name must be less than 100 characters').optional(),
@@ -98,11 +104,20 @@ export async function GET(request: NextRequest) {
 // POST /api/audits - Create a new audit
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      console.error('Failed to parse JSON body:', e);
+      body = {};
+    }
+
+    console.log('Audit POST received body:', JSON.stringify(body, null, 2));
     
     // Validate request body
     const validationResult = createAuditSchema.safeParse(body);
     if (!validationResult.success) {
+      console.error('Validation errors:', validationResult.error.errors);
       return NextResponse.json(
         { 
           success: false, 
@@ -115,15 +130,27 @@ export async function POST(request: NextRequest) {
 
     const validatedData = validationResult.data;
     
+    // Ensure minimum required fields for creating an audit
+    if (!validatedData.agentName || !validatedData.interactionId) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Missing required fields', 
+          details: 'agentName and interactionId are required'
+        },
+        { status: 400 }
+      );
+    }
+    
     // Map the validated data to the format expected by createAudit
     const auditData = {
       callId: validatedData.interactionId,
       agentName: validatedData.agentName,
-      customerName: validatedData.customerName,
+      customerName: validatedData.customerName || 'Unknown Customer',
       callDate: validatedData.auditDate ? new Date(validatedData.auditDate) : new Date(),
-      campaignId: validatedData.qaParameterSetId, // Using QA parameter set as campaign for now
-      campaignName: validatedData.qaParameterSetName,
-      auditResults: validatedData.parameters.flatMap(param => 
+      campaignId: validatedData.qaParameterSetId || 'default_campaign', // Using QA parameter set as campaign for now
+      campaignName: validatedData.qaParameterSetName || 'Default Campaign',
+      auditResults: validatedData.parameters?.flatMap(param => 
          param.subParameters.map(subParam => ({
            parameterId: subParam.id,
            parameterName: subParam.name,
@@ -132,12 +159,12 @@ export async function POST(request: NextRequest) {
            type: subParam.type,
            comments: subParam.comments
          }))
-       ),
-      overallScore: validatedData.overallScore,
+       ) || [],
+      overallScore: validatedData.overallScore || 0,
       maxPossibleScore: 100, // Assuming max score is 100
-      transcript: validatedData.callTranscript,
+      transcript: validatedData.callTranscript || 'No transcript provided',
       auditedBy: validatedData.auditorName || validatedData.auditorId || 'Unknown',
-      auditType: validatedData.auditType
+      auditType: validatedData.auditType || 'manual'
     };
     
     const newAudit = await createAudit(auditData);
