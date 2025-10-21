@@ -337,17 +337,17 @@ export default function ManualAuditContent() {
     setAudioAnalysisResult(null);
     setManualAudioKey(Date.now().toString());
     if (!file) {
-      manualAudioInputRef.current?.clearFile();
+      // Don't call clearFile() to avoid infinite recursion
       return;
     }
     if (!file.type.startsWith("audio/") && file.type !== "video/mp4") {
       toast({ title: "Invalid file type", variant: "destructive" });
-      manualAudioInputRef.current?.clearFile();
+      // Don't call clearFile() to avoid infinite recursion
       return;
     }
     if (file.size > MAX_AUDIO_FILE_SIZE_BYTES) {
       toast({ title: "File too large", variant: "destructive" });
-      manualAudioInputRef.current?.clearFile();
+      // Don't call clearFile() to avoid infinite recursion
       return;
     }
     setManualSelectedAudioFile(file);
