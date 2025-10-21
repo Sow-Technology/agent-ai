@@ -577,7 +577,7 @@ export default function QaAuditContent() {
     setPreviewAudioSrc(null);
     setAudioKey(Date.now().toString());
     // Don't call clearFile() to avoid infinite recursion - just update state
-    // audioInputRef.current?.clearFile();
+  // audioInputRef.current?.clearFile(); // intentionally left commented - parent will manage state
     setQaCallLanguage(DEFAULT_CALL_LANGUAGE);
     setQaTranscriptionLanguage("");
     setSelectedQaParameterSetId("default_params_set");

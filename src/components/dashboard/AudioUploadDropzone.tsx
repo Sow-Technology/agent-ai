@@ -27,7 +27,8 @@ export const AudioUploadDropzone = forwardRef<AudioUploadDropzoneRef, AudioUploa
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
-        onFileSelected(null); // Notify parent that file is cleared
+        // Do not call onFileSelected(null) here to avoid potential recursion
+        // Parent components should update state directly when clearing the file
       }
     }));
 
