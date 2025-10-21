@@ -111,13 +111,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           icon: Edit,
           roles: ["Administrator", "Manager", "QA Analyst"],
         },
-        {
-          href: "/dashboard/bulk-qa-audit",
-          label: "Bulk QA Audit",
-          tabName: "bulk-qa-audit",
-          icon: UsersRound,
-          roles: ["Administrator", "Manager", "QA Analyst"],
-        },
+        // Bulk QA Audit intentionally hidden from sidebar
       ],
     },
     {

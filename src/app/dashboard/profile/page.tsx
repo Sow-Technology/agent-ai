@@ -151,38 +151,35 @@ export default function ProfilePage() {
 
   const handleSaveProfile = () => {
     if (isClient) {
-      try {
-        const currentDetailsRaw = localStorage.getItem(LOCAL_STORAGE_LOGGED_IN_USER_DETAILS_KEY);
-        let currentDetails: Partial<User> = {};
-        if (currentDetailsRaw) {
-          currentDetails = JSON.parse(currentDetailsRaw);
-        }
-        
-        const updatedDetails: User = {
-          username: currentDetails.username || profileUsername, // Username is not editable here, preserve it
-          role: (currentDetails.role || profileRole) as 'Administrator' | 'Manager' | 'QA Analyst' | 'Agent',             // Role is not editable here, preserve it
-          id: currentDetails.id || '', // ID is not editable, preserve it
-          fullName: profileFullName,
-          email: profileEmail,
-        };
-        localStorage.setItem(LOCAL_STORAGE_LOGGED_IN_USER_DETAILS_KEY, JSON.stringify(updatedDetails));
-        
-        setInitialFullName(profileFullName); 
-        setInitialEmail(profileEmail);
-        
-        toast({
-          title: "Profile Saved",
-          description: "Your profile information has been updated.",
-        });
+      (async () => {
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'PUT',
+            headers: {
+              ...getAuthHeaders(),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fullName: profileFullName, email: profileEmail })
+          });
 
-      } catch (error) {
-        console.error("Error saving profile to localStorage:", error);
-        toast({
-          title: "Save Failed",
-          description: "Could not save profile information.",
-          variant: "destructive",
-        });
-      }
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to update profile');
+          }
+
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error || 'Failed to update profile');
+
+          // Update UI
+          setInitialFullName(profileFullName);
+          setInitialEmail(profileEmail);
+
+          toast({ title: 'Profile Saved', description: 'Your profile information has been updated.' });
+        } catch (error: any) {
+          console.error('Error updating profile:', error);
+          toast({ title: 'Save Failed', description: error.message || 'Could not update profile', variant: 'destructive' });
+        }
+      })();
     }
   };
 

@@ -37,6 +37,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   ChartContainer,
   ChartTooltip,
@@ -180,6 +181,124 @@ function convertAuditDocumentToSavedAuditItem(
     },
     auditType: doc.auditType,
   };
+}
+
+// CSV export helper
+function generateCSV(audits: SavedAuditItem[]) {
+  const headers = [
+    "interactionId",
+    "agentName",
+    "campaignName",
+    "auditDate",
+    "overallScore",
+    "auditType",
+    "transcript",
+    "auditResults",
+  ];
+  const rows = [headers.join(",")];
+  audits.forEach((a) => {
+    const row = [
+      (a as any).callId || a.id,
+      a.agentName,
+      a.campaignName || "",
+      a.auditDate,
+      a.overallScore,
+      a.auditType,
+      `"${(a.auditData?.transcriptionInOriginalLanguage || "").replace(
+        /"/g,
+        '""'
+      )}"`,
+      `"${JSON.stringify(a.auditData?.auditResults || []).replace(
+        /"/g,
+        '""'
+      )}"`,
+    ];
+    rows.push(row.join(","));
+  });
+  return rows.join("\n");
+}
+
+function handleDownload(
+  audits: SavedAuditItem[],
+  activeTab: string,
+  dateRange: DateRange | undefined,
+  selectedCampaignIdForFilter: string,
+  availableQaParameterSets: QAParameter[],
+  currentUser: User | null
+) {
+  try {
+    // Compute filtered audits based on current UI filters
+    const auditType =
+      activeTab === "overview"
+        ? "all"
+        : activeTab === "qa-dashboard"
+        ? "ai"
+        : "manual";
+    const filtered = applyAuditFilters(
+      audits,
+      auditType as any,
+      dateRange,
+      selectedCampaignIdForFilter,
+      availableQaParameterSets,
+      currentUser
+    );
+    const csv = generateCSV(filtered);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `audits_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Failed to download audits:", err);
+    alert("Failed to download audits. Please try again.");
+  }
+}
+
+function applyAuditFilters(
+  audits: SavedAuditItem[],
+  auditType: "all" | "ai" | "manual",
+  dateRange: DateRange | undefined,
+  selectedCampaignIdForFilter: string,
+  availableQaParameterSets: QAParameter[],
+  currentUser: User | null
+) {
+  let filtered = audits;
+
+  if (currentUser?.role === "Agent") {
+    filtered = filtered.filter((a) => a.agentUserId === currentUser.username);
+  }
+
+  if (auditType !== "all") {
+    filtered = filtered.filter((a) => a.auditType === auditType);
+  }
+
+  if (dateRange?.from) {
+    filtered = filtered.filter((audit) => {
+      const auditDate = new Date(audit.auditDate);
+      let inRange = auditDate >= dateRange.from!;
+      if (dateRange.to) {
+        inRange = inRange && auditDate <= dateRange.to!;
+      }
+      return inRange;
+    });
+  }
+
+  if (selectedCampaignIdForFilter && selectedCampaignIdForFilter !== "all") {
+    const selectedCampaign = availableQaParameterSets.find(
+      (c) => c.id === selectedCampaignIdForFilter
+    );
+    if (selectedCampaign) {
+      filtered = filtered.filter(
+        (audit) => audit.campaignName === selectedCampaign.name
+      );
+    }
+  }
+
+  return filtered;
 }
 
 export default function DashboardPage() {
@@ -417,13 +536,26 @@ function DashboardPageContent() {
                       Show/Hide Full Transcription
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <ScrollArea className="h-48 mt-2 p-3 border rounded-md">
-                      <pre className="text-xs whitespace-pre-wrap">
-                        {audit.auditData.transcriptionInOriginalLanguage}
-                      </pre>
-                    </ScrollArea>
-                  </CollapsibleContent>
+                    <CollapsibleContent className="mt-4 space-y-4">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label>Original Transcription</Label>
+                          <ScrollArea className="h-48 mt-2 p-3 border rounded-md">
+                            <pre className="text-xs whitespace-pre-wrap">
+                              {audit.auditData.transcriptionInOriginalLanguage}
+                            </pre>
+                          </ScrollArea>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>English Translation</Label>
+                          <ScrollArea className="h-48 mt-2 p-3 border rounded-md">
+                            <pre className="text-xs whitespace-pre-wrap">
+                              {audit.auditData.englishTranslation || "No translation available"}
+                            </pre>
+                          </ScrollArea>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
                 </Collapsible>
               </>
             )}
@@ -500,7 +632,18 @@ function DashboardPageContent() {
               />
             </PopoverContent>
           </Popover>
-          <Button>
+          <Button
+            onClick={() =>
+              handleDownload(
+                savedAudits,
+                activeTab,
+                dateRange,
+                selectedCampaignIdForFilter,
+                availableQaParameterSets,
+                currentUser
+              )
+            }
+          >
             <Download className="mr-2 h-4 w-4" />
             Download
           </Button>
@@ -1155,36 +1298,46 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-[350px] w-full">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Campaign</TableHead>
-                      <TableHead className="text-right">QA Score</TableHead>
-                      <TableHead className="text-right">Compliance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {campaignPerformanceData.map((c) => (
-                      <TableRow key={c.name}>
-                        <TableCell className="font-medium">{c.name}</TableCell>
-                        <TableCell className="text-right">{c.score}%</TableCell>
-                        <TableCell className="text-right">
-                          {c.compliance}%
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {campaignPerformanceData.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={3}
-                          className="text-center text-muted-foreground"
-                        >
-                          No campaign data available.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                <ScrollArea className="h-full">
+                  <div className="min-h-[350px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Campaign</TableHead>
+                          <TableHead className="text-right">QA Score</TableHead>
+                          <TableHead className="text-right">
+                            Compliance
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {campaignPerformanceData.map((c) => (
+                          <TableRow key={c.name}>
+                            <TableCell className="font-medium">
+                              {c.name}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {c.score}%
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {c.compliance}%
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {campaignPerformanceData.length === 0 && (
+                          <TableRow>
+                            <TableCell
+                              colSpan={3}
+                              className="text-center text-muted-foreground"
+                            >
+                              No campaign data available.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           </div>
