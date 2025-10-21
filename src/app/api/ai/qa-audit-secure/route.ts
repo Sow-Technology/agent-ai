@@ -3,7 +3,7 @@ import crypto from "crypto";
 
 export const route = {
   body: {
-    sizeLimit: '12mb',
+    sizeLimit: "12mb",
   },
 };
 

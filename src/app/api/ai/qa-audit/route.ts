@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const route = {
   body: {
-    sizeLimit: '12mb',
+    sizeLimit: "12mb",
   },
 };
 
