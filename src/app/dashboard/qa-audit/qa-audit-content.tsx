@@ -360,7 +360,7 @@ export default function QaAuditContent() {
     setAudioKey(Date.now().toString());
 
     if (!file) {
-      audioInputRef.current?.clearFile();
+      // No file selected; just return and let state handle UI reset
       return;
     }
 
@@ -371,7 +371,7 @@ export default function QaAuditContent() {
           "Please select an audio file (e.g., MP3, WAV) or an MP4 video file.",
         variant: "destructive",
       });
-      audioInputRef.current?.clearFile();
+  // Don't call clearFile() here to avoid recursion - just return
       return;
     }
 
@@ -381,7 +381,7 @@ export default function QaAuditContent() {
         description: `Please select an audio file smaller than ${MAX_AUDIO_FILE_SIZE_MB}MB.`,
         variant: "destructive",
       });
-      audioInputRef.current?.clearFile();
+  // Don't call clearFile() here to avoid recursion - just return
       return;
     }
 
