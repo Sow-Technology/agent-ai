@@ -437,12 +437,25 @@ function DashboardPageContent() {
         </Tabs>
       )}
 
-      {isModalOpen && !modalContent && (
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-              {/* This is a fallback, the content is now set directly */}
-          </Dialog>
+      {isModalOpen && (
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          {modalContent ? (
+            // modalContent already contains DialogContent wrapper
+            modalContent
+          ) : (
+            // Fallback empty content to satisfy Dialog structure
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Details</DialogTitle>
+              </DialogHeader>
+              <div className="p-4">No content</div>
+              <DialogFooter>
+                <Button onClick={() => setIsModalOpen(false)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          )}
+        </Dialog>
       )}
-      {isModalOpen && modalContent}
     </div>
   );
 }
