@@ -536,26 +536,27 @@ function DashboardPageContent() {
                       Show/Hide Full Transcription
                     </Button>
                   </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-4 space-y-4">
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label>Original Transcription</Label>
-                          <ScrollArea className="h-48 mt-2 p-3 border rounded-md">
-                            <pre className="text-xs whitespace-pre-wrap">
-                              {audit.auditData.transcriptionInOriginalLanguage}
-                            </pre>
-                          </ScrollArea>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>English Translation</Label>
-                          <ScrollArea className="h-48 mt-2 p-3 border rounded-md">
-                            <pre className="text-xs whitespace-pre-wrap">
-                              {audit.auditData.englishTranslation || "No translation available"}
-                            </pre>
-                          </ScrollArea>
-                        </div>
+                  <CollapsibleContent className="mt-4 space-y-4">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label>Original Transcription</Label>
+                        <ScrollArea className="h-48 mt-2 p-3 border rounded-md">
+                          <pre className="text-xs whitespace-pre-wrap">
+                            {audit.auditData.transcriptionInOriginalLanguage}
+                          </pre>
+                        </ScrollArea>
                       </div>
-                    </CollapsibleContent>
+                      <div className="space-y-2">
+                        <Label>English Translation</Label>
+                        <ScrollArea className="h-48 mt-2 p-3 border rounded-md">
+                          <pre className="text-xs whitespace-pre-wrap">
+                            {audit.auditData.englishTranslation ||
+                              "No translation available"}
+                          </pre>
+                        </ScrollArea>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
                 </Collapsible>
               </>
             )}
