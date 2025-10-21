@@ -115,27 +115,53 @@ function convertAuditDocumentToSavedAuditItem(doc: AuditDocument): SavedAuditIte
 
 // Helper function to convert SavedAuditItem to createAudit format
 function convertSavedAuditItemToCreateAuditFormat(savedAudit: SavedAuditItem, auditedBy: string) {
+  // Extract auditResults - they can be directly on savedAudit or nested in auditData
+  const auditResults = (savedAudit as any).auditResults || 
+                       (savedAudit.auditData?.auditResults) || 
+                       [];
+  
+  // Extract transcript - can be directly on savedAudit or nested in auditData
+  const transcript = (savedAudit as any).transcript || 
+                     (savedAudit.auditData?.transcriptionInOriginalLanguage) || 
+                     "";
+
   return {
-    callId: savedAudit.id,
+    // Required fields for the API
     agentName: savedAudit.agentName,
-    customerName: undefined,
-    callDate: new Date(savedAudit.auditDate),
-    campaignId: savedAudit.campaignName || 'unknown',
-    campaignName: savedAudit.campaignName || 'Unknown Campaign',
-    auditResults: savedAudit.auditData.auditResults.map((result: any) => ({
-      parameterId: result.parameter,
-      parameterName: result.parameter,
-      score: result.score,
-      maxScore: result.weightedScore ? Math.round((result.score * 100) / result.weightedScore) : 100,
-      type: result.type || 'Non-Fatal',
-      comments: result.comments || ''
-    })),
+    interactionId: (savedAudit as any).callId || savedAudit.id,
+
+    // Optional fields
+    auditName: `Audit for ${savedAudit.agentName}`,
+    customerName: (savedAudit as any).customerName || "Unknown Customer",
+    qaParameterSetId: savedAudit.campaignName || "default",
+    qaParameterSetName: savedAudit.campaignName || "Unknown Parameter Set",
+    callTranscript: transcript,
     overallScore: savedAudit.overallScore,
-    maxPossibleScore: 100,
-    transcript: savedAudit.auditData.transcriptionInOriginalLanguage,
-    audioUrl: undefined,
-    auditedBy: auditedBy,
-    auditType: savedAudit.auditType
+    auditType: savedAudit.auditType,
+    auditorId: auditedBy,
+    auditorName: "AI Auditor",
+    auditDate: new Date(savedAudit.auditDate).toISOString(),
+
+    // Map auditResults to parameters with subParameters structure
+    parameters:
+      auditResults && Array.isArray(auditResults)
+        ? [
+            {
+              id: "audit-results",
+              name: "Audit Results",
+              subParameters: auditResults.map(
+                (result: any) => ({
+                  id: result.parameterId || result.id || "unknown",
+                  name: result.parameterName || result.name || "Unknown",
+                  weight: result.maxScore || result.weight || 100,
+                  type: result.type || "Non-Fatal",
+                  score: result.score || 0,
+                  comments: result.comments || "",
+                })
+              ),
+            },
+          ]
+        : [],
   };
 }
 
@@ -393,18 +419,21 @@ export default function ManualAuditContent() {
             
             const createAuditData = convertSavedAuditItemToCreateAuditFormat(newSavedAudit, auditedBy);
             
+            console.log("Sending manual audit data to API:", JSON.stringify(createAuditData, null, 2));
+            
             const response = await fetch('/api/audits', {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(createAuditData),
             });
             
-            if (!response.ok) {
-                throw new Error('Failed to save audit');
-            }
-            
             const responseData = await response.json();
-            if (!responseData.success) {
+            
+            if (!response.ok || !responseData.success) {
+                const errorDetails = responseData.details 
+                    ? JSON.stringify(responseData.details, null, 2)
+                    : responseData.error || 'Failed to save audit';
+                console.error("API Error:", errorDetails);
                 throw new Error(responseData.error || 'Failed to save audit');
             }
             
