@@ -136,26 +136,39 @@ function convertAuditDocumentToSavedAuditItem(doc: AuditDocument): SavedAuditIte
 // Helper function to convert SavedAuditItem to createAudit format
 function convertSavedAuditItemToCreateAuditFormat(savedAudit: SavedAuditItem, auditedBy: string) {
   return {
-    callId: savedAudit.id,
+    // Required fields for the API
     agentName: savedAudit.agentName,
-    customerName: undefined,
-    callDate: new Date(savedAudit.auditDate),
-    campaignId: savedAudit.campaignName || 'unknown',
-    campaignName: savedAudit.campaignName || 'Unknown Campaign',
-    auditResults: savedAudit.auditData.auditResults.map((result: any) => ({
-      parameterId: result.parameter,
-      parameterName: result.parameter,
-      score: result.score,
-      maxScore: result.weightedScore ? Math.round((result.score * 100) / result.weightedScore) : 100,
-      type: result.type || 'Non-Fatal',
-      comments: result.comments || ''
-    })),
+    interactionId: savedAudit.id,
+    
+    // Optional fields
+    auditName: `Audit for ${savedAudit.agentName}`,
+    customerName: 'Unknown Customer',
+    qaParameterSetId: savedAudit.campaignName || 'default',
+    qaParameterSetName: savedAudit.campaignName || 'Unknown Parameter Set',
+    callTranscript: savedAudit.auditData.transcriptionInOriginalLanguage || '',
     overallScore: savedAudit.overallScore,
-    maxPossibleScore: 100,
-    transcript: savedAudit.auditData.transcriptionInOriginalLanguage,
-    audioUrl: undefined,
-    auditedBy: auditedBy,
-    auditType: savedAudit.auditType
+    auditType: savedAudit.auditType,
+    auditorId: auditedBy,
+    auditorName: 'AI Auditor',
+    auditDate: new Date(savedAudit.auditDate).toISOString(),
+    
+    // Map auditResults to parameters with subParameters structure
+    parameters: savedAudit.auditData.auditResults && Array.isArray(savedAudit.auditData.auditResults)
+      ? [
+          {
+            id: 'audit-results',
+            name: 'Audit Results',
+            subParameters: savedAudit.auditData.auditResults.map((result: any) => ({
+              id: result.parameter || result.parameterId || 'unknown',
+              name: result.parameter || result.parameterName || 'Unknown',
+              weight: result.weightedScore || 100,
+              type: result.type || 'Non-Fatal',
+              score: result.score || 0,
+              comments: result.comments || ''
+            }))
+          }
+        ]
+      : []
   };
 }
 
