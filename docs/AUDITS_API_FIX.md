@@ -1,63 +1,72 @@
 # Audits API Fix - October 21, 2025
 
 ## Problem
+
 POST request to `https://assureqai.com/api/audits` was returning validation errors with all fields marked as `undefined`:
 
 ```json
 {
-    "success": false,
-    "error": "Validation failed",
-    "details": [
-        {
-            "code": "invalid_type",
-            "expected": "string",
-            "received": "undefined",
-            "path": ["auditName"],
-            "message": "Required"
-        },
-        // ... more undefined fields
-    ]
+  "success": false,
+  "error": "Validation failed",
+  "details": [
+    {
+      "code": "invalid_type",
+      "expected": "string",
+      "received": "undefined",
+      "path": ["auditName"],
+      "message": "Required"
+    }
+    // ... more undefined fields
+  ]
 }
 ```
 
 ## Root Cause
+
 The POST endpoint schema required many fields as mandatory, but the client was sending:
+
 1. An empty request body
 2. Missing required fields like `auditName`, `qaParameterSetId`, `customerName`, `interactionId`, `callTranscript`, and `parameters`
 
 ## Solution Implemented
 
 ### 1. **Made Schema More Flexible**
+
 - Changed all fields from **required** to **optional** in the validation schema
 - Added a `.refine()` check to ensure at least one audit-related field is present
 - This prevents completely empty requests while allowing partial data
 
 ### 2. **Added Better Error Handling**
+
 - Added try-catch for JSON parsing failures
 - Added logging of received body for debugging
 - Added validation error logging
 
 ### 3. **Provided Default Values**
+
 When optional fields are missing, the endpoint now uses sensible defaults:
 
-| Field | Default |
-|-------|---------|
-| `customerName` | `"Unknown Customer"` |
-| `qaParameterSetId` | `"default_campaign"` |
-| `qaParameterSetName` | `"Default Campaign"` |
-| `parameters` | `[]` (empty array) |
-| `overallScore` | `0` |
-| `callTranscript` | `"No transcript provided"` |
-| `auditType` | `"manual"` |
+| Field                | Default                    |
+| -------------------- | -------------------------- |
+| `customerName`       | `"Unknown Customer"`       |
+| `qaParameterSetId`   | `"default_campaign"`       |
+| `qaParameterSetName` | `"Default Campaign"`       |
+| `parameters`         | `[]` (empty array)         |
+| `overallScore`       | `0`                        |
+| `callTranscript`     | `"No transcript provided"` |
+| `auditType`          | `"manual"`                 |
 
 ### 4. **Minimum Requirements**
+
 At least these two fields must be provided:
+
 - `agentName` (string)
 - `interactionId` (string)
 
 ## Updated Endpoint Behavior
 
 ### ✅ Valid Request (Minimal)
+
 ```bash
 POST /api/audits
 Content-Type: application/json
@@ -69,6 +78,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
     "success": true,
@@ -87,6 +97,7 @@ Response:
 ```
 
 ### ✅ Valid Request (Full)
+
 ```bash
 POST /api/audits
 Content-Type: application/json
@@ -120,6 +131,7 @@ Content-Type: application/json
 ```
 
 ### ❌ Invalid Request (Empty Body)
+
 ```bash
 POST /api/audits
 Content-Type: application/json
@@ -128,22 +140,24 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
-    "success": false,
-    "error": "Validation failed",
-    "details": [
-        {
-            "code": "custom",
-            "message": "At least one audit field is required"
-        }
-    ]
+  "success": false,
+  "error": "Validation failed",
+  "details": [
+    {
+      "code": "custom",
+      "message": "At least one audit field is required"
+    }
+  ]
 }
 ```
 
 ## Testing the Fix
 
 ### Using curl:
+
 ```bash
 # Minimal valid request
 curl -X POST https://assureqai.com/api/audits \
@@ -167,15 +181,16 @@ curl -X POST https://assureqai.com/api/audits \
 ```
 
 ### Using JavaScript:
+
 ```javascript
 // Minimal request
-const response = await fetch('/api/audits', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("/api/audits", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    agentName: 'Test Agent',
-    interactionId: 'TEST-123'
-  })
+    agentName: "Test Agent",
+    interactionId: "TEST-123",
+  }),
 });
 
 const result = await response.json();
@@ -194,6 +209,7 @@ console.log(result);
 ## Migration Guide
 
 ### For Existing Clients
+
 If your client is sending POST requests to `/api/audits`:
 
 1. **Ensure you send at least `agentName` and `interactionId`**
@@ -201,11 +217,13 @@ If your client is sending POST requests to `/api/audits`:
 3. **Optional fields can be omitted** - defaults will be applied
 
 ### For New Integrations
+
 Use the minimal or full request format shown above. Start with the minimal format and add fields as needed.
 
 ## Deployment
 
 This fix is backward compatible:
+
 - ✅ Existing full requests continue to work
 - ✅ New partial requests now work
 - ✅ Empty requests are properly rejected with clear error
@@ -213,6 +231,7 @@ This fix is backward compatible:
 ## Monitoring
 
 Check server logs for:
+
 ```
 "Audit POST received body: {...}"
 ```
