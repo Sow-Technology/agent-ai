@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Increase the API body parser limit so larger base64 audio payloads (data URIs)
+// can be accepted. Keep the route-level validation for a practical maximum.
+
+export const route = {
+  body: {
+    sizeLimit: '12mb',
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     // Check if audio is too large for direct processing
-    if (body.audioDataUri && body.audioDataUri.length > 6 * 1024 * 1024) {
-      // 6MB limit
+    if (body.audioDataUri && body.audioDataUri.length > 10 * 1024 * 1024) {
+      // 10MB limit (server handles up to 12MB); recommend using cloud storage for larger files
       return NextResponse.json(
         {
           success: false,

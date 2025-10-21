@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
+  // Note: bodyParser size limits should be configured per-route using route segment config in Next.js 14.
   typescript: {
     ignoreBuildErrors: false,
   },

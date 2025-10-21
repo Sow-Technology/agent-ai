@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
+export const route = {
+  body: {
+    sizeLimit: '12mb',
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

@@ -617,6 +617,16 @@ export default function ManualAuditContent() {
         body: JSON.stringify(createAuditData),
       });
 
+      if (response.status === 413) {
+        toast({
+          title: 'File Too Large',
+          description: 'The uploaded audio file is too large for the server. Please upload a smaller file.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+
       const responseData = await response.json();
 
       if (!response.ok || !responseData.success) {

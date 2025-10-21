@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
+
+export const route = {
+  body: {
+    sizeLimit: '12mb',
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -34,8 +41,8 @@ export async function POST(request: NextRequest) {
     const audioDataUri = `data:${contentType};base64,${base64Audio}`;
 
     // Check size after fetching
-    if (audioDataUri.length > 6 * 1024 * 1024) {
-      // 6MB limit
+    if (audioDataUri.length > 10 * 1024 * 1024) {
+      // 10MB limit for cloud-fetched audio data URI (route-level body limit is 12MB)
       return NextResponse.json(
         { success: false, error: "Audio file too large even after fetching" },
         { status: 413 }

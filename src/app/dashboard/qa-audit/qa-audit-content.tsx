@@ -541,7 +541,24 @@ export default function QaAuditContent() {
         body: JSON.stringify(createAuditData),
       });
 
-      const responseData = await response.json();
+      if (response.status === 413) {
+        // Server rejected due to size limits
+        toast({
+          title: "File Too Large",
+          description:
+            "The uploaded audio file is too large for the server. Please upload a smaller file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let responseData: any = null;
+      try {
+        responseData = await response.json();
+      } catch (err) {
+        console.error("Failed to parse response JSON", err);
+        throw new Error("Failed to save audit");
+      }
 
       if (!response.ok || !responseData.success) {
         const errorDetails = responseData.details
@@ -577,7 +594,7 @@ export default function QaAuditContent() {
     setPreviewAudioSrc(null);
     setAudioKey(Date.now().toString());
     // Don't call clearFile() to avoid infinite recursion - just update state
-  // audioInputRef.current?.clearFile(); // intentionally left commented - parent will manage state
+    // audioInputRef.current?.clearFile(); // intentionally left commented - parent will manage state
     setQaCallLanguage(DEFAULT_CALL_LANGUAGE);
     setQaTranscriptionLanguage("");
     setSelectedQaParameterSetId("default_params_set");
