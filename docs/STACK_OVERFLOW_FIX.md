@@ -22,6 +22,7 @@ The `resetSingleAuditForm()` function was calling `audioInputRef.current?.clearF
 5. Creating infinite recursion → Stack overflow
 
 **Same issue in manual audit:**
+
 - `handleManualAudioFileSelected()` was calling `clearFile()` when file validation failed
 - This created a loop since clearing the file also triggers the `onFileSelected` callback
 
@@ -98,6 +99,7 @@ The `resetSingleAuditForm()` function was calling `audioInputRef.current?.clearF
 ## Testing
 
 ### Before Fix
+
 ```
 1. User clicks "Save Audit"
 2. Audit sends to API ✓
@@ -109,6 +111,7 @@ The `resetSingleAuditForm()` function was calling `audioInputRef.current?.clearF
 ```
 
 ### After Fix
+
 ```
 1. User clicks "Save Audit"
 2. Audit sends to API ✓
@@ -145,11 +148,10 @@ The `resetSingleAuditForm()` function was calling `audioInputRef.current?.clearF
 
 Instead of trying to "sync" the ref with the form state, we simply rely on React's state management:
 
-| Approach | Problem | Solution |
-|----------|---------|----------|
-| Call `clearFile()` via ref | Creates circular dependency | Don't call it - use state |
-| Update state only | File input doesn't visually clear | Changing `audioKey` remounts component |
-| Both state + ref clear | Infinite recursion | Choose one - state is simpler |
+| Approach                   | Problem                           | Solution                               |
+| -------------------------- | --------------------------------- | -------------------------------------- |
+| Call `clearFile()` via ref | Creates circular dependency       | Don't call it - use state              |
+| Update state only          | File input doesn't visually clear | Changing `audioKey` remounts component |
+| Both state + ref clear     | Infinite recursion                | Choose one - state is simpler          |
 
 **Lesson**: When using forwardRef and imperative handles, be careful about circular dependencies with callbacks that update the same state being passed to the component.
-
