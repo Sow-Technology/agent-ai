@@ -6,15 +6,24 @@ When users clicked "Save" on the QA audit form after completing an audit, the AP
 
 ```json
 {
-    "success": false,
-    "error": "Validation failed",
-    "details": [
-        {
-            "code": "unrecognized_keys",
-            "keys": ["callId", "callDate", "campaignId", "campaignName", "auditResults", "maxPossibleScore", "transcript", "auditedBy"],
-            "message": "Unrecognized key(s) in object"
-        }
-    ]
+  "success": false,
+  "error": "Validation failed",
+  "details": [
+    {
+      "code": "unrecognized_keys",
+      "keys": [
+        "callId",
+        "callDate",
+        "campaignId",
+        "campaignName",
+        "auditResults",
+        "maxPossibleScore",
+        "transcript",
+        "auditedBy"
+      ],
+      "message": "Unrecognized key(s) in object"
+    }
+  ]
 }
 ```
 
@@ -25,10 +34,12 @@ But the response also showed `"success": true` with the saved audit data, confus
 The `convertSavedAuditItemToCreateAuditFormat()` function in both `qa-audit-content.tsx` and `manual-audit-content.tsx` was:
 
 1. **Sending wrong field names** that didn't match the API schema
+
    - Sending: `callId`, `campaignName`, `auditResults`, `transcript`, etc.
    - API expects: `interactionId`, `qaParameterSetName`, `parameters` (with nested structure), `callTranscript`, etc.
 
 2. **Looking for data in wrong locations**
+
    - Looking for: `savedAudit.auditData.transcriptionInOriginalLanguage`
    - Data was actually at: `savedAudit.transcript` (at the root level)
    - Looking for: `savedAudit.auditData.auditResults`
@@ -48,16 +59,16 @@ Updated `convertSavedAuditItemToCreateAuditFormat()` to:
 return {
   // API expects: interactionId, not callId
   interactionId: (savedAudit as any).callId || savedAudit.id,
-  
+
   // Map all other required fields
   agentName: savedAudit.agentName,
   customerName: (savedAudit as any).customerName || "Unknown Customer",
   qaParameterSetId: savedAudit.campaignName || "default",
   qaParameterSetName: savedAudit.campaignName || "Unknown Parameter Set",
-  
+
   // API expects: callTranscript, not transcript
   callTranscript: transcript,
-  
+
   // Map auditResults to parameters structure
   parameters: [
     {
@@ -82,14 +93,14 @@ Data can come from both API response format and internal SavedAuditItem format:
 
 ```typescript
 // Extract auditResults from either location
-const auditResults = (savedAudit as any).auditResults || 
-                     (savedAudit.auditData?.auditResults) || 
-                     [];
+const auditResults =
+  (savedAudit as any).auditResults || savedAudit.auditData?.auditResults || [];
 
 // Extract transcript from either location
-const transcript = (savedAudit as any).transcript || 
-                   (savedAudit.auditData?.transcriptionInOriginalLanguage) || 
-                   "";
+const transcript =
+  (savedAudit as any).transcript ||
+  savedAudit.auditData?.transcriptionInOriginalLanguage ||
+  "";
 ```
 
 ### 3. **Improved Error Handling**
@@ -100,7 +111,7 @@ Added better error logging to see what the API actually returned:
 const responseData = await response.json();
 
 if (!response.ok || !responseData.success) {
-  const errorDetails = responseData.details 
+  const errorDetails = responseData.details
     ? JSON.stringify(responseData.details, null, 2)
     : responseData.error || "Failed to save audit";
   console.error("API Error:", errorDetails);
@@ -113,6 +124,7 @@ if (!response.ok || !responseData.success) {
 ### Files Modified
 
 1. **`src/app/dashboard/qa-audit/qa-audit-content.tsx`**
+
    - Lines 221-268: Rewrote `convertSavedAuditItemToCreateAuditFormat()`
    - Lines 528-548: Improved error handling in save function
    - Added console logging of sent data for debugging
@@ -163,12 +175,14 @@ The `/api/audits` POST endpoint expects:
 ## Testing the Fix
 
 ### Before Fix
+
 - User completes QA audit
 - Clicks "Save"
 - Sees "Failed to save audit" error
 - But audit is actually saved in the database ❌
 
 ### After Fix
+
 - User completes QA audit
 - Clicks "Save"
 - Audit successfully saves with correct data
@@ -201,6 +215,7 @@ This confirms the correct data format is being sent.
 ## Deployment
 
 This fix is backward compatible:
+
 - Existing saved audits are not affected
 - The conversion function handles both old and new data formats
 - No database migrations needed
@@ -212,4 +227,3 @@ This fix is backward compatible:
 3. Add audit preview before saving
 4. Implement audit versioning/history
 5. Add success animation/confirmation dialog
-
