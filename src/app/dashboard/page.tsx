@@ -1115,7 +1115,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   return (
     <div className="space-y-4">
       {!isAgentView && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
           <OverviewCard title="Overall QA Score" icon={Target}>
             <div className="text-2xl font-bold">{overallQAScore}%</div>
             <p className="text-xs text-muted-foreground">

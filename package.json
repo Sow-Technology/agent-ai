@@ -54,6 +54,7 @@
     "mongoose": "^8.18.3",
     "next": "14.2.4",
     "next-themes": "^0.3.0",
+    "nodemailer": "^7.0.9",
     "react": "18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "18.3.1",
@@ -67,6 +68,7 @@
   "devDependencies": {
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.2",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.3",
     "@types/uuid": "^10.0.0",
