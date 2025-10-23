@@ -97,9 +97,7 @@ function BillingContent() {
         </Card>
 
         <div className="text-center">
-          <h2 className="text-3xl font-bold">
-            Simple, Transparent Pricing
-          </h2>
+          <h2 className="text-3xl font-bold">Simple, Transparent Pricing</h2>
           <p className="text-muted-foreground mt-2">
             Pay only ₹2 per AI audit. No hidden fees, no setup costs.
           </p>
@@ -132,9 +130,7 @@ function BillingContent() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
+                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                   {plan.cta}
                 </Button>
               </CardFooter>
@@ -147,7 +143,8 @@ function BillingContent() {
           <CardHeader>
             <CardTitle>AssureQAI vs Manual Auditing</CardTitle>
             <CardDescription>
-              See how our AI-powered pricing compares to traditional manual auditing
+              See how our AI-powered pricing compares to traditional manual
+              auditing
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -155,36 +152,52 @@ function BillingContent() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-2 px-4 font-semibold">Metric</th>
-                    <th className="text-center py-2 px-4 font-semibold">Manual Audit</th>
-                    <th className="text-center py-2 px-4 font-semibold text-primary">AssureQAI</th>
+                    <th className="text-left py-2 px-4 font-semibold">
+                      Metric
+                    </th>
+                    <th className="text-center py-2 px-4 font-semibold">
+                      Manual Audit
+                    </th>
+                    <th className="text-center py-2 px-4 font-semibold text-primary">
+                      AssureQAI
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b hover:bg-muted/50">
                     <td className="py-3 px-4">Cost per call</td>
                     <td className="text-center py-3 px-4">₹0.2</td>
-                    <td className="text-center py-3 px-4 font-semibold text-primary">₹2</td>
+                    <td className="text-center py-3 px-4 font-semibold text-primary">
+                      ₹2
+                    </td>
                   </tr>
                   <tr className="border-b hover:bg-muted/50">
                     <td className="py-3 px-4">Calls per month</td>
                     <td className="text-center py-3 px-4">Limited</td>
-                    <td className="text-center py-3 px-4 font-semibold text-green-500">Unlimited</td>
+                    <td className="text-center py-3 px-4 font-semibold text-green-500">
+                      Unlimited
+                    </td>
                   </tr>
                   <tr className="border-b hover:bg-muted/50">
                     <td className="py-3 px-4">Consistency</td>
                     <td className="text-center py-3 px-4">Variable</td>
-                    <td className="text-center py-3 px-4 font-semibold text-green-500">100%</td>
+                    <td className="text-center py-3 px-4 font-semibold text-green-500">
+                      100%
+                    </td>
                   </tr>
                   <tr className="border-b hover:bg-muted/50">
                     <td className="py-3 px-4">Time to insights</td>
                     <td className="text-center py-3 px-4">Days</td>
-                    <td className="text-center py-3 px-4 font-semibold text-green-500">Minutes</td>
+                    <td className="text-center py-3 px-4 font-semibold text-green-500">
+                      Minutes
+                    </td>
                   </tr>
                   <tr className="hover:bg-muted/50">
                     <td className="py-3 px-4">24/7 Monitoring</td>
                     <td className="text-center py-3 px-4">No</td>
-                    <td className="text-center py-3 px-4 font-semibold text-green-500">Yes</td>
+                    <td className="text-center py-3 px-4 font-semibold text-green-500">
+                      Yes
+                    </td>
                   </tr>
                 </tbody>
               </table>
