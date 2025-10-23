@@ -25,8 +25,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if SMTP is configured
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-      console.error("SMTP not configured. Please set SMTP environment variables.");
+    if (
+      !process.env.SMTP_HOST ||
+      !process.env.SMTP_USER ||
+      !process.env.SMTP_PASSWORD
+    ) {
+      console.error(
+        "SMTP not configured. Please set SMTP environment variables."
+      );
       return NextResponse.json(
         { error: "Email service not configured" },
         { status: 500 }
@@ -74,12 +80,15 @@ export async function POST(request: NextRequest) {
 
     await transporter.sendMail(confirmationEmail);
 
-    console.log(`Email sent successfully from ${name} (${email}) to support@assureqai.com`);
+    console.log(
+      `Email sent successfully from ${name} (${email}) to support@assureqai.com`
+    );
 
     return NextResponse.json(
-      { 
-        message: "Thank you! Your message has been received and sent to support@assureqai.com",
-        success: true 
+      {
+        message:
+          "Thank you! Your message has been received and sent to support@assureqai.com",
+        success: true,
       },
       { status: 200 }
     );

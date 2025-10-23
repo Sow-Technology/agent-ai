@@ -22,65 +22,29 @@ interface Plan {
   description: string;
   features: string[];
   cta: string;
-  isCurrent: boolean;
-  isPopular?: boolean;
 }
 
 const plans: Plan[] = [
   {
-    name: "Starter",
+    name: "AssureQAI Pay-Per-Call",
     price: "₹2",
-    pricePeriod: "per call",
-    description: "Perfect for small teams getting started.",
-    features: [
-      "AI-Assisted Audits",
-      "100% Call Coverage",
-      "Real-time Scoring",
-      "Basic Dashboard",
-      "Up to 500 calls/month",
-      "Email Support",
-    ],
-    cta: "Start Free Trial",
-    isCurrent: true,
-  },
-  {
-    name: "Professional",
-    price: "₹2",
-    pricePeriod: "per call",
-    description: "For growing QA teams with advanced needs.",
+    pricePeriod: "per AI audit",
+    description: "Simple, transparent pricing. Pay only for what you use.",
     features: [
       "AI-Assisted Audits",
       "100% Call Coverage",
       "Real-time Scoring",
       "Advanced Dashboard",
-      "Up to 5,000 calls/month",
-      "Priority Email Support",
+      "Unlimited Calls",
+      "Priority Support",
       "Custom Parameters",
       "Team Collaboration",
       "Compliance Reports",
-    ],
-    cta: "Upgrade to Professional",
-    isCurrent: false,
-    isPopular: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    pricePeriod: "based on volume",
-    description: "For large-scale operations with custom needs.",
-    features: [
-      "AI-Assisted Audits",
-      "100% Call Coverage",
-      "Unlimited Calls",
-      "24/7 Priority Support",
-      "Custom Parameters & Workflows",
-      "Advanced Analytics & ML",
       "API Access",
       "Custom Integrations",
-      "Dedicated Account Manager",
+      "24/7 Monitoring",
     ],
-    cta: "Contact Sales",
-    isCurrent: false,
+    cta: "View Details",
   },
 ];
 
@@ -134,39 +98,25 @@ function BillingContent() {
 
         <div className="text-center">
           <h2 className="text-3xl font-bold">
-            Find the plan that&rsquo;s right for you
+            Simple, Transparent Pricing
           </h2>
           <p className="text-muted-foreground mt-2">
-            Start with a free trial and scale as you grow.
+            Pay only ₹2 per AI audit. No hidden fees, no setup costs.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+        <div className="max-w-2xl mx-auto">
           {plans.map((plan) => (
             <Card
               key={plan.name}
-              className={`shadow-lg flex flex-col ${
-                plan.isCurrent ? "border-primary" : ""
-              } ${
-                plan.isPopular
-                  ? "border-2 border-primary shadow-2xl relative"
-                  : ""
-              }`}
+              className="shadow-lg flex flex-col border-2 border-primary"
             >
-              {plan.isPopular && (
-                <Badge
-                  variant="default"
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1"
-                >
-                  <Star className="mr-2 h-4 w-4" /> Most Popular
-                </Badge>
-              )}
               <CardHeader>
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                 <CardDescription>{plan.description}</CardDescription>
                 <div className="flex items-baseline pt-4">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground ml-1">
+                  <span className="text-5xl font-bold">{plan.price}</span>
+                  <span className="text-muted-foreground ml-2">
                     {plan.pricePeriod}
                   </span>
                 </div>
@@ -183,13 +133,7 @@ function BillingContent() {
               </CardContent>
               <CardFooter>
                 <Button
-                  className={`w-full ${
-                    plan.isCurrent
-                      ? ""
-                      : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                  }`}
-                  variant={plan.isCurrent ? "outline" : "default"}
-                  disabled={plan.isCurrent}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {plan.cta}
                 </Button>
@@ -197,6 +141,56 @@ function BillingContent() {
             </Card>
           ))}
         </div>
+
+        {/* Pricing Comparison */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>AssureQAI vs Manual Auditing</CardTitle>
+            <CardDescription>
+              See how our AI-powered pricing compares to traditional manual auditing
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-4 font-semibold">Metric</th>
+                    <th className="text-center py-2 px-4 font-semibold">Manual Audit</th>
+                    <th className="text-center py-2 px-4 font-semibold text-primary">AssureQAI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b hover:bg-muted/50">
+                    <td className="py-3 px-4">Cost per call</td>
+                    <td className="text-center py-3 px-4">₹0.2</td>
+                    <td className="text-center py-3 px-4 font-semibold text-primary">₹2</td>
+                  </tr>
+                  <tr className="border-b hover:bg-muted/50">
+                    <td className="py-3 px-4">Calls per month</td>
+                    <td className="text-center py-3 px-4">Limited</td>
+                    <td className="text-center py-3 px-4 font-semibold text-green-500">Unlimited</td>
+                  </tr>
+                  <tr className="border-b hover:bg-muted/50">
+                    <td className="py-3 px-4">Consistency</td>
+                    <td className="text-center py-3 px-4">Variable</td>
+                    <td className="text-center py-3 px-4 font-semibold text-green-500">100%</td>
+                  </tr>
+                  <tr className="border-b hover:bg-muted/50">
+                    <td className="py-3 px-4">Time to insights</td>
+                    <td className="text-center py-3 px-4">Days</td>
+                    <td className="text-center py-3 px-4 font-semibold text-green-500">Minutes</td>
+                  </tr>
+                  <tr className="hover:bg-muted/50">
+                    <td className="py-3 px-4">24/7 Monitoring</td>
+                    <td className="text-center py-3 px-4">No</td>
+                    <td className="text-center py-3 px-4 font-semibold text-green-500">Yes</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

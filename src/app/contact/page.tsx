@@ -43,7 +43,8 @@ export default function ContactPage() {
       setIsLoading(false);
       toast({
         title: "Message Sent!",
-        description: "Thank you for reaching out. We'll get back to you shortly.",
+        description:
+          "Thank you for reaching out. We'll get back to you shortly.",
       });
       // Reset the form
       const form = event.target as HTMLFormElement;
