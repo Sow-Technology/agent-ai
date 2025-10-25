@@ -6,6 +6,7 @@ import { AssureQaiLogo } from "@/components/common/SakshiQaiLogo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check, ArrowLeft, Building, Rocket, Users } from "lucide-react";
+import { useLocationPricing } from "@/hooks/useLocationPricing";
 
 const leadershipTeam = [
   {
@@ -42,6 +43,7 @@ const missionPoints = [
 ];
 
 export default function AboutPage() {
+  const { pricing } = useLocationPricing();
   return (
     <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
       <header className="flex justify-between items-center px-4 sm:px-6 lg:px-8 py-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur-sm z-10">
@@ -62,7 +64,7 @@ export default function AboutPage() {
 
       <main className="flex-1 animate-fade-in">
         {/* Hero */}
-        <section className="relative py-24 px-4 text-center text-white">
+        <section className="relative py-24 px-4 text-center text-foreground">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/70 via-purple-700 to-indigo-800 opacity-90"></div>
           <div className="relative z-10 max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
@@ -75,7 +77,10 @@ export default function AboutPage() {
             </p>
             <div className="mt-8 flex items-center justify-center gap-4">
               <Link href="/pricing" passHref>
-                <Button className="bg-primary">See Pricing — ₹2 / call</Button>
+                <Button className="bg-primary">
+                  See Pricing — {pricing.currencySymbol}
+                  {pricing.aiAuditPrice} / call
+                </Button>
               </Link>
               <Link href="/contact" passHref>
                 <Button variant="outline">Contact Sales</Button>

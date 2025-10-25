@@ -9,7 +9,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
       {/* Top Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
+      <header className="z-10 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="hidden md:flex items-center gap-6">
             <Link href="/about" passHref>

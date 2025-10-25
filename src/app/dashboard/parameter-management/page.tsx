@@ -271,8 +271,9 @@ export default function ParameterManagementPage() {
         }
         
         const updatedCampaign = await response.json();
+        const updatedCampaignData = updatedCampaign.success ? updatedCampaign.data : updatedCampaign;
         setCampaigns(campaigns.map((c) =>
-          c.id === editingCampaign.id ? convertQAParameterDocumentToQAParameter(updatedCampaign) : c
+          c.id === editingCampaign.id ? convertQAParameterDocumentToQAParameter(updatedCampaignData) : c
         ));
         toast({ title: 'Campaign Updated', description: `Campaign "${submissionData.name}" has been updated.` });
       } else {
@@ -298,7 +299,8 @@ export default function ParameterManagementPage() {
         }
         
         const newCampaign = await response.json();
-        setCampaigns([convertQAParameterDocumentToQAParameter(newCampaign), ...campaigns]);
+        const newCampaignData = newCampaign.success ? newCampaign.data : newCampaign;
+        setCampaigns([convertQAParameterDocumentToQAParameter(newCampaignData), ...campaigns]);
         toast({ title: 'Campaign Created', description: `Campaign "${submissionData.name}" has been created.` });
       }
       closeForm();
@@ -485,8 +487,8 @@ export default function ParameterManagementPage() {
                       return (
                       <TableRow key={c.id}>
                         <TableCell className="font-medium">{c.name}</TableCell>
-                        <TableCell>{c.parameters.length}</TableCell>
-                        <TableCell>{c.parameters.flatMap(p => p.subParameters).length}</TableCell>
+                        <TableCell>{(c.parameters || []).length}</TableCell>
+                        <TableCell>{(c.parameters || []).flatMap(p => p.subParameters || []).length}</TableCell>
                         <TableCell>{linkedSop ? `${linkedSop.title} (v${linkedSop.version})` : 'N/A'}</TableCell>
                         <TableCell><span className={`px-2 py-1 text-xs rounded-full ${c.isActive ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>{c.isActive ? 'Active' : 'Inactive'}</span></TableCell>
                         <TableCell>{format(new Date(c.lastModified), 'PPp')}</TableCell>

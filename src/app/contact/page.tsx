@@ -70,7 +70,7 @@ export default function ContactPage() {
           <Link href="/" passHref>
             <Button
               variant="outline"
-              className="bg-white/5 hover:bg-white/10 text-white border-white/20"
+              className="bg-white/5 hover:bg-white/10 text-foreground border-white/20"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home
@@ -81,7 +81,7 @@ export default function ContactPage() {
 
       <main className="flex-1 animate-fade-in">
         {/* Hero Section */}
-        <section className="relative py-20 md:py-32 px-4 text-center text-white">
+        <section className="relative py-20 md:py-32 px-4 text-center text-foreground">
           <div className="relative z-10 max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-400">
               Get in Touch
@@ -102,10 +102,10 @@ export default function ContactPage() {
               style={{ animationDelay: "0.4s" }}
             >
               <div>
-                <h2 className="text-3xl font-bold text-white mb-4">
+                <h2 className="text-3xl font-bold text-foreground mb-4">
                   Contact Information
                 </h2>
-                <p className="text-gray-300/80">
+                <p className="text-muted-foreground">
                   Fill up the form and our team will get back to you within 24
                   hours.
                 </p>
@@ -117,7 +117,7 @@ export default function ContactPage() {
                   </div>
                   <a
                     href="tel:+916363644521"
-                    className="text-lg text-gray-200 hover:text-primary transition-colors"
+                    className="text-lg text-muted-foreground hover:text-primary transition-colors"
                   >
                     +91 6363644521
                   </a>
@@ -128,7 +128,7 @@ export default function ContactPage() {
                   </div>
                   <a
                     href="mailto:support@assureqai.com"
-                    className="text-lg text-gray-200 hover:text-primary transition-colors"
+                    className="text-lg text-muted-foreground hover:text-primary transition-colors"
                   >
                     support@assureqai.com
                   </a>
@@ -137,7 +137,7 @@ export default function ContactPage() {
                   <div className="p-3 bg-primary/10 rounded-lg">
                     <MapPin className="h-6 w-6 text-primary" />
                   </div>
-                  <p className="text-lg text-gray-200">
+                  <p className="text-lg text-muted-foreground">
                     #198, Balaji Street
                     <br />
                     Ramamurthy Nagar, Bangalore
@@ -157,7 +157,7 @@ export default function ContactPage() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-gray-300">
+                      <Label htmlFor="name" className="text-muted-foreground">
                         Full Name
                       </Label>
                       <Input
@@ -166,11 +166,11 @@ export default function ContactPage() {
                         type="text"
                         placeholder="John Doe"
                         required
-                        className="bg-white/5 border-white/20 text-white placeholder:text-gray-500"
+                        className="bg-white/5 border-white/20 text-foreground placeholder:text-gray-500"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-gray-300">
+                      <Label htmlFor="email" className="text-muted-foreground">
                         Email Address
                       </Label>
                       <Input
@@ -179,12 +179,12 @@ export default function ContactPage() {
                         type="email"
                         placeholder="you@company.com"
                         required
-                        className="bg-white/5 border-white/20 text-white placeholder:text-gray-500"
+                        className="bg-white/5 border-white/20 text-foreground placeholder:text-gray-500"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company" className="text-gray-300">
+                    <Label htmlFor="company" className="text-muted-foreground">
                       Company Name (Optional)
                     </Label>
                     <Input
@@ -192,11 +192,11 @@ export default function ContactPage() {
                       name="company"
                       type="text"
                       placeholder="Your Company"
-                      className="bg-white/5 border-white/20 text-white placeholder:text-gray-500"
+                      className="bg-white/5 border-white/20 text-foreground placeholder:text-gray-500"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="message" className="text-gray-300">
+                    <Label htmlFor="message" className="text-muted-foreground">
                       Message
                     </Label>
                     <Textarea
@@ -205,7 +205,7 @@ export default function ContactPage() {
                       placeholder="How can we help?"
                       required
                       rows={5}
-                      className="bg-white/5 border-white/20 text-white placeholder:text-gray-500"
+                      className="bg-white/5 border-white/20 text-foreground placeholder:text-gray-500"
                     />
                   </div>
                   <div>
@@ -232,7 +232,7 @@ export default function ContactPage() {
 
       <footer className="z-10 relative mt-12">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 border-t border-white/10">
-          <p className="text-base text-gray-400/80 text-center">
+          <p className="text-base text-muted-foreground text-center">
             &copy; 2025 Joaji Innovation. All rights reserved.
           </p>
         </div>

@@ -14,6 +14,7 @@ import { Check, CreditCard, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 import { Suspense } from "react";
+import { useLocationPricing } from "@/hooks/useLocationPricing";
 
 interface Plan {
   name: string;
@@ -23,30 +24,6 @@ interface Plan {
   features: string[];
   cta: string;
 }
-
-const plans: Plan[] = [
-  {
-    name: "AssureQAI Pay-Per-Call",
-    price: "₹2",
-    pricePeriod: "per AI audit",
-    description: "Simple, transparent pricing. Pay only for what you use.",
-    features: [
-      "AI-Assisted Audits",
-      "100% Call Coverage",
-      "Real-time Scoring",
-      "Advanced Dashboard",
-      "Unlimited Calls",
-      "Priority Support",
-      "Custom Parameters",
-      "Team Collaboration",
-      "Compliance Reports",
-      "API Access",
-      "Custom Integrations",
-      "24/7 Monitoring",
-    ],
-    cta: "View Details",
-  },
-];
 
 export default function BillingPage() {
   return (
@@ -58,9 +35,34 @@ export default function BillingPage() {
 }
 
 function BillingContent() {
+  const { pricing } = useLocationPricing();
   const currentUsage = 37; // Example data
   const usageLimit = 150; // Example data
-  const usagePercentage = (currentUsage / usageLimit) * 100; // Although useSearchParams is not directly used here, wrapping in Suspense is a good practice
+  const usagePercentage = (currentUsage / usageLimit) * 100;
+
+  const plans = [
+    {
+      name: "AssureQAI Pay-Per-Call",
+      price: `${pricing.currencySymbol}${pricing.aiAuditPrice}`,
+      pricePeriod: "per AI audit",
+      description: "Simple, transparent pricing. Pay only for what you use.",
+      features: [
+        "AI-Assisted Audits",
+        "100% Call Coverage",
+        "Real-time Scoring",
+        "Advanced Dashboard",
+        "Unlimited Calls",
+        "Priority Support",
+        "Custom Parameters",
+        "Team Collaboration",
+        "Compliance Reports",
+        "API Access",
+        "Custom Integrations",
+        "24/7 Monitoring",
+      ],
+      cta: "View Details",
+    },
+  ];
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-8">
@@ -99,7 +101,8 @@ function BillingContent() {
         <div className="text-center">
           <h2 className="text-3xl font-bold">Simple, Transparent Pricing</h2>
           <p className="text-muted-foreground mt-2">
-            Pay only ₹2 per AI audit. No hidden fees, no setup costs.
+            Pay only {pricing.currencySymbol}
+            {pricing.aiAuditPrice} per AI audit. No hidden fees, no setup costs.
           </p>
         </div>
 
@@ -166,9 +169,13 @@ function BillingContent() {
                 <tbody>
                   <tr className="border-b hover:bg-muted/50">
                     <td className="py-3 px-4">Cost per call</td>
-                    <td className="text-center py-3 px-4">₹0.2</td>
+                    <td className="text-center py-3 px-4">
+                      {pricing.currencySymbol}
+                      {pricing.manualAuditPrice}
+                    </td>
                     <td className="text-center py-3 px-4 font-semibold text-primary">
-                      ₹2
+                      {pricing.currencySymbol}
+                      {pricing.aiAuditPrice}
                     </td>
                   </tr>
                   <tr className="border-b hover:bg-muted/50">
