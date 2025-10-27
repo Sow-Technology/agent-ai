@@ -48,6 +48,7 @@ import {
   AudioUploadDropzone,
   type AudioUploadDropzoneRef,
 } from "@/components/dashboard/AudioUploadDropzone";
+import { convertAudioToWavDataUri, needsAudioConversion } from "@/lib/audioConverter";
 import { AuditChatbot } from "@/components/dashboard/AuditChatbot";
 
 import { getAuthHeaders } from "@/lib/authUtils";
@@ -386,14 +387,40 @@ export default function QaAuditContent() {
     }
 
     setSelectedAudioFile(file);
+    
+    // Convert audio to WAV if needed
+    if (needsAudioConversion(file)) {
+      setAudioKey("converting");
+      convertAudioToWavDataUri(file)
+        .then((wavDataUri) => {
+          setOriginalAudioDataUri(wavDataUri);
+          setPreviewAudioSrc(URL.createObjectURL(new Blob([wavDataUri], { type: "audio/wav" })));
+          setAudioKey("converted");
+          toast({
+            title: "Audio Converted",
+            description: "Audio file has been converted to WAV format.",
+          });
+        })
+        .catch((error) => {
+          console.error("Audio conversion failed:", error);
+          toast({
+            title: "Conversion Failed",
+            description: "Failed to convert audio to WAV. Please try another file.",
+            variant: "destructive",
+          });
+          setSelectedAudioFile(null);
+          setAudioKey("error");
+        });
+    } else {
+      // Already WAV, just read as data URL
+      const reader = new FileReader();
+      reader.onload = (e) => setOriginalAudioDataUri(e.target?.result as string);
+      reader.readAsDataURL(file);
 
-    const reader = new FileReader();
-    reader.onload = (e) => setOriginalAudioDataUri(e.target?.result as string);
-    reader.readAsDataURL(file);
-
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewAudioSrc(objectUrl);
-    setAudioKey(objectUrl);
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewAudioSrc(objectUrl);
+      setAudioKey(objectUrl);
+    }
   };
 
   const handleQaAudit = async () => {

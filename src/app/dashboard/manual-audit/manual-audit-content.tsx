@@ -46,6 +46,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { AuditChatbot } from "@/components/dashboard/AuditChatbot";
+import { convertAudioToWavDataUri, needsAudioConversion } from "@/lib/audioConverter";
 
 import { getAuthHeaders } from "@/lib/authUtils";
 import {
@@ -352,13 +353,39 @@ export default function ManualAuditContent() {
     }
     setManualSelectedAudioFile(file);
 
-    const reader = new FileReader();
-    reader.onload = (e) => setManualAudioDataUri(e.target?.result as string);
-    reader.readAsDataURL(file);
+    // Convert audio to WAV if needed
+    if (needsAudioConversion(file)) {
+      setManualAudioKey("converting");
+      convertAudioToWavDataUri(file)
+        .then((wavDataUri) => {
+          setManualAudioDataUri(wavDataUri);
+          setManualPreviewAudioSrc(URL.createObjectURL(new Blob([wavDataUri], { type: "audio/wav" })));
+          setManualAudioKey("converted");
+          toast({
+            title: "Audio Converted",
+            description: "Audio file has been converted to WAV format.",
+          });
+        })
+        .catch((error) => {
+          console.error("Audio conversion failed:", error);
+          toast({
+            title: "Conversion Failed",
+            description: "Failed to convert audio to WAV. Please try another file.",
+            variant: "destructive",
+          });
+          setManualSelectedAudioFile(null);
+          setManualAudioKey("error");
+        });
+    } else {
+      // Already WAV, just read as data URL
+      const reader = new FileReader();
+      reader.onload = (e) => setManualAudioDataUri(e.target?.result as string);
+      reader.readAsDataURL(file);
 
-    const objectUrl = URL.createObjectURL(file);
-    setManualPreviewAudioSrc(objectUrl);
-    setManualAudioKey(objectUrl);
+      const objectUrl = URL.createObjectURL(file);
+      setManualPreviewAudioSrc(objectUrl);
+      setManualAudioKey(objectUrl);
+    }
   };
 
   const handleManualResultChange = (
