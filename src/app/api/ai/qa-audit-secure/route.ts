@@ -32,6 +32,22 @@ export async function POST(request: NextRequest) {
 
     // Process with AI (data never stored)
     const { qaAuditCall } = await import("@/ai/flows/qa-audit-flow");
+    
+    try {
+      const result = await qaAuditCall(decryptedData);
+    } catch (aiError) {
+      console.error("AI Processing Error Details:", {
+        error: aiError instanceof Error ? aiError.message : aiError,
+        timestamp: new Date().toISOString(),
+      });
+      
+      // Re-throw with more context
+      if (aiError instanceof Error) {
+        throw new Error(`AI Processing failed: ${aiError.message}`);
+      }
+      throw aiError;
+    }
+    
     const result = await qaAuditCall(decryptedData);
 
     // Encrypt result before sending back
@@ -55,7 +71,11 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Secure QA Audit API error:", error);
+    console.error("Secure QA Audit API error:", {
+      error: error instanceof Error ? error.message : String(error),
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      timestamp: new Date().toISOString(),
+    });
 
     // Log security events
     await logSecurityEvent({
@@ -65,8 +85,16 @@ export async function POST(request: NextRequest) {
       timestamp: new Date(),
     });
 
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
     return NextResponse.json(
-      { success: false, error: "Secure processing failed" },
+      {
+        success: false,
+        error: "Secure processing failed",
+        details: errorMessage.substring(0, 200),
+        timestamp: new Date().toISOString(),
+      },
       { status: 500 }
     );
   }
