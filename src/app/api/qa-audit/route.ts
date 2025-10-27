@@ -30,9 +30,11 @@ export async function POST(request: NextRequest) {
         errorBody: errorText,
         timestamp: new Date().toISOString(),
       });
-      
+
       throw new Error(
-        `AI API returned ${aiResponse.status}: ${aiResponse.statusText}. ${errorText.substring(0, 200)}`
+        `AI API returned ${aiResponse.status}: ${
+          aiResponse.statusText
+        }. ${errorText.substring(0, 200)}`
       );
     }
 
@@ -44,15 +46,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("QA Audit API error:", error);
-    
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: "Failed to process QA audit",
         details: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );

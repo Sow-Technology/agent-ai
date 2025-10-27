@@ -38,14 +38,20 @@ export async function POST(request: NextRequest) {
     // Check if audio is too large for direct processing
     if (body.audioDataUri && body.audioDataUri.length > MAX_AUDIO_SIZE) {
       console.warn(
-        `Audio too large: ${(body.audioDataUri.length / (1024 * 1024)).toFixed(2)}MB`
+        `Audio too large: ${(body.audioDataUri.length / (1024 * 1024)).toFixed(
+          2
+        )}MB`
       );
       return NextResponse.json(
         {
           success: false,
-          error: `Audio file too large. Maximum size: ${MAX_AUDIO_SIZE / (1024 * 1024)}MB. Please use cloud storage upload.`,
+          error: `Audio file too large. Maximum size: ${
+            MAX_AUDIO_SIZE / (1024 * 1024)
+          }MB. Please use cloud storage upload.`,
           solution: "Upload audio to cloud storage first, then provide the URL",
-          audioSize: `${(body.audioDataUri.length / (1024 * 1024)).toFixed(2)}MB`,
+          audioSize: `${(body.audioDataUri.length / (1024 * 1024)).toFixed(
+            2
+          )}MB`,
         },
         { status: 413 }
       );
@@ -71,10 +77,10 @@ export async function POST(request: NextRequest) {
     const errorCode = errorMessage.includes("503")
       ? "SERVICE_UNAVAILABLE"
       : errorMessage.includes("500")
-        ? "INTERNAL_ERROR"
-        : errorMessage.includes("quota")
-          ? "QUOTA_EXCEEDED"
-          : "UNKNOWN_ERROR";
+      ? "INTERNAL_ERROR"
+      : errorMessage.includes("quota")
+      ? "QUOTA_EXCEEDED"
+      : "UNKNOWN_ERROR";
 
     console.error("QA Audit API error:", {
       error: errorMessage,
@@ -84,8 +90,8 @@ export async function POST(request: NextRequest) {
         errorCode === "SERVICE_UNAVAILABLE"
           ? "Google AI service is temporarily unavailable. Try again in a few moments."
           : errorCode === "QUOTA_EXCEEDED"
-            ? "API quota exceeded. Check Google Cloud Console for usage limits."
-            : "Unexpected error. Check logs for details.",
+          ? "API quota exceeded. Check Google Cloud Console for usage limits."
+          : "Unexpected error. Check logs for details.",
     });
 
     return NextResponse.json(

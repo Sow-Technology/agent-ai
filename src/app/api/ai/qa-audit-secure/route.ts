@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Process with AI (data never stored)
     const { qaAuditCall } = await import("@/ai/flows/qa-audit-flow");
-    
+
     try {
       const result = await qaAuditCall(decryptedData);
     } catch (aiError) {
@@ -40,14 +40,14 @@ export async function POST(request: NextRequest) {
         error: aiError instanceof Error ? aiError.message : aiError,
         timestamp: new Date().toISOString(),
       });
-      
+
       // Re-throw with more context
       if (aiError instanceof Error) {
         throw new Error(`AI Processing failed: ${aiError.message}`);
       }
       throw aiError;
     }
-    
+
     const result = await qaAuditCall(decryptedData);
 
     // Encrypt result before sending back
