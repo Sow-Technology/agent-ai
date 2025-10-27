@@ -46,7 +46,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { AuditChatbot } from "@/components/dashboard/AuditChatbot";
-import { convertAudioToWavDataUri, needsAudioConversion } from "@/lib/audioConverter";
+import {
+  convertAudioToWavDataUri,
+  needsAudioConversion,
+} from "@/lib/audioConverter";
 
 import { getAuthHeaders } from "@/lib/authUtils";
 import {
@@ -60,9 +63,6 @@ import type { QAParameterDocument } from "@/lib/qaParameterService";
 import type { AuditDocument } from "@/lib/auditService";
 import type { AuditResultDocument } from "@/lib/models";
 // Removed direct service imports - using API routes instead
-
-const MAX_AUDIO_FILE_SIZE_MB = 5;
-const MAX_AUDIO_FILE_SIZE_BYTES = MAX_AUDIO_FILE_SIZE_MB * 1024 * 1024;
 // Removed localStorage constants - now using database operations
 
 const DEFAULT_AUDIT_PARAMETERS: ParameterGroup[] = [
@@ -346,11 +346,6 @@ export default function ManualAuditContent() {
       // Don't call clearFile() to avoid infinite recursion
       return;
     }
-    if (file.size > MAX_AUDIO_FILE_SIZE_BYTES) {
-      toast({ title: "File too large", variant: "destructive" });
-      // Don't call clearFile() to avoid infinite recursion
-      return;
-    }
     setManualSelectedAudioFile(file);
 
     // Convert audio to WAV if needed
@@ -359,7 +354,9 @@ export default function ManualAuditContent() {
       convertAudioToWavDataUri(file)
         .then((wavDataUri) => {
           setManualAudioDataUri(wavDataUri);
-          setManualPreviewAudioSrc(URL.createObjectURL(new Blob([wavDataUri], { type: "audio/wav" })));
+          setManualPreviewAudioSrc(
+            URL.createObjectURL(new Blob([wavDataUri], { type: "audio/wav" }))
+          );
           setManualAudioKey("converted");
           toast({
             title: "Audio Converted",
@@ -370,7 +367,8 @@ export default function ManualAuditContent() {
           console.error("Audio conversion failed:", error);
           toast({
             title: "Conversion Failed",
-            description: "Failed to convert audio to WAV. Please try another file.",
+            description:
+              "Failed to convert audio to WAV. Please try another file.",
             variant: "destructive",
           });
           setManualSelectedAudioFile(null);

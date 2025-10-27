@@ -48,7 +48,10 @@ import {
   AudioUploadDropzone,
   type AudioUploadDropzoneRef,
 } from "@/components/dashboard/AudioUploadDropzone";
-import { convertAudioToWavDataUri, needsAudioConversion } from "@/lib/audioConverter";
+import {
+  convertAudioToWavDataUri,
+  needsAudioConversion,
+} from "@/lib/audioConverter";
 import { AuditChatbot } from "@/components/dashboard/AuditChatbot";
 
 import { getAuthHeaders } from "@/lib/authUtils";
@@ -65,9 +68,6 @@ import type { SOPDocument } from "@/lib/sopService";
 import type { AuditDocument } from "@/lib/auditService";
 import type { AuditResultDocument } from "@/lib/models";
 // Removed direct service imports - using API routes instead
-
-const MAX_AUDIO_FILE_SIZE_MB = 5;
-const MAX_AUDIO_FILE_SIZE_BYTES = MAX_AUDIO_FILE_SIZE_MB * 1024 * 1024;
 // Removed localStorage constants - now using database operations
 
 const DEFAULT_AUDIT_PARAMETERS: ParameterGroup[] = [
@@ -376,25 +376,17 @@ export default function QaAuditContent() {
       return;
     }
 
-    if (file.size > MAX_AUDIO_FILE_SIZE_BYTES) {
-      toast({
-        title: "File too large",
-        description: `Please select an audio file smaller than ${MAX_AUDIO_FILE_SIZE_MB}MB.`,
-        variant: "destructive",
-      });
-      // Don't call clearFile() here to avoid recursion - just return
-      return;
-    }
-
     setSelectedAudioFile(file);
-    
+
     // Convert audio to WAV if needed
     if (needsAudioConversion(file)) {
       setAudioKey("converting");
       convertAudioToWavDataUri(file)
         .then((wavDataUri) => {
           setOriginalAudioDataUri(wavDataUri);
-          setPreviewAudioSrc(URL.createObjectURL(new Blob([wavDataUri], { type: "audio/wav" })));
+          setPreviewAudioSrc(
+            URL.createObjectURL(new Blob([wavDataUri], { type: "audio/wav" }))
+          );
           setAudioKey("converted");
           toast({
             title: "Audio Converted",
@@ -405,7 +397,8 @@ export default function QaAuditContent() {
           console.error("Audio conversion failed:", error);
           toast({
             title: "Conversion Failed",
-            description: "Failed to convert audio to WAV. Please try another file.",
+            description:
+              "Failed to convert audio to WAV. Please try another file.",
             variant: "destructive",
           });
           setSelectedAudioFile(null);
@@ -414,7 +407,8 @@ export default function QaAuditContent() {
     } else {
       // Already WAV, just read as data URL
       const reader = new FileReader();
-      reader.onload = (e) => setOriginalAudioDataUri(e.target?.result as string);
+      reader.onload = (e) =>
+        setOriginalAudioDataUri(e.target?.result as string);
       reader.readAsDataURL(file);
 
       const objectUrl = URL.createObjectURL(file);

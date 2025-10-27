@@ -15,7 +15,8 @@ export async function convertAudioToWav(audioFile: File): Promise<Blob> {
     reader.onload = async (event) => {
       try {
         const arrayBuffer = event.target?.result as ArrayBuffer;
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioContext = new (window.AudioContext ||
+          (window as any).webkitAudioContext)();
 
         // Decode the audio file
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
@@ -109,7 +110,9 @@ function audioBufferToWav(audioBuffer: AudioBuffer): Blob {
  * @param audioFile - The audio file to convert
  * @returns Promise<string> - WAV file as data URI
  */
-export async function convertAudioToWavDataUri(audioFile: File): Promise<string> {
+export async function convertAudioToWavDataUri(
+  audioFile: File
+): Promise<string> {
   const wavBlob = await convertAudioToWav(audioFile);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
