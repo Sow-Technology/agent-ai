@@ -9,6 +9,7 @@
 ## 📋 Pre-Deployment Verification
 
 ### Code Implementation ✅
+
 - [x] Backend endpoint created: `src/app/api/audio/convert/route.ts`
 - [x] QA audit component updated: `src/app/dashboard/qa-audit/qa-audit-content.tsx`
 - [x] Manual audit component updated: `src/app/dashboard/manual-audit/manual-audit-content.tsx`
@@ -17,6 +18,7 @@
 - [x] No unused imports or dead code
 
 ### Integration Verification ✅
+
 - [x] Frontend calling `/api/audio/convert` endpoint
 - [x] Authentication headers properly included (`getAuthHeaders()`)
 - [x] Error handling implemented on frontend and backend
@@ -24,6 +26,7 @@
 - [x] File size information provided to users
 
 ### Code Quality ✅
+
 - [x] Error handling comprehensive
 - [x] Logging configured for debugging
 - [x] Comments and documentation added
@@ -52,6 +55,7 @@ df -h /
 ```
 
 **Expected Output:**
+
 - Node: v18.x or higher
 - fluent-ffmpeg: installed
 - Disk: 5GB+ free
@@ -70,6 +74,7 @@ ffmpeg -version
 ```
 
 **Expected Output:**
+
 ```
 ffmpeg version N-[date]
 ...
@@ -92,6 +97,7 @@ npm run build
 ```
 
 **Expected Output:**
+
 - All packages installed
 - Build completes successfully
 - No errors in console
@@ -108,6 +114,7 @@ pm2 logs app-name --lines 50
 ```
 
 **Expected Output:**
+
 ```
 app-name    │ id │ mode │ status    │
 app-name    │  0 │ fork │ online    │  ← Must show "online"
@@ -120,23 +127,28 @@ app-name    │  0 │ fork │ online    │  ← Must show "online"
 ### Immediate Tests (10 minutes)
 
 #### Test 1: Check Endpoint Exists
+
 ```bash
 curl -X OPTIONS http://localhost:3000/api/audio/convert
 ```
+
 **Expected:** 200 OK response
 
 #### Test 2: Verify FFmpeg Available
+
 ```bash
 # SSH to VM and test
 curl -X POST http://localhost:3000/api/audio/convert \
   -F "file=@test_missing.mp3" \
   -H "Authorization: Bearer test-token" 2>&1 | head -20
 ```
+
 **Expected:** Some response (error about auth or file is fine, means endpoint works)
 
 #### Test 3: Test with Real Audio File
 
 **Option A: Using Command Line**
+
 ```bash
 # Download a sample MP3
 wget https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
@@ -149,6 +161,7 @@ curl -X POST http://localhost:3000/api/audio/convert \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -164,6 +177,7 @@ curl -X POST http://localhost:3000/api/audio/convert \
 ```
 
 **Option B: Using Browser/Web Interface**
+
 1. Navigate to QA audit or manual audit page
 2. Upload an MP3 file
 3. Watch for success toast notification
@@ -172,6 +186,7 @@ curl -X POST http://localhost:3000/api/audio/convert \
 ### Extended Testing (20 minutes)
 
 #### Test 4: Large File Upload
+
 ```bash
 # Create 100MB test file
 dd if=/dev/zero bs=1M count=100 | ffmpeg -f u8 -acodec pcm_s16le -ar 16000 -ac 1 -i - test_100mb.wav
@@ -186,6 +201,7 @@ curl -X POST http://localhost:3000/api/audio/convert \
 **Expected:** Success response (conversion takes 20-30 seconds)
 
 #### Test 5: WAV Pass-Through
+
 ```bash
 # Create simple WAV file
 ffmpeg -f lavfi -i sine=f=1000:d=1 -acodec pcm_s16le -ar 16000 -ac 1 test.wav
@@ -199,6 +215,7 @@ time curl -X POST http://localhost:3000/api/audio/convert \
 **Expected:** Very fast response (< 2 seconds)
 
 #### Test 6: Invalid Format Rejection
+
 ```bash
 # Try with invalid format
 curl -X POST http://localhost:3000/api/audio/convert \
@@ -209,6 +226,7 @@ curl -X POST http://localhost:3000/api/audio/convert \
 **Expected:** 400 error with message about invalid file type
 
 #### Test 7: Monitor Temp Directory
+
 ```bash
 # Check /tmp during conversion
 watch -n 0.5 'ls -lh /tmp/ffmpeg-* 2>/dev/null | tail -5'
@@ -226,6 +244,7 @@ curl -X POST http://localhost:3000/api/audio/convert \
 ## 🔍 Monitoring & Validation
 
 ### Check Application Logs
+
 ```bash
 # View recent logs
 pm2 logs app-name --lines 100
@@ -238,12 +257,14 @@ pm2 logs app-name | grep -i audio
 ```
 
 **Look For:**
+
 - ✅ "Converting audio file to WAV"
 - ✅ "Audio conversion completed"
 - ❌ NO "FFmpeg not found" errors
 - ❌ NO "Cannot read file" errors
 
 ### Monitor Resources
+
 ```bash
 # Check CPU/Memory usage
 pm2 monit
@@ -257,12 +278,14 @@ ps aux | grep ffmpeg
 ```
 
 **Expected:**
+
 - CPU: Normal, spikes during conversion
 - Memory: Stable
 - Disk: `/tmp` under 1GB
 - Processes: Clean exit after conversion
 
 ### Health Check URL (Optional)
+
 ```bash
 # Create health check endpoint test
 curl -X POST http://localhost:3000/api/audio/convert \
@@ -278,7 +301,9 @@ curl -X POST http://localhost:3000/api/audio/convert \
 ## 🐛 Troubleshooting During Deployment
 
 ### Issue: "FFmpeg not found" Error
+
 **Solution:**
+
 ```bash
 # Verify installation
 which ffmpeg
@@ -292,7 +317,9 @@ pm2 restart app-name
 ```
 
 ### Issue: Permission Denied on /tmp
+
 **Solution:**
+
 ```bash
 # Check /tmp permissions
 ls -ld /tmp
@@ -305,7 +332,9 @@ pm2 restart app-name
 ```
 
 ### Issue: Connection Refused (Can't reach endpoint)
+
 **Solution:**
+
 ```bash
 # Check if app is running
 pm2 status
@@ -322,7 +351,9 @@ curl http://localhost:3000/api/audio/convert
 ```
 
 ### Issue: 413 Payload Too Large Error
+
 **Solution:**
+
 ```bash
 # Check nginx config
 grep client_max_body_size /etc/nginx/nginx.conf
@@ -335,7 +366,9 @@ sudo nginx -s reload
 ```
 
 ### Issue: Timeout on Large Files
+
 **Solution:**
+
 ```bash
 # Check Node.js timeout setting in PM2
 pm2 show app-name
@@ -351,29 +384,34 @@ pm2 restart app-name --max-memory-restart 1G
 You'll know deployment is successful when:
 
 ✅ **Code Checks**
+
 - No TypeScript errors in build
 - Application starts without crashing
 - PM2 shows "online" status
 
 ✅ **Functionality**
+
 - Can POST to `/api/audio/convert`
 - MP3 files convert to WAV
 - WAV files pass through unchanged
 - Response includes valid data URI
 
 ✅ **Performance**
+
 - Small files convert in <2 seconds
 - Large files (100MB) convert in <60 seconds
 - Temporary files cleaned up after conversion
 - No memory leaks observed
 
 ✅ **Error Handling**
+
 - Invalid formats return helpful error messages
 - Missing FFmpeg returns clear instructions
 - Network errors handled gracefully
 - User sees appropriate feedback
 
 ✅ **Monitoring**
+
 - PM2 logs show conversion events
 - FFmpeg processes complete cleanly
 - No orphaned processes
@@ -384,6 +422,7 @@ You'll know deployment is successful when:
 ## 📊 Key Metrics After Deployment
 
 ### Baseline Metrics
+
 ```
 Conversion Success Rate:  Target >99%
 Average Conversion Time:  Target <30 seconds (100MB)
@@ -393,6 +432,7 @@ Disk Usage (/tmp):       Target <1GB
 ```
 
 ### Performance Benchmarks
+
 ```
 1MB WAV:      0.2 seconds
 10MB MP3:     2-3 seconds
@@ -406,6 +446,7 @@ Disk Usage (/tmp):       Target <1GB
 ## 🎯 Deployment Checklist
 
 ### Before Deployment
+
 - [ ] Read this entire document
 - [ ] Backup current production state
 - [ ] Verify VM has 5GB+ free disk space
@@ -414,6 +455,7 @@ Disk Usage (/tmp):       Target <1GB
 - [ ] Have rollback plan ready
 
 ### During Deployment
+
 - [ ] Install FFmpeg
 - [ ] Pull latest code
 - [ ] Verify build successful
@@ -422,6 +464,7 @@ Disk Usage (/tmp):       Target <1GB
 - [ ] Run basic tests
 
 ### After Deployment
+
 - [ ] Test with WAV file upload
 - [ ] Test with MP3 file upload
 - [ ] Test with large file (100MB+)
@@ -430,6 +473,7 @@ Disk Usage (/tmp):       Target <1GB
 - [ ] Get team sign-off
 
 ### Ongoing
+
 - [ ] Monitor daily for errors
 - [ ] Check `/tmp` directory weekly
 - [ ] Review performance metrics
@@ -467,21 +511,25 @@ pm2 logs app-name
 ### If You Get Stuck
 
 1. **Check the logs first:**
+
    ```bash
    pm2 logs app-name --err
    ```
 
 2. **Verify FFmpeg:**
+
    ```bash
    ffmpeg -version
    ```
 
 3. **Test endpoint directly:**
+
    ```bash
    curl http://localhost:3000/api/audio/convert
    ```
 
 4. **Check documentation:**
+
    - See `AUDIO_CONVERSION_TESTING.md` for detailed tests
    - See `QUICK_REFERENCE.md` for common issues
 
@@ -494,6 +542,7 @@ pm2 logs app-name
 ## ✅ Final Approval
 
 **Ready for Deployment:**
+
 - ✅ Code complete and tested
 - ✅ Documentation comprehensive
 - ✅ Rollback plan available

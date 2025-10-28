@@ -3,6 +3,7 @@
 ## Visual Comparison
 
 ### BEFORE: Continuous Slider (0-100)
+
 ```
 ┌─────────────────────────────────────────────┐
 │ Score (0-100)                               │
@@ -19,6 +20,7 @@ Issues:
 ```
 
 ### AFTER: Binary Toggle (0 or Max)
+
 ```
 ┌─────────────────────────────────────────────┐
 │ Score: 0 or 5                               │
@@ -87,6 +89,7 @@ Button State: 0 button highlighted
 ## Code Comparison
 
 ### BEFORE: Slider Implementation
+
 ```typescript
 <div className="flex items-center gap-2">
   <Slider
@@ -107,6 +110,7 @@ Button State: 0 button highlighted
 ```
 
 ### AFTER: Toggle Button Implementation
+
 ```typescript
 <div className="flex items-center gap-3">
   {/* 0 Button */}
@@ -147,6 +151,7 @@ Button State: 0 button highlighted
 ## Button State Variations
 
 ### When score = 0
+
 ```
 ┌────────────────┐  ┌────────────────┐
 │ [ 0 ]          │  │ [ 5 ]          │
@@ -157,6 +162,7 @@ Button State: 0 button highlighted
 ```
 
 ### When score = 5 (max)
+
 ```
 ┌────────────────┐  ┌────────────────┐
 │ [ 0 ]          │  │ [ 5 ]          │
@@ -169,6 +175,7 @@ Button State: 0 button highlighted
 ## Score Mapping Examples
 
 ### For Weight = 4 (e.g., Critical)
+
 ```
 Input Value  →  Rounds To
     0        →      0
@@ -180,6 +187,7 @@ Input Value  →  Rounds To
 ```
 
 ### For Weight = 5
+
 ```
 Input Value  →  Rounds To
     0        →      0
@@ -192,6 +200,7 @@ Input Value  →  Rounds To
 ```
 
 ### For Weight = 6
+
 ```
 Input Value  →  Rounds To
     0        →      0
@@ -207,6 +216,7 @@ Input Value  →  Rounds To
 ## Mobile Responsiveness
 
 ### Desktop View
+
 ```
 ┌─────────────────────────────────────┐
 │ [ 0 Button ]  [ Max Button ]  [Input│
@@ -216,6 +226,7 @@ Input Value  →  Rounds To
 ```
 
 ### Mobile View
+
 ```
 Same layout:
 [ 0 ]  [ 5 ]  [  5  ]
@@ -229,6 +240,7 @@ Uses:
 ## Data Validation
 
 ### Current Score State
+
 ```
 const currentScore = manualAuditResults[groupId]?.[subParamId]?.score || 0
 
@@ -237,6 +249,7 @@ Invalid values: 1, 2, 3, 7+ (automatically corrected)
 ```
 
 ### On Save
+
 ```
 Audit result saved with:
 {
@@ -251,26 +264,31 @@ Audit result saved with:
 ## Testing Scenarios
 
 ### Test 1: Toggle from 0 to Max
+
 - Start with score 0
 - Click max button → score becomes max ✓
 - Button states update correctly ✓
 
 ### Test 2: Toggle from Max to 0
+
 - Start with score max
 - Click 0 button → score becomes 0 ✓
 - Button states update correctly ✓
 
 ### Test 3: Type Value Below Midpoint
+
 - Start with score max
 - Type "2" (for max=5) → score becomes 0 ✓
 - 0 button highlights ✓
 
 ### Test 4: Type Value Above Midpoint
+
 - Start with score 0
 - Type "4" (for max=5) → score becomes 5 ✓
 - Max button highlights ✓
 
 ### Test 5: Type At Midpoint
+
 - Score max (e.g., 5)
 - Type "2.5" (midpoint) → score becomes 0 ✓
 - Type "2.6" (just above) → score becomes 5 ✓

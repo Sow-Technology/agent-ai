@@ -11,6 +11,7 @@ Updated the manual audit score input from a continuous slider (0-100) to a binar
 ## Changes Made
 
 ### 1. Removed Slider Import
+
 ```typescript
 // BEFORE:
 import { Slider } from "@/components/ui/slider";
@@ -38,11 +39,13 @@ import { Slider } from "@/components/ui/slider";
 ### Features
 
 1. **Toggle Buttons:**
+
    - **0 Button:** Sets score to 0 (Highlighted when selected)
    - **Max Button:** Sets score to maximum weight value (4, 5, or 6)
    - Active button shows with "default" variant, inactive with "outline"
 
 2. **Text Input:**
+
    - Allows manual entry if needed
    - Automatically constrains values:
      - Values ≤ 50% of max → rounds down to 0
@@ -63,7 +66,7 @@ import { Slider } from "@/components/ui/slider";
 ✅ **Clearer Intent:** Only pass/fail evaluation for each criterion  
 ✅ **Faster Input:** One click to toggle between states  
 ✅ **Less Ambiguity:** No subjective middle-ground scores  
-✅ **Better UX:** Visual feedback with button states  
+✅ **Better UX:** Visual feedback with button states
 
 ## Code Quality
 
@@ -89,8 +92,9 @@ import { Slider } from "@/components/ui/slider";
 ### State Management
 
 Score state is managed by `handleManualResultChange()`:
+
 ```typescript
-handleManualResultChange(groupId, subParamId, "score", newValue)
+handleManualResultChange(groupId, subParamId, "score", newValue);
 ```
 
 ## Testing Checklist
@@ -116,6 +120,7 @@ src/app/dashboard/manual-audit/manual-audit-content.tsx
 ## Impact on Other Components
 
 **No breaking changes:**
+
 - Same data structure maintained
 - Score values remain numeric
 - Calculation logic unchanged
@@ -130,6 +135,7 @@ src/app/dashboard/manual-audit/manual-audit-content.tsx
 ## Future Considerations
 
 If similar changes needed for QA Audit page:
+
 - Would need separate implementation for that component
 - Both components use slightly different patterns
 - Could extract toggle component into reusable UI component
@@ -137,6 +143,7 @@ If similar changes needed for QA Audit page:
 ## Rollback Instructions
 
 If needed to revert:
+
 1. Restore Slider import
 2. Replace button UI with Slider component
 3. Restore original 0-100 range

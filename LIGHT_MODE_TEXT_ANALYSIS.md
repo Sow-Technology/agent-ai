@@ -40,7 +40,9 @@ These are still light in light mode:
 ## FIX STRATEGY
 
 ### Dark Mode Consideration
+
 These components use `dark:` modifier, so we must maintain that. Pattern:
+
 ```
 Light: text-gray-800 or text-gray-900
 Dark: dark:text-white or dark:text-gray-100
@@ -48,15 +50,15 @@ Dark: dark:text-white or dark:text-gray-100
 
 ### Color Mapping for All Text
 
-| Text Type | Light Mode | Dark Mode | Reason |
-|-----------|-----------|-----------|--------|
-| **Main Headings** | `text-gray-900` | `dark:text-white` | High contrast everywhere |
-| **Body Text** | `text-gray-700` | `dark:text-gray-100` | Readable on light BG |
-| **Secondary Text** | `text-gray-600` | `dark:text-gray-300` | Slightly less emphasis |
-| **Tertiary Text** | `text-gray-600` | `dark:text-gray-400` | Subtle but readable |
-| **Table Values** | `text-gray-900` | `dark:text-white` | Important data |
-| **Links** | `text-gray-700` | `dark:text-gray-400` | Should be distinct |
-| **Footer** | `text-gray-700` | `dark:text-gray-400` | Readable |
+| Text Type          | Light Mode      | Dark Mode            | Reason                   |
+| ------------------ | --------------- | -------------------- | ------------------------ |
+| **Main Headings**  | `text-gray-900` | `dark:text-white`    | High contrast everywhere |
+| **Body Text**      | `text-gray-700` | `dark:text-gray-100` | Readable on light BG     |
+| **Secondary Text** | `text-gray-600` | `dark:text-gray-300` | Slightly less emphasis   |
+| **Tertiary Text**  | `text-gray-600` | `dark:text-gray-400` | Subtle but readable      |
+| **Table Values**   | `text-gray-900` | `dark:text-white`    | Important data           |
+| **Links**          | `text-gray-700` | `dark:text-gray-400` | Should be distinct       |
+| **Footer**         | `text-gray-700` | `dark:text-gray-400` | Readable                 |
 
 ---
 
@@ -80,4 +82,3 @@ Dark: dark:text-white or dark:text-gray-100
 **Total problematic elements:** 50+ text color instances
 **Files to modify:** 1 (HomePageContent.tsx)
 **Complexity:** Medium (systematic replacement needed)
-

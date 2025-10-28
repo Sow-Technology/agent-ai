@@ -42,7 +42,7 @@ export const config = {
 
 /**
  * POST /api/audio/convert
- * 
+ *
  * Converts audio files to WAV format on the server
  * Request body should contain multipart form data with the audio file
  */
@@ -59,7 +59,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    if (!audioFile.type.startsWith("audio/") && audioFile.type !== "video/mp4") {
+    if (
+      !audioFile.type.startsWith("audio/") &&
+      audioFile.type !== "video/mp4"
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -126,10 +129,7 @@ export async function POST(request: NextRequest) {
  * Convert audio buffer to WAV format
  * Using FFmpeg.wasm for server-side conversion
  */
-async function convertToWav(
-  buffer: Buffer,
-  mimeType: string
-): Promise<Buffer> {
+async function convertToWav(buffer: Buffer, mimeType: string): Promise<Buffer> {
   try {
     const ffmpegInstance = await getFFmpeg();
 

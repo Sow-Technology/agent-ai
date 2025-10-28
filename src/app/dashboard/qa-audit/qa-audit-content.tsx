@@ -378,7 +378,7 @@ export default function QaAuditContent() {
     // Send file to backend for conversion
     if (needsAudioConversion(file)) {
       setAudioKey("converting");
-      
+
       const formData = new FormData();
       formData.append("file", file);
 
@@ -407,7 +407,10 @@ export default function QaAuditContent() {
             setAudioKey("converted");
             toast({
               title: "Audio Converted",
-              description: `Successfully converted to WAV (${(data.data.convertedSize / (1024 * 1024)).toFixed(2)}MB)`,
+              description: `Successfully converted to WAV (${(
+                data.data.convertedSize /
+                (1024 * 1024)
+              ).toFixed(2)}MB)`,
             });
           } else {
             throw new Error(data.error || "Conversion failed");
@@ -417,7 +420,8 @@ export default function QaAuditContent() {
           console.error("Audio conversion failed:", error);
           toast({
             title: "Conversion Failed",
-            description: error.message || "Failed to convert audio to WAV on server.",
+            description:
+              error.message || "Failed to convert audio to WAV on server.",
             variant: "destructive",
           });
           setSelectedAudioFile(null);

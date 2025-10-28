@@ -1,23 +1,28 @@
 # Audio Conversion Backend - Quick Reference Card
 
 ## What Was Done
+
 Audio format conversion moved from browser (Web Audio API) to server (FFmpeg).
 
 ## Files Changed
 
 ### Created
+
 - `src/app/api/audio/convert/route.ts` - New backend endpoint
 
-### Updated  
+### Updated
+
 - `src/app/dashboard/qa-audit/qa-audit-content.tsx` - Uses backend API
 - `src/app/dashboard/manual-audit/manual-audit-content.tsx` - Uses backend API
 
 ### Unchanged
+
 - `src/lib/audioConverter.ts` - Still has `needsAudioConversion()` utility
 
 ## The Change (Before vs After)
 
 ### BEFORE: Client-Side Processing
+
 ```typescript
 // Old way - in browser
 import { convertAudioToWavDataUri } from "@/lib/audioConverter";
@@ -25,7 +30,7 @@ import { convertAudioToWavDataUri } from "@/lib/audioConverter";
 const handleAudioFileSelected = (file) => {
   if (needsAudioConversion(file)) {
     convertAudioToWavDataUri(file) // Web Audio API processing
-      .then(wavDataUri => {
+      .then((wavDataUri) => {
         setAudioDataUri(wavDataUri);
       });
   }
@@ -33,27 +38,30 @@ const handleAudioFileSelected = (file) => {
 ```
 
 ### AFTER: Server-Side Processing
+
 ```typescript
 // New way - server handles it
 const handleAudioFileSelected = (file) => {
   if (needsAudioConversion(file)) {
     const formData = new FormData();
     formData.append("file", file);
-    
-    fetch("/api/audio/convert", { // Backend does conversion
+
+    fetch("/api/audio/convert", {
+      // Backend does conversion
       method: "POST",
       headers: getAuthHeaders(),
-      body: formData
+      body: formData,
     })
-    .then(res => res.json())
-    .then(({ data }) => {
-      setAudioDataUri(data.audioDataUri);
-    });
+      .then((res) => res.json())
+      .then(({ data }) => {
+        setAudioDataUri(data.audioDataUri);
+      });
   }
 };
 ```
 
 ## Key Benefits
+
 1. ✅ Handles 100-500MB files (was limited by browser memory)
 2. ✅ More reliable (FFmpeg is battle-tested)
 3. ✅ Faster (offloads from browser)
@@ -83,6 +91,7 @@ curl -X POST http://localhost:3000/api/audio/convert \
 ## API Reference
 
 ### Endpoint
+
 ```
 POST /api/audio/convert
 Content-Type: multipart/form-data
@@ -90,6 +99,7 @@ Max Size: 500MB
 ```
 
 ### Request
+
 ```javascript
 const formData = new FormData();
 formData.append("file", audioFile);
@@ -97,11 +107,12 @@ formData.append("file", audioFile);
 fetch("/api/audio/convert", {
   method: "POST",
   headers: getAuthHeaders(),
-  body: formData
+  body: formData,
 });
 ```
 
 ### Response (Success)
+
 ```json
 {
   "success": true,
@@ -117,6 +128,7 @@ fetch("/api/audio/convert", {
 ```
 
 ### Response (Error)
+
 ```json
 {
   "success": false,
@@ -127,12 +139,12 @@ fetch("/api/audio/convert", {
 
 ## Common Issues & Fixes
 
-| Issue | Fix |
-|-------|-----|
-| "FFmpeg not found" | `sudo apt-get install ffmpeg` |
-| 413 Payload Too Large | nginx: `client_max_body_size 500m;` |
+| Issue                  | Fix                                       |
+| ---------------------- | ----------------------------------------- |
+| "FFmpeg not found"     | `sudo apt-get install ffmpeg`             |
+| 413 Payload Too Large  | nginx: `client_max_body_size 500m;`       |
 | Timeout on large files | Increase Node.js timeout or use streaming |
-| `/tmp` full | Check disk space, clean up old files |
+| `/tmp` full            | Check disk space, clean up old files      |
 
 ## Testing Checklist
 
@@ -147,21 +159,25 @@ fetch("/api/audio/convert", {
 ## Monitoring
 
 ### Check If App Running
+
 ```bash
 pm2 status
 ```
 
 ### View Logs
+
 ```bash
 pm2 logs app-name | grep "audio"
 ```
 
 ### Restart If Needed
+
 ```bash
 pm2 restart app-name
 ```
 
 ## Documentation
+
 - Full details: `AUDIO_MIGRATION_COMPLETE.md`
 - Testing guide: `AUDIO_CONVERSION_TESTING.md`
 - Technical spec: `AUDIO_CONVERSION_MIGRATION.md`

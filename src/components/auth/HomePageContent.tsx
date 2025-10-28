@@ -466,7 +466,9 @@ export function HomePageContent() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/10">
-                    <TableHead className="text-gray-700 dark:text-gray-200 font-semibold">Metric</TableHead>
+                    <TableHead className="text-gray-700 dark:text-gray-200 font-semibold">
+                      Metric
+                    </TableHead>
                     <TableHead className="text-primary font-bold">
                       AssureQAI
                     </TableHead>
@@ -845,15 +847,24 @@ export function HomePageContent() {
                 Product by Joaji Innovation
               </p>
               <div className="flex space-x-6">
-                <a href="#" className="text-gray-700 dark:text-gray-400/80 hover:text-primary">
+                <a
+                  href="#"
+                  className="text-gray-700 dark:text-gray-400/80 hover:text-primary"
+                >
                   <span className="sr-only">Facebook</span>
                   <Facebook className="h-6 w-6" />
                 </a>
-                <a href="#" className="text-gray-700 dark:text-gray-400/80 hover:text-primary">
+                <a
+                  href="#"
+                  className="text-gray-700 dark:text-gray-400/80 hover:text-primary"
+                >
                   <span className="sr-only">LinkedIn</span>
                   <Linkedin className="h-6 w-6" />
                 </a>
-                <a href="#" className="text-gray-700 dark:text-gray-400/80 hover:text-primary">
+                <a
+                  href="#"
+                  className="text-gray-700 dark:text-gray-400/80 hover:text-primary"
+                >
                   <span className="sr-only">Twitter</span>
                   <Twitter className="h-6 w-6" />
                 </a>

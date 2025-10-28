@@ -13,17 +13,19 @@
 **Issue:** Button background was barely visible with `bg-white/5` and `text-white border-white/20`
 
 **Before:**
+
 ```tsx
-bg-gradient-to-r from-primary/20 to-primary/10 
-hover:from-primary/30 hover:to-primary/20 
+bg-gradient-to-r from-primary/20 to-primary/10
+hover:from-primary/30 hover:to-primary/20
 border-primary/50 hover:border-primary
 ```
 
 **After:**
+
 ```tsx
-bg-gradient-to-r from-primary via-primary/80 to-purple-600 
-hover:from-primary hover:to-primary 
-border-primary shadow-lg hover:shadow-primary/50 
+bg-gradient-to-r from-primary via-primary/80 to-purple-600
+hover:from-primary hover:to-primary
+border-primary shadow-lg hover:shadow-primary/50
 font-semibold
 ```
 
@@ -36,21 +38,25 @@ font-semibold
 **Issue:** Table text was too light using `text-gray-200` for labels and `text-primary` for values
 
 **Before - Left Column (Metric labels):**
+
 ```tsx
 text-gray-200          # Very light gray
 ```
 
 **Before - Right Column (Values):**
+
 ```tsx
 font-semibold text-primary    # Primary color only
 ```
 
 **After - Left Column:**
+
 ```tsx
 font-medium text-gray-100 dark:text-gray-100    # Much darker
 ```
 
 **After - Right Column:**
+
 ```tsx
 font-bold text-white text-lg                    # Pure white, larger
 (For ₹2) or font-bold text-white               # White for values
@@ -59,6 +65,7 @@ font-bold text-white text-lg                    # Pure white, larger
 **Result:** All table content now clearly visible with high contrast
 
 #### Table Content Fixed:
+
 - Cost per audit: ₹2
 - Consistency: Consistent, repeatable
 - Time to insights: Minutes
@@ -71,12 +78,14 @@ font-bold text-white text-lg                    # Pure white, larger
 **Issue:** Heading was using `animate-text-gradient` which was making it hard to see
 
 **Before:**
+
 ```tsx
 h2 className="text-3xl md:text-4xl font-bold tracking-tight animate-text-gradient"
 p className="text-lg text-gray-600 dark:text-gray-300/80"
 ```
 
 **After:**
+
 ```tsx
 h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white"
 p className="text-lg text-gray-300 dark:text-gray-200"
@@ -91,6 +100,7 @@ p className="text-lg text-gray-300 dark:text-gray-200"
 **Issue:** Names in `text-white` but roles in `text-gray-400` made them blend in
 
 **Before:**
+
 ```tsx
 <p className="font-semibold text-white">
   {testimonial.name}
@@ -101,6 +111,7 @@ p className="text-lg text-gray-300 dark:text-gray-200"
 ```
 
 **After:**
+
 ```tsx
 <p className="font-semibold text-white text-sm">
   {testimonial.name}
@@ -119,6 +130,7 @@ p className="text-lg text-gray-300 dark:text-gray-200"
 **Issue:** FAQ answers were using `text-gray-600` which was too light
 
 **Before:**
+
 ```tsx
 <AccordionContent className="text-gray-600 dark:text-gray-300/80 text-base leading-relaxed">
   {faq.answer}
@@ -126,6 +138,7 @@ p className="text-lg text-gray-300 dark:text-gray-200"
 ```
 
 **After:**
+
 ```tsx
 <AccordionContent className="text-gray-200 dark:text-gray-100 text-base leading-relaxed py-4">
   {faq.answer}
@@ -138,19 +151,20 @@ p className="text-lg text-gray-300 dark:text-gray-200"
 
 ## Summary of Changes
 
-| Section | Problem | Solution | Result |
-|---------|---------|----------|--------|
-| Book Demo Button | Too subtle | Added bright gradient & shadow | Prominent CTA |
-| Table Cells | Very light text | `text-gray-100` + `text-white` | Clear contrast |
-| Section Heading | Animation issue | Solid `text-white` | Always visible |
+| Section           | Problem          | Solution                        | Result            |
+| ----------------- | ---------------- | ------------------------------- | ----------------- |
+| Book Demo Button  | Too subtle       | Added bright gradient & shadow  | Prominent CTA     |
+| Table Cells       | Very light text  | `text-gray-100` + `text-white`  | Clear contrast    |
+| Section Heading   | Animation issue  | Solid `text-white`              | Always visible    |
 | Testimonial Names | Faint gray roles | `text-gray-300` + proper sizing | Clear attribution |
-| FAQ Answers | Light gray text | `text-gray-200` + padding | Readable Q&A |
+| FAQ Answers       | Light gray text  | `text-gray-200` + padding       | Readable Q&A      |
 
 ---
 
 ## Visibility Improvements
 
 ### Text Color Hierarchy
+
 ```
 White/Bright:        text-white (headings, highlights)
 Light Gray:          text-gray-100, text-gray-200 (readable body text)
@@ -159,11 +173,12 @@ Dark Gray:           text-gray-400+ (subtle backgrounds)
 ```
 
 ### What Now Works
+
 ✅ **Book a demo** button is prominent and clickable  
 ✅ **Table values** (₹2, Minutes, etc.) are clearly visible  
 ✅ **Section heading** "Everything You Need for Modern QA" is bright white  
 ✅ **Testimonial names and roles** are both readable  
-✅ **FAQ questions and answers** are both clearly visible  
+✅ **FAQ questions and answers** are both clearly visible
 
 ---
 
@@ -182,7 +197,7 @@ Dark Gray:           text-gray-400+ (subtle backgrounds)
 ✅ No ESLint warnings  
 ✅ Consistent with design system  
 ✅ Proper color hierarchy  
-✅ Mobile responsive preserved  
+✅ Mobile responsive preserved
 
 ---
 
