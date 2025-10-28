@@ -32,13 +32,8 @@ async function getFFmpeg() {
   return ffmpeg;
 }
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "500mb",
-    },
-  },
-};
+// Set max request timeout for large audio files
+export const maxDuration = 300; // 5 minutes
 
 /**
  * POST /api/audio/convert
