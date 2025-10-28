@@ -43,20 +43,85 @@ export const maxDuration = 300; // 5 minutes
  */
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const audioFile = formData.get("file") as File;
+    const contentType = (request.headers.get("content-type") || "").toLowerCase();
 
-    if (!audioFile) {
+    let buffer: Buffer;
+    let originalType = "application/octet-stream";
+    let fileName = "upload";
+
+    // Case 1: multipart/form-data (file input)
+    if (
+      contentType.includes("multipart/form-data") ||
+      contentType.includes("application/x-www-form-urlencoded")
+    ) {
+      const formData = await request.formData();
+      const audioFile = formData.get("file") as File | null;
+
+      if (!audioFile) {
+        return NextResponse.json(
+          { success: false, error: "No audio file provided in form data" },
+          { status: 400 }
+        );
+      }
+
+      originalType = audioFile.type || originalType;
+      fileName = audioFile.name || fileName;
+      const arrayBuffer = await audioFile.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    } else if (contentType.includes("application/json")) {
+      // Case 2: JSON body containing base64 or data URI
+      const json = await request.json();
+      const data = json?.audioDataUri || json?.audioData || json?.audioBase64;
+
+      if (!data || typeof data !== "string") {
+        return NextResponse.json(
+          { success: false, error: "No audio data found in JSON body" },
+          { status: 400 }
+        );
+      }
+
+      if (data.startsWith("data:")) {
+        const match = data.match(/^data:(.+);base64,(.+)$/);
+        if (!match) {
+          return NextResponse.json(
+            { success: false, error: "Invalid data URI provided" },
+            { status: 400 }
+          );
+        }
+        originalType = match[1];
+        const base64 = match[2];
+        buffer = Buffer.from(base64, "base64");
+      } else {
+        // Assume plain base64
+        originalType = json?.originalType || originalType;
+        buffer = Buffer.from(data, "base64");
+      }
+    } else if (
+      contentType.startsWith("audio/") ||
+      contentType.startsWith("video/") ||
+      contentType.includes("application/octet-stream")
+    ) {
+      // Case 3: raw binary body upload (audio/*, video/mp4, or octet-stream)
+      const arrayBuffer = await request.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      originalType = contentType || originalType;
+      fileName = request.headers.get("x-filename") || fileName;
+    } else {
       return NextResponse.json(
-        { success: false, error: "No audio file provided" },
-        { status: 400 }
+        {
+          success: false,
+          error:
+            'Unsupported Content-Type. Accepts multipart/form-data, application/json (base64/dataURI), audio/*, video/mp4, or application/octet-stream',
+        },
+        { status: 415 }
       );
     }
 
-    // Validate file type
+    // Basic validation of type
     if (
-      !audioFile.type.startsWith("audio/") &&
-      audioFile.type !== "video/mp4"
+      !originalType.startsWith("audio/") &&
+      originalType !== "video/mp4" &&
+      originalType !== "application/octet-stream"
     ) {
       return NextResponse.json(
         {
@@ -68,25 +133,21 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Converting audio file to WAV", {
-      fileName: audioFile.name,
-      fileSize: `${(audioFile.size / (1024 * 1024)).toFixed(2)}MB`,
-      fileType: audioFile.type,
+      fileName,
+      fileSize: `${(buffer.length / (1024 * 1024)).toFixed(2)}MB`,
+      fileType: originalType,
       timestamp: new Date().toISOString(),
     });
 
-    // Read file as buffer
-    const arrayBuffer = await audioFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Convert to WAV using FFmpeg (via Node.js)
-    const wavBuffer = await convertToWav(buffer, audioFile.type);
+    // Convert to WAV
+    const wavBuffer = await convertToWav(buffer, originalType);
 
     // Convert buffer to base64 data URI
     const base64 = wavBuffer.toString("base64");
     const wavDataUri = `data:audio/wav;base64,${base64}`;
 
     console.log("Audio conversion completed", {
-      originalSize: `${(audioFile.size / (1024 * 1024)).toFixed(2)}MB`,
+      originalSize: `${(buffer.length / (1024 * 1024)).toFixed(2)}MB`,
       convertedSize: `${(wavBuffer.length / (1024 * 1024)).toFixed(2)}MB`,
       timestamp: new Date().toISOString(),
     });
@@ -95,10 +156,10 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         audioDataUri: wavDataUri,
-        fileName: audioFile.name,
-        originalType: audioFile.type,
+        fileName,
+        originalType,
         convertedType: "audio/wav",
-        originalSize: audioFile.size,
+        originalSize: buffer.length,
         convertedSize: wavBuffer.length,
       },
     });
@@ -112,8 +173,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Failed to convert audio file",
-        details:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        details: error instanceof Error ? error.message : "Unknown error occurred",
       },
       { status: 500 }
     );
