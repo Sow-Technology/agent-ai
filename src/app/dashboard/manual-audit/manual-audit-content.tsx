@@ -44,12 +44,8 @@ import {
   type AudioUploadDropzoneRef,
 } from "@/components/dashboard/AudioUploadDropzone";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
 import { AuditChatbot } from "@/components/dashboard/AuditChatbot";
-import {
-  convertAudioToWavDataUri,
-  needsAudioConversion,
-} from "@/lib/audioConverter";
+import { needsAudioConversion } from "@/lib/audioConverter";
 
 import { getAuthHeaders } from "@/lib/authUtils";
 import {
@@ -348,29 +344,56 @@ export default function ManualAuditContent() {
     }
     setManualSelectedAudioFile(file);
 
-    // Convert audio to WAV if needed
+    // Send file to backend for conversion
     if (needsAudioConversion(file)) {
       setManualAudioKey("converting");
-      convertAudioToWavDataUri(file)
-        .then((wavDataUri) => {
-          setManualAudioDataUri(wavDataUri);
-          setManualPreviewAudioSrc(
-            URL.createObjectURL(new Blob([wavDataUri], { type: "audio/wav" }))
-          );
-          setManualAudioKey("converted");
-          toast({
-            title: "Audio Converted",
-            description: "Audio file has been converted to WAV format.",
-          });
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      fetch("/api/audio/convert", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(
+              error.error || `Conversion failed with status ${response.status}`
+            );
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            setManualAudioDataUri(data.data.audioDataUri);
+            setManualPreviewAudioSrc(
+              URL.createObjectURL(
+                new Blob([data.data.audioDataUri], { type: "audio/wav" })
+              )
+            );
+            setManualAudioKey("converted");
+            toast({
+              title: "Audio Converted",
+              description: `Successfully converted to WAV (${(
+                data.data.convertedSize /
+                (1024 * 1024)
+              ).toFixed(2)}MB)`,
+            });
+          } else {
+            throw new Error(data.error || "Conversion failed");
+          }
         })
         .catch((error) => {
           console.error("Audio conversion failed:", error);
           toast({
             title: "Conversion Failed",
             description:
-              "Failed to convert audio to WAV. Please try another file.",
+              error.message || "Failed to convert audio to WAV on server.",
             variant: "destructive",
           });
+
           setManualSelectedAudioFile(null);
           setManualAudioKey("error");
         });
@@ -935,42 +958,73 @@ export default function ManualAuditContent() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={`score-${subParam.id}`}>
-                        Score (0-100)
+                        Score: 0 or {subParam.weight}
                       </Label>
-                      <div className="flex items-center gap-2">
-                        <Slider
-                          id={`score-${subParam.id}`}
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[
-                            manualAuditResults[group.id]?.[subParam.id]
-                              ?.score || 0,
-                          ]}
-                          onValueChange={(value) =>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant={
+                            (manualAuditResults[group.id]?.[subParam.id]
+                              ?.score || 0) === 0
+                              ? "default"
+                              : "outline"
+                          }
+                          className="flex-1"
+                          onClick={() =>
                             handleManualResultChange(
                               group.id,
                               subParam.id,
                               "score",
-                              value[0]
+                              0
                             )
                           }
-                        />
+                        >
+                          0
+                        </Button>
+                        <Button
+                          variant={
+                            (manualAuditResults[group.id]?.[subParam.id]
+                              ?.score || 0) === subParam.weight
+                              ? "default"
+                              : "outline"
+                          }
+                          className="flex-1"
+                          onClick={() =>
+                            handleManualResultChange(
+                              group.id,
+                              subParam.id,
+                              "score",
+                              subParam.weight
+                            )
+                          }
+                        >
+                          {subParam.weight}
+                        </Button>
                         <Input
                           type="number"
                           className="w-20"
+                          placeholder="Or enter"
                           value={
                             manualAuditResults[group.id]?.[subParam.id]
                               ?.score || 0
                           }
-                          onChange={(e) =>
+                          onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>
+                          ) => {
+                            const value = Number(e.target.value);
+                            // Constrain value to 0 or max
+                            const constrainedValue =
+                              value <= subParam.weight / 2
+                                ? 0
+                                : subParam.weight;
                             handleManualResultChange(
                               group.id,
                               subParam.id,
                               "score",
-                              Number(e.target.value)
-                            )
-                          }
+                              constrainedValue
+                            );
+                          }}
+                          min={0}
+                          max={subParam.weight}
                         />
                       </div>
                     </div>

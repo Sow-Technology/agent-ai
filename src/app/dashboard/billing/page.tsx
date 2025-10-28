@@ -142,75 +142,7 @@ function BillingContent() {
         </div>
 
         {/* Pricing Comparison */}
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>AssureQAI vs Manual Auditing</CardTitle>
-            <CardDescription>
-              See how our AI-powered pricing compares to traditional manual
-              auditing
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 px-4 font-semibold">
-                      Metric
-                    </th>
-                    <th className="text-center py-2 px-4 font-semibold">
-                      Manual Audit
-                    </th>
-                    <th className="text-center py-2 px-4 font-semibold text-primary">
-                      AssureQAI
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b hover:bg-muted/50">
-                    <td className="py-3 px-4">Cost per call</td>
-                    <td className="text-center py-3 px-4">
-                      {pricing.currencySymbol}
-                      {pricing.manualAuditPrice}
-                    </td>
-                    <td className="text-center py-3 px-4 font-semibold text-primary">
-                      {pricing.currencySymbol}
-                      {pricing.aiAuditPrice}
-                    </td>
-                  </tr>
-                  <tr className="border-b hover:bg-muted/50">
-                    <td className="py-3 px-4">Calls per month</td>
-                    <td className="text-center py-3 px-4">Limited</td>
-                    <td className="text-center py-3 px-4 font-semibold text-green-500">
-                      Unlimited
-                    </td>
-                  </tr>
-                  <tr className="border-b hover:bg-muted/50">
-                    <td className="py-3 px-4">Consistency</td>
-                    <td className="text-center py-3 px-4">Variable</td>
-                    <td className="text-center py-3 px-4 font-semibold text-green-500">
-                      100%
-                    </td>
-                  </tr>
-                  <tr className="border-b hover:bg-muted/50">
-                    <td className="py-3 px-4">Time to insights</td>
-                    <td className="text-center py-3 px-4">Days</td>
-                    <td className="text-center py-3 px-4 font-semibold text-green-500">
-                      Minutes
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-muted/50">
-                    <td className="py-3 px-4">24/7 Monitoring</td>
-                    <td className="text-center py-3 px-4">No</td>
-                    <td className="text-center py-3 px-4 font-semibold text-green-500">
-                      Yes
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        {/* REMOVED - Comparison section removed per user request */}
       </div>
     </div>
   );

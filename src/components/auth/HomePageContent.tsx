@@ -243,7 +243,7 @@ const BentoCard = ({
       ref={cardRef}
       onMouseMove={onMouseMove}
       className={cn(
-        "group relative p-6 flex flex-col items-start gap-4 transition-all duration-300 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-lg shadow-lg hover:shadow-primary/20",
+        "group relative p-6 flex flex-col items-start gap-4 transition-all duration-300 rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/5 via-transparent to-transparent backdrop-blur-lg shadow-lg hover:shadow-primary/30 hover:border-primary/60",
         "before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-radial from-primary/10 via-transparent to-transparent before:opacity-0 before:transition-opacity before:duration-300 group-hover:before:opacity-100",
         className
       )}
@@ -293,7 +293,7 @@ export function HomePageContent() {
             <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tighter animate-text-gradient">
               Audit each agent call for just ₹2.
             </h1>
-            <p className="text-lg md:text-xl text-gray-300/80 max-w-2xl">
+            <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300/80 max-w-2xl">
               Save up to 92% vs manual auditing. Fast, consistent, and scalable
               call audits powered by AssureQAI.
             </p>
@@ -310,8 +310,7 @@ export function HomePageContent() {
               <Link href="/contact" passHref>
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="text-lg h-12 px-8 w-full sm:w-auto transition-all hover:scale-105 bg-white/5 hover:bg-white/10 text-white border-white/20"
+                  className="text-lg h-12 px-8 w-full sm:w-auto transition-all hover:scale-105 bg-gradient-to-r from-primary via-primary/80 to-purple-600 hover:from-primary hover:to-primary text-white border-primary shadow-lg hover:shadow-primary/50 font-semibold"
                 >
                   Book a demo
                   <ChevronRight className="ml-2 h-5 w-5" />
@@ -344,7 +343,7 @@ export function HomePageContent() {
         style={{ animationDelay: "0.6s" }}
       >
         <div className="max-w-7xl mx-auto text-center z-10 relative">
-          <p className="text-center text-sm font-semibold text-gray-400/80 tracking-wider uppercase mb-8">
+          <p className="text-center text-sm font-semibold text-gray-700 dark:text-gray-400/80 tracking-wider uppercase mb-8">
             Trusted by leading companies
           </p>
           <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_20%,white_80%,transparent)]">
@@ -357,7 +356,7 @@ export function HomePageContent() {
                   <div className="h-12 w-12 bg-gradient-to-br from-primary/40 to-primary/20 rounded-lg flex items-center justify-center border border-primary/30 hover:border-primary/60 transition-colors">
                     <span className="text-2xl font-bold text-primary">🔷</span>
                   </div>
-                  <p className="text-xs font-semibold text-gray-300/60 uppercase tracking-wide">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300/60 uppercase tracking-wide">
                     Logo
                   </p>
                 </div>
@@ -376,7 +375,7 @@ export function HomePageContent() {
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight animate-text-gradient">
             Manual QA is slow, inconsistent, and doesn&apos;t scale.
           </h2>
-          <p className="text-lg text-gray-300/80 mt-4">
+          <p className="text-lg text-gray-700 dark:text-gray-300/80 mt-4">
             Traditional auditing costs around ₹25 per interaction, relies on
             tiny sample sizes, and delivers insights days later. This leaves you
             blind to widespread issues and unable to coach agents effectively.
@@ -389,7 +388,7 @@ export function HomePageContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <p className="text-gray-300/70">
+                <p className="text-gray-700 dark:text-gray-300/70">
                   Expensive manual labor for every single audit.
                 </p>
               </CardContent>
@@ -401,7 +400,7 @@ export function HomePageContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <p className="text-gray-300/70">
+                <p className="text-gray-700 dark:text-gray-300/70">
                   Takes days to get feedback, making real-time coaching
                   impossible.
                 </p>
@@ -414,7 +413,7 @@ export function HomePageContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <p className="text-gray-300/70">
+                <p className="text-gray-700 dark:text-gray-300/70">
                   Subjective scoring varies between auditors and over time.
                 </p>
               </CardContent>
@@ -426,7 +425,7 @@ export function HomePageContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <p className="text-gray-300/70">
+                <p className="text-gray-700 dark:text-gray-300/70">
                   Impossible to audit 100% of calls without a massive team.
                 </p>
               </CardContent>
@@ -445,13 +444,13 @@ export function HomePageContent() {
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight animate-text-gradient">
               The Solution: AI-Assisted Audits at Scale
             </h2>
-            <p className="text-lg text-gray-300/80 mt-4">
+            <p className="text-lg text-gray-700 dark:text-gray-300/80 mt-4">
               AssureQAI combines speech analysis and powerful AI to
               automatically evaluate 100% of your calls against your QA
               parameters. It reduces cost and time dramatically while boosting
               consistency and providing instant insights.
             </p>
-            <p className="text-lg text-gray-300/80 mt-4">
+            <p className="text-lg text-gray-700 dark:text-gray-300/80 mt-4">
               This frees your human QA team to focus on high-value tasks like
               coaching and handling complex edge cases, not tedious manual
               scoring.
@@ -459,7 +458,7 @@ export function HomePageContent() {
           </div>
           <GlassCard className="transform transition-transform hover:scale-105">
             <CardHeader>
-              <CardTitle className="text-white">
+              <CardTitle className="text-gray-900 dark:text-white">
                 The AssureQAI Difference
               </CardTitle>
             </CardHeader>
@@ -467,7 +466,7 @@ export function HomePageContent() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/10">
-                    <TableHead className="text-gray-300">Metric</TableHead>
+                    <TableHead className="text-gray-700 dark:text-gray-200 font-semibold">Metric</TableHead>
                     <TableHead className="text-primary font-bold">
                       AssureQAI
                     </TableHead>
@@ -475,34 +474,34 @@ export function HomePageContent() {
                 </TableHeader>
                 <TableBody>
                   <TableRow className="border-white/10">
-                    <TableCell className="font-medium text-gray-200">
+                    <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       Cost per audit
                     </TableCell>
-                    <TableCell className="font-semibold text-primary">
+                    <TableCell className="font-bold text-gray-900 dark:text-white text-lg">
                       ₹2
                     </TableCell>
                   </TableRow>
                   <TableRow className="border-white/10">
-                    <TableCell className="font-medium text-gray-200">
+                    <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       Consistency
                     </TableCell>
-                    <TableCell className="font-semibold text-primary">
+                    <TableCell className="font-bold text-gray-900 dark:text-white">
                       Consistent, repeatable
                     </TableCell>
                   </TableRow>
                   <TableRow className="border-white/10">
-                    <TableCell className="font-medium text-gray-200">
+                    <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       Time to insights
                     </TableCell>
-                    <TableCell className="font-semibold text-primary">
+                    <TableCell className="font-bold text-gray-900 dark:text-white">
                       Minutes
                     </TableCell>
                   </TableRow>
                   <TableRow className="border-white/10">
-                    <TableCell className="font-medium text-gray-200">
+                    <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       Scalability
                     </TableCell>
-                    <TableCell className="font-semibold text-primary">
+                    <TableCell className="font-bold text-gray-900 dark:text-white">
                       Cheap, elastic
                     </TableCell>
                   </TableRow>
@@ -519,10 +518,10 @@ export function HomePageContent() {
         style={{ animationDelay: "1.2s" }}
       >
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight animate-text-gradient">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
             Everything You Need for Modern QA
           </h2>
-          <p className="text-lg text-gray-300/80 mt-2 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-700 dark:text-gray-200 mt-2 max-w-2xl mx-auto">
             A complete toolkit for quality assurance and performance management.
           </p>
         </div>
@@ -537,10 +536,10 @@ export function HomePageContent() {
                   <Layers className="h-6 w-6 text-primary" />
                 </div>
                 <div className="mt-2">
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {useCases[0]?.title}
                   </h3>
-                  <p className="text-sm text-gray-300/70 mt-1">
+                  <p className="text-sm text-gray-700 dark:text-gray-300/70 mt-1">
                     {useCases[0]?.description}
                   </p>
                 </div>
@@ -552,10 +551,10 @@ export function HomePageContent() {
                   <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
                 <div className="mt-2">
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {useCases[1]?.title}
                   </h3>
-                  <p className="text-sm text-gray-300/70 mt-1">
+                  <p className="text-sm text-gray-700 dark:text-gray-300/70 mt-1">
                     {useCases[1]?.description}
                   </p>
                 </div>
@@ -573,10 +572,10 @@ export function HomePageContent() {
                     <IconComponent className="h-6 w-6 text-primary" />
                   </div>
                   <div className="mt-2">
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {feature.title}
                     </h3>
-                    <p className="text-sm text-gray-300/70 mt-1">
+                    <p className="text-sm text-gray-700 dark:text-gray-300/70 mt-1">
                       {feature.description}
                     </p>
                   </div>
@@ -591,10 +590,10 @@ export function HomePageContent() {
                     <IconComponent className="h-6 w-6 text-primary" />
                   </div>
                   <div className="mt-2">
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {feature.title}
                     </h3>
-                    <p className="text-sm text-gray-300/70 mt-1">
+                    <p className="text-sm text-gray-700 dark:text-gray-300/70 mt-1">
                       {feature.description}
                     </p>
                   </div>
@@ -611,10 +610,10 @@ export function HomePageContent() {
                   <UsersRound className="h-6 w-6 text-primary" />
                 </div>
                 <div className="mt-2">
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {moreFeatures[2]?.title}
                   </h3>
-                  <p className="text-sm text-gray-300/70 mt-1">
+                  <p className="text-sm text-gray-700 dark:text-gray-300/70 mt-1">
                     {moreFeatures[2]?.description}
                   </p>
                 </div>
@@ -626,10 +625,10 @@ export function HomePageContent() {
                   <Briefcase className="h-6 w-6 text-primary" />
                 </div>
                 <div className="mt-2">
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {moreFeatures[3]?.title}
                   </h3>
-                  <p className="text-sm text-gray-300/70 mt-1">
+                  <p className="text-sm text-gray-700 dark:text-gray-300/70 mt-1">
                     {moreFeatures[3]?.description}
                   </p>
                 </div>
@@ -648,7 +647,7 @@ export function HomePageContent() {
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight animate-text-gradient">
             Get Started in 3 Simple Steps
           </h2>
-          <p className="text-lg text-gray-300/80 mt-2 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-700 dark:text-gray-300/80 mt-2 max-w-2xl mx-auto">
             Our workflow is designed to be powerful yet effortless.
           </p>
         </div>
@@ -657,10 +656,10 @@ export function HomePageContent() {
             <div className="relative p-4 bg-primary/10 rounded-full mb-4 border border-primary/20">
               <UploadCloud className="relative h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-white">
+            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
               1. Upload Calls
             </h3>
-            <p className="text-gray-300/70">
+            <p className="text-gray-700 dark:text-gray-300/70">
               Connect your call center software or bulk upload recordings for
               automated processing.
             </p>
@@ -669,10 +668,10 @@ export function HomePageContent() {
             <div className="relative p-4 bg-primary/10 rounded-full mb-4 border border-primary/20">
               <FileScan className="relative h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-white">
+            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
               2. AI Analyzes & Scores
             </h3>
-            <p className="text-gray-300/70">
+            <p className="text-gray-700 dark:text-gray-300/70">
               AssureQAI transcribes, scores, and surfaces key insights against
               your QA parameters.
             </p>
@@ -681,10 +680,10 @@ export function HomePageContent() {
             <div className="relative p-4 bg-primary/10 rounded-full mb-4 border border-primary/20">
               <PenSquare className="relative h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-white">
+            <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
               3. Review & Coach
             </h3>
-            <p className="text-gray-300/70">
+            <p className="text-gray-700 dark:text-gray-300/70">
               Use the dashboard and AI chatbot to review results and provide
               targeted feedback to agents.
             </p>
@@ -702,7 +701,7 @@ export function HomePageContent() {
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight animate-text-gradient">
               What Our Customers Are Saying
             </h2>
-            <p className="text-lg text-gray-300/80 mt-2">
+            <p className="text-lg text-gray-700 dark:text-gray-300/80 mt-2">
               Real testimonials from teams who transformed their QA process.
             </p>
           </div>
@@ -727,7 +726,7 @@ export function HomePageContent() {
                           />
                         ))}
                       </div>
-                      <p className="text-gray-300/80 italic mb-4 flex-grow">
+                      <p className="text-gray-800 dark:text-gray-100 italic mb-4 flex-grow">
                         &quot;{testimonial.quote}&quot;
                       </p>
                       <div className="flex items-center gap-3 pt-4 border-t border-white/10">
@@ -742,10 +741,10 @@ export function HomePageContent() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-semibold text-white">
+                          <p className="font-semibold text-gray-900 dark:text-white text-sm">
                             {testimonial.name}
                           </p>
-                          <p className="text-sm text-gray-400">
+                          <p className="text-xs text-gray-600 dark:text-gray-300">
                             {testimonial.role}
                           </p>
                         </div>
@@ -774,12 +773,12 @@ export function HomePageContent() {
             <AccordionItem
               value={`item-${index}`}
               key={index}
-              className="border-b-white/10"
+              className="border-b border-primary/20"
             >
-              <AccordionTrigger className="text-lg font-medium text-left text-white hover:text-primary transition-colors hover:no-underline">
+              <AccordionTrigger className="text-lg font-medium text-left text-gray-900 dark:text-white hover:text-primary transition-colors hover:no-underline py-4">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-gray-300/80 text-base">
+              <AccordionContent className="text-gray-800 dark:text-gray-100 text-base leading-relaxed py-4">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>
@@ -795,11 +794,11 @@ export function HomePageContent() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 blur-2xl opacity-30"></div>
-            <div className="relative p-8 border border-primary/20 rounded-2xl bg-black/30">
+            <div className="relative p-8 border-2 border-primary/60 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-black/50 dark:to-black/30">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight animate-text-gradient">
                 From ₹25 → ₹2 per audit.
               </h2>
-              <p className="text-lg text-gray-300/70 mt-2 mb-8">
+              <p className="text-lg text-gray-700 dark:text-gray-200 mt-2 mb-8">
                 Audit 10× more calls for 1/10th the cost. See your ROI in 24
                 hours.
               </p>
@@ -842,19 +841,19 @@ export function HomePageContent() {
                   </text>
                 </g>
               </svg>
-              <p className="text-gray-400/80 text-base">
+              <p className="text-gray-700 dark:text-gray-400/80 text-base">
                 Product by Joaji Innovation
               </p>
               <div className="flex space-x-6">
-                <a href="#" className="text-gray-400/80 hover:text-primary">
+                <a href="#" className="text-gray-700 dark:text-gray-400/80 hover:text-primary">
                   <span className="sr-only">Facebook</span>
                   <Facebook className="h-6 w-6" />
                 </a>
-                <a href="#" className="text-gray-400/80 hover:text-primary">
+                <a href="#" className="text-gray-700 dark:text-gray-400/80 hover:text-primary">
                   <span className="sr-only">LinkedIn</span>
                   <Linkedin className="h-6 w-6" />
                 </a>
-                <a href="#" className="text-gray-400/80 hover:text-primary">
+                <a href="#" className="text-gray-700 dark:text-gray-400/80 hover:text-primary">
                   <span className="sr-only">Twitter</span>
                   <Twitter className="h-6 w-6" />
                 </a>
@@ -863,14 +862,14 @@ export function HomePageContent() {
             <div className="mt-12 grid grid-cols-2 gap-8 xl:mt-0 xl:col-span-2">
               <div className="md:grid md:grid-cols-2 md:gap-8">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-200 tracking-wider uppercase">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 tracking-wider uppercase">
                     Product
                   </h3>
                   <ul className="mt-4 space-y-4">
                     <li>
                       <Link
                         href="/dashboard/billing"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Pricing
                       </Link>
@@ -878,7 +877,7 @@ export function HomePageContent() {
                     <li>
                       <a
                         href="#"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Features
                       </a>
@@ -886,7 +885,7 @@ export function HomePageContent() {
                     <li>
                       <a
                         href="#"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Integrations
                       </a>
@@ -894,14 +893,14 @@ export function HomePageContent() {
                   </ul>
                 </div>
                 <div className="mt-12 md:mt-0">
-                  <h3 className="text-sm font-semibold text-gray-200 tracking-wider uppercase">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 tracking-wider uppercase">
                     Company
                   </h3>
                   <ul className="mt-4 space-y-4">
                     <li>
                       <Link
                         href="/about"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         About
                       </Link>
@@ -909,7 +908,7 @@ export function HomePageContent() {
                     <li>
                       <a
                         href="#"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Careers
                       </a>
@@ -917,7 +916,7 @@ export function HomePageContent() {
                     <li>
                       <Link
                         href="/contact"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Contact Us
                       </Link>
@@ -927,14 +926,14 @@ export function HomePageContent() {
               </div>
               <div className="md:grid md:grid-cols-2 md:gap-8">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-200 tracking-wider uppercase">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 tracking-wider uppercase">
                     Resources
                   </h3>
                   <ul className="mt-4 space-y-4">
                     <li>
                       <a
                         href="#"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Blog
                       </a>
@@ -942,7 +941,7 @@ export function HomePageContent() {
                     <li>
                       <a
                         href="#"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Documentation
                       </a>
@@ -950,7 +949,7 @@ export function HomePageContent() {
                     <li>
                       <a
                         href="#"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Case Studies
                       </a>
@@ -958,14 +957,14 @@ export function HomePageContent() {
                   </ul>
                 </div>
                 <div className="mt-12 md:mt-0">
-                  <h3 className="text-sm font-semibold text-gray-200 tracking-wider uppercase">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 tracking-wider uppercase">
                     Legal
                   </h3>
                   <ul className="mt-4 space-y-4">
                     <li>
                       <a
                         href="#"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Privacy
                       </a>
@@ -973,7 +972,7 @@ export function HomePageContent() {
                     <li>
                       <a
                         href="#"
-                        className="text-base text-gray-400/80 hover:text-primary"
+                        className="text-base text-gray-700 dark:text-gray-400/80 hover:text-primary"
                       >
                         Terms
                       </a>

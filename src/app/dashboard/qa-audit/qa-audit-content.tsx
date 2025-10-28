@@ -48,10 +48,7 @@ import {
   AudioUploadDropzone,
   type AudioUploadDropzoneRef,
 } from "@/components/dashboard/AudioUploadDropzone";
-import {
-  convertAudioToWavDataUri,
-  needsAudioConversion,
-} from "@/lib/audioConverter";
+import { needsAudioConversion } from "@/lib/audioConverter";
 import { AuditChatbot } from "@/components/dashboard/AuditChatbot";
 
 import { getAuthHeaders } from "@/lib/authUtils";
@@ -378,27 +375,49 @@ export default function QaAuditContent() {
 
     setSelectedAudioFile(file);
 
-    // Convert audio to WAV if needed
+    // Send file to backend for conversion
     if (needsAudioConversion(file)) {
       setAudioKey("converting");
-      convertAudioToWavDataUri(file)
-        .then((wavDataUri) => {
-          setOriginalAudioDataUri(wavDataUri);
-          setPreviewAudioSrc(
-            URL.createObjectURL(new Blob([wavDataUri], { type: "audio/wav" }))
-          );
-          setAudioKey("converted");
-          toast({
-            title: "Audio Converted",
-            description: "Audio file has been converted to WAV format.",
-          });
+      
+      const formData = new FormData();
+      formData.append("file", file);
+
+      fetch("/api/audio/convert", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(
+              error.error || `Conversion failed with status ${response.status}`
+            );
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            setOriginalAudioDataUri(data.data.audioDataUri);
+            setPreviewAudioSrc(
+              URL.createObjectURL(
+                new Blob([data.data.audioDataUri], { type: "audio/wav" })
+              )
+            );
+            setAudioKey("converted");
+            toast({
+              title: "Audio Converted",
+              description: `Successfully converted to WAV (${(data.data.convertedSize / (1024 * 1024)).toFixed(2)}MB)`,
+            });
+          } else {
+            throw new Error(data.error || "Conversion failed");
+          }
         })
         .catch((error) => {
           console.error("Audio conversion failed:", error);
           toast({
             title: "Conversion Failed",
-            description:
-              "Failed to convert audio to WAV. Please try another file.",
+            description: error.message || "Failed to convert audio to WAV on server.",
             variant: "destructive",
           });
           setSelectedAudioFile(null);

@@ -133,48 +133,7 @@ export default function PricingPage() {
         </div>
 
         {/* Comparison Section */}
-        <div className="mt-20">
-          <h2 className="text-3xl font-bold text-foreground mb-4 text-center">
-            AssureQAI vs Manual Auditing
-          </h2>
-          <p className="text-center text-muted-foreground mb-12">
-            See how our AI-powered solution compares to traditional manual
-            auditing
-          </p>
-
-          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-3 gap-4 p-6 border-b border-white/10">
-              <div className="text-sm font-semibold text-muted-foreground">
-                Metric
-              </div>
-              <div className="text-sm font-semibold text-muted-foreground text-center">
-                Manual Audit ({pricing.currencySymbol}
-                {pricing.manualAuditPrice}/call)
-              </div>
-              <div className="text-sm font-semibold text-primary text-center">
-                AssureQAI ({pricing.currencySymbol}
-                {pricing.aiAuditPrice}/call)
-              </div>
-            </div>
-
-            {comparisonData.map((item, idx) => (
-              <div
-                key={idx}
-                className="grid grid-cols-3 gap-4 p-6 border-b border-white/10 hover:bg-white/5 transition"
-              >
-                <div className="text-sm font-medium text-muted-foreground">
-                  {item.metric}
-                </div>
-                <div className="text-sm text-muted-foreground text-center">
-                  {item.manual}
-                </div>
-                <div className="text-sm text-green-400 text-center font-semibold">
-                  {item.assureqai}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* REMOVED - Comparison section removed per user request */}
 
         {/* FAQ */}
         <div className="mt-20">
