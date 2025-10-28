@@ -43,7 +43,9 @@ export const maxDuration = 300; // 5 minutes
  */
 export async function POST(request: NextRequest) {
   try {
-    const contentType = (request.headers.get("content-type") || "").toLowerCase();
+    const contentType = (
+      request.headers.get("content-type") || ""
+    ).toLowerCase();
 
     let buffer: Buffer;
     let originalType = "application/octet-stream";
@@ -70,31 +72,47 @@ export async function POST(request: NextRequest) {
       buffer = Buffer.from(arrayBuffer);
     } else if (contentType.includes("application/json")) {
       // Case 2: JSON body containing base64 or data URI
-      const json = await request.json();
-      const data = json?.audioDataUri || json?.audioData || json?.audioBase64;
-
-      if (!data || typeof data !== "string") {
+      let json: any;
+      try {
+        json = await request.json();
+      } catch (parseErr) {
         return NextResponse.json(
-          { success: false, error: "No audio data found in JSON body" },
+          { success: false, error: "Invalid JSON in request body", details: parseErr instanceof Error ? parseErr.message : "JSON parse error" },
           { status: 400 }
         );
       }
 
-      if (data.startsWith("data:")) {
-        const match = data.match(/^data:(.+);base64,(.+)$/);
-        if (!match) {
-          return NextResponse.json(
-            { success: false, error: "Invalid data URI provided" },
-            { status: 400 }
-          );
+      const data = json?.audioDataUri || json?.audioData || json?.audioBase64;
+
+      if (!data || typeof data !== "string") {
+        return NextResponse.json(
+          { success: false, error: "No audio data found in JSON body. Provide audioDataUri, audioData, or audioBase64 field." },
+          { status: 400 }
+        );
+      }
+
+      try {
+        if (data.startsWith("data:")) {
+          const match = data.match(/^data:(.+);base64,(.+)$/);
+          if (!match) {
+            return NextResponse.json(
+              { success: false, error: "Invalid data URI provided. Expected format: data:audio/mpeg;base64,..." },
+              { status: 400 }
+            );
+          }
+          originalType = match[1];
+          const base64 = match[2];
+          buffer = Buffer.from(base64, "base64");
+        } else {
+          // Assume plain base64
+          originalType = json?.originalType || originalType;
+          buffer = Buffer.from(data, "base64");
         }
-        originalType = match[1];
-        const base64 = match[2];
-        buffer = Buffer.from(base64, "base64");
-      } else {
-        // Assume plain base64
-        originalType = json?.originalType || originalType;
-        buffer = Buffer.from(data, "base64");
+      } catch (bufferErr) {
+        return NextResponse.json(
+          { success: false, error: "Failed to decode base64 data", details: bufferErr instanceof Error ? bufferErr.message : "Decode error" },
+          { status: 400 }
+        );
       }
     } else if (
       contentType.startsWith("audio/") ||
@@ -111,7 +129,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error:
-            'Unsupported Content-Type. Accepts multipart/form-data, application/json (base64/dataURI), audio/*, video/mp4, or application/octet-stream',
+            "Unsupported Content-Type. Accepts multipart/form-data, application/json (base64/dataURI), audio/*, video/mp4, or application/octet-stream",
         },
         { status: 415 }
       );
@@ -173,7 +191,8 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Failed to convert audio file",
-        details: error instanceof Error ? error.message : "Unknown error occurred",
+        details:
+          error instanceof Error ? error.message : "Unknown error occurred",
       },
       { status: 500 }
     );

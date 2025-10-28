@@ -344,69 +344,83 @@ export default function ManualAuditContent() {
     }
     setManualSelectedAudioFile(file);
 
-    // Send file to backend for conversion
-    if (needsAudioConversion(file)) {
-      setManualAudioKey("converting");
+    // TODO: Commented out conversion for now - send original file directly
+    // if (needsAudioConversion(file)) {
+    //   setManualAudioKey("converting");
+    //
+    //   const formData = new FormData();
+    //   formData.append("file", file);
+    //
+    //   fetch("/api/audio/convert", {
+    //     method: "POST",
+    //     headers: getAuthHeaders(),
+    //     body: formData,
+    //   })
+    //     .then(async (response) => {
+    //       if (!response.ok) {
+    //         const error = await response.json();
+    //         throw new Error(
+    //           error.error || `Conversion failed with status ${response.status}`
+    //         );
+    //       }
+    //       return response.json();
+    //     })
+    //     .then((data) => {
+    //       if (data.success) {
+    //         setManualAudioDataUri(data.data.audioDataUri);
+    //         setManualPreviewAudioSrc(
+    //           URL.createObjectURL(
+    //             new Blob([data.data.audioDataUri], { type: "audio/wav" })
+    //           )
+    //         );
+    //         setManualAudioKey("converted");
+    //         toast({
+    //           title: "Audio Converted",
+    //           description: `Successfully converted to WAV (${(
+    //             data.data.convertedSize /
+    //             (1024 * 1024)
+    //           ).toFixed(2)}MB)`,
+    //         });
+    //       } else {
+    //         throw new Error(data.error || "Conversion failed");
+    //       }
+    //     })
+    //     .catch((error) => {
+    //       console.error("Audio conversion failed:", error);
+    //       toast({
+    //         title: "Conversion Failed",
+    //         description:
+    //           error.message || "Failed to convert audio to WAV on server.",
+    //         variant: "destructive",
+    //       });
+    //
+    //       setManualSelectedAudioFile(null);
+    //       setManualAudioKey("error");
+    //     });
+    // } else {
+    //   // Already WAV, just read as data URL
+    //   const reader = new FileReader();
+    //   reader.onload = (e) => setManualAudioDataUri(e.target?.result as string);
+    //   reader.readAsDataURL(file);
+    //
+    //   const objectUrl = URL.createObjectURL(file);
+    //   setManualPreviewAudioSrc(objectUrl);
+    //   setManualAudioKey(objectUrl);
+    // }
 
-      const formData = new FormData();
-      formData.append("file", file);
+    // Send original file directly without conversion
+    const reader = new FileReader();
+    reader.onload = (e) => setManualAudioDataUri(e.target?.result as string);
+    reader.readAsDataURL(file);
 
-      fetch("/api/audio/convert", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: formData,
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(
-              error.error || `Conversion failed with status ${response.status}`
-            );
-          }
-          return response.json();
-        })
-        .then((data) => {
-          if (data.success) {
-            setManualAudioDataUri(data.data.audioDataUri);
-            setManualPreviewAudioSrc(
-              URL.createObjectURL(
-                new Blob([data.data.audioDataUri], { type: "audio/wav" })
-              )
-            );
-            setManualAudioKey("converted");
-            toast({
-              title: "Audio Converted",
-              description: `Successfully converted to WAV (${(
-                data.data.convertedSize /
-                (1024 * 1024)
-              ).toFixed(2)}MB)`,
-            });
-          } else {
-            throw new Error(data.error || "Conversion failed");
-          }
-        })
-        .catch((error) => {
-          console.error("Audio conversion failed:", error);
-          toast({
-            title: "Conversion Failed",
-            description:
-              error.message || "Failed to convert audio to WAV on server.",
-            variant: "destructive",
-          });
+    const objectUrl = URL.createObjectURL(file);
+    setManualPreviewAudioSrc(objectUrl);
+    setManualAudioKey(objectUrl);
 
-          setManualSelectedAudioFile(null);
-          setManualAudioKey("error");
-        });
-    } else {
-      // Already WAV, just read as data URL
-      const reader = new FileReader();
-      reader.onload = (e) => setManualAudioDataUri(e.target?.result as string);
-      reader.readAsDataURL(file);
-
-      const objectUrl = URL.createObjectURL(file);
-      setManualPreviewAudioSrc(objectUrl);
-      setManualAudioKey(objectUrl);
-    }
+    toast({
+      title: "Audio File Selected",
+      description: `Selected ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`,
+    });
   };
 
   const handleManualResultChange = (
