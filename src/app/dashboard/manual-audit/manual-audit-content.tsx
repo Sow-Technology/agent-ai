@@ -419,7 +419,10 @@ export default function ManualAuditContent() {
 
     toast({
       title: "Audio File Selected",
-      description: `Selected ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`,
+      description: `Selected ${file.name} (${(
+        file.size /
+        (1024 * 1024)
+      ).toFixed(2)}MB)`,
     });
   };
 

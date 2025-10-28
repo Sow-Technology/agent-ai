@@ -77,7 +77,12 @@ export async function POST(request: NextRequest) {
         json = await request.json();
       } catch (parseErr) {
         return NextResponse.json(
-          { success: false, error: "Invalid JSON in request body", details: parseErr instanceof Error ? parseErr.message : "JSON parse error" },
+          {
+            success: false,
+            error: "Invalid JSON in request body",
+            details:
+              parseErr instanceof Error ? parseErr.message : "JSON parse error",
+          },
           { status: 400 }
         );
       }
@@ -86,7 +91,11 @@ export async function POST(request: NextRequest) {
 
       if (!data || typeof data !== "string") {
         return NextResponse.json(
-          { success: false, error: "No audio data found in JSON body. Provide audioDataUri, audioData, or audioBase64 field." },
+          {
+            success: false,
+            error:
+              "No audio data found in JSON body. Provide audioDataUri, audioData, or audioBase64 field.",
+          },
           { status: 400 }
         );
       }
@@ -96,7 +105,11 @@ export async function POST(request: NextRequest) {
           const match = data.match(/^data:(.+);base64,(.+)$/);
           if (!match) {
             return NextResponse.json(
-              { success: false, error: "Invalid data URI provided. Expected format: data:audio/mpeg;base64,..." },
+              {
+                success: false,
+                error:
+                  "Invalid data URI provided. Expected format: data:audio/mpeg;base64,...",
+              },
               { status: 400 }
             );
           }
@@ -110,7 +123,12 @@ export async function POST(request: NextRequest) {
         }
       } catch (bufferErr) {
         return NextResponse.json(
-          { success: false, error: "Failed to decode base64 data", details: bufferErr instanceof Error ? bufferErr.message : "Decode error" },
+          {
+            success: false,
+            error: "Failed to decode base64 data",
+            details:
+              bufferErr instanceof Error ? bufferErr.message : "Decode error",
+          },
           { status: 400 }
         );
       }

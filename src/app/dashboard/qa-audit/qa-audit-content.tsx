@@ -441,8 +441,7 @@ export default function QaAuditContent() {
 
     // Send original file directly without conversion
     const reader = new FileReader();
-    reader.onload = (e) =>
-      setOriginalAudioDataUri(e.target?.result as string);
+    reader.onload = (e) => setOriginalAudioDataUri(e.target?.result as string);
     reader.readAsDataURL(file);
 
     const objectUrl = URL.createObjectURL(file);
@@ -451,7 +450,10 @@ export default function QaAuditContent() {
 
     toast({
       title: "Audio File Selected",
-      description: `Selected ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`,
+      description: `Selected ${file.name} (${(
+        file.size /
+        (1024 * 1024)
+      ).toFixed(2)}MB)`,
     });
   };
 
