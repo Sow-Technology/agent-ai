@@ -207,7 +207,7 @@ function generateCSV(audits: SavedAuditItem[]) {
     "Parameter 4",
     "Parameter 5",
     "Parameter 6",
-    "Parameter 7"
+    "Parameter 7",
   ];
 
   const rows = [headers.join(",")];
@@ -226,8 +226,8 @@ function generateCSV(audits: SavedAuditItem[]) {
 
     // Determine fatal status and count
     const auditResults = audit.auditData?.auditResults || [];
-    const fatalCount = auditResults.filter((result: any) =>
-      result?.isFatal || result?.severity === 'fatal'
+    const fatalCount = auditResults.filter(
+      (result: any) => result?.isFatal || result?.severity === "fatal"
     ).length;
     let fatalStatus = "Non - Fatal";
     if (fatalCount > 0) {
@@ -238,7 +238,12 @@ function generateCSV(audits: SavedAuditItem[]) {
 
     // Format audit date as DD-MM-YYYY
     const auditDate = new Date(audit.auditDate);
-    const formattedDate = `${auditDate.getDate().toString().padStart(2, '0')}-${(auditDate.getMonth() + 1).toString().padStart(2, '0')}-${auditDate.getFullYear()}`;
+    const formattedDate = `${auditDate
+      .getDate()
+      .toString()
+      .padStart(2, "0")}-${(auditDate.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}-${auditDate.getFullYear()}`;
 
     // Calculate audit duration (if we have start/end times in auditData)
     let auditDuration = "";
@@ -256,21 +261,31 @@ function generateCSV(audits: SavedAuditItem[]) {
       const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
       const milliseconds = durationMs % 1000;
-      auditDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+      auditDuration = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${milliseconds
+        .toString()
+        .padStart(3, "0")}`;
 
       startTime = start.toISOString();
       endTime = end.toISOString();
     } else {
       // Fallback: estimate based on createdAt and updatedAt if available
       // This is a rough estimate assuming the audit was updated when completed
-      const createdAt = audit.auditData?.createdAt ? new Date(audit.auditData.createdAt) : auditDate;
-      const updatedAt = audit.auditData?.updatedAt ? new Date(audit.auditData.updatedAt) : auditDate;
+      const createdAt = audit.auditData?.createdAt
+        ? new Date(audit.auditData.createdAt)
+        : auditDate;
+      const updatedAt = audit.auditData?.updatedAt
+        ? new Date(audit.auditData.updatedAt)
+        : auditDate;
 
       if (updatedAt > createdAt) {
         const durationMs = updatedAt.getTime() - createdAt.getTime();
         const minutes = Math.floor(durationMs / (1000 * 60));
         const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
-        auditDuration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.000`;
+        auditDuration = `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}.000`;
 
         startTime = createdAt.toISOString();
         endTime = updatedAt.toISOString();
@@ -288,13 +303,17 @@ function generateCSV(audits: SavedAuditItem[]) {
       if (!isNaN(duration)) {
         const minutes = Math.floor(duration / 60);
         const seconds = Math.floor(duration % 60);
-        callDuration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        callDuration = `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`;
       }
     } else if (audit.auditData?.audioDataUri) {
       // Try to estimate from data URI size (rough approximation)
       // WAV files are ~44 bytes per second at 16kHz mono
       try {
-        const dataUriMatch = audit.auditData.audioDataUri.match(/^data:audio\/[^;]+;base64,(.+)$/);
+        const dataUriMatch = audit.auditData.audioDataUri.match(
+          /^data:audio\/[^;]+;base64,(.+)$/
+        );
         if (dataUriMatch) {
           const base64Data = dataUriMatch[1];
           const bytes = (base64Data.length * 3) / 4; // Base64 to bytes
@@ -302,7 +321,9 @@ function generateCSV(audits: SavedAuditItem[]) {
           if (estimatedSeconds > 0) {
             const minutes = Math.floor(estimatedSeconds / 60);
             const seconds = estimatedSeconds % 60;
-            callDuration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            callDuration = `${minutes.toString().padStart(2, "0")}:${seconds
+              .toString()
+              .padStart(2, "0")}`;
           }
         }
       } catch (e) {
@@ -311,9 +332,9 @@ function generateCSV(audits: SavedAuditItem[]) {
     }
 
     // Get parameter scores (assuming auditResults contains parameter data)
-    const parameterScores = auditResults.slice(0, 7).map((result: any) =>
-      result?.score || result?.percentage || ""
-    );
+    const parameterScores = auditResults
+      .slice(0, 7)
+      .map((result: any) => result?.score || result?.percentage || "");
 
     // Pad parameter scores to 7 columns
     while (parameterScores.length < 7) {
@@ -328,7 +349,7 @@ function generateCSV(audits: SavedAuditItem[]) {
       audit.id,
       callDuration,
       formattedDate,
-      audit.auditType === 'ai' ? 'AI' : 'Manual',
+      audit.auditType === "ai" ? "AI" : "Manual",
       passFail,
       auditDuration,
       startTime,
@@ -336,10 +357,10 @@ function generateCSV(audits: SavedAuditItem[]) {
       audit.overallScore.toString(),
       fatalStatus,
       fatalCount.toString(),
-      ...parameterScores
+      ...parameterScores,
     ];
 
-    rows.push(row.map(field => `"${field}"`).join(","));
+    rows.push(row.map((field) => `"${field}"`).join(","));
   });
 
   return rows.join("\n");
