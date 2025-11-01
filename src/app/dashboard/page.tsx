@@ -186,35 +186,162 @@ function convertAuditDocumentToSavedAuditItem(
 // CSV export helper
 function generateCSV(audits: SavedAuditItem[]) {
   const headers = [
-    "interactionId",
-    "agentName",
-    "campaignName",
-    "auditDate",
-    "overallScore",
-    "auditType",
-    "transcript",
-    "auditResults",
+    "Employee ID",
+    "Process/Campaign",
+    "Call Category",
+    "Associate Name",
+    "Audit ID",
+    "Call Duration",
+    "Audit Date",
+    "QA/Audited By",
+    "Pass/Fail",
+    "Audit Duration",
+    "Start Time",
+    "End Time",
+    "Overall Score",
+    "Fatal Status",
+    "Fatal Count",
+    "Parameter 1",
+    "Parameter 2",
+    "Parameter 3",
+    "Parameter 4",
+    "Parameter 5",
+    "Parameter 6",
+    "Parameter 7"
   ];
+
   const rows = [headers.join(",")];
-  audits.forEach((a) => {
+
+  audits.forEach((audit) => {
+    // Determine call category based on score
+    let callCategory = "Bad";
+    if (audit.overallScore >= 90) {
+      callCategory = "Good";
+    } else if (audit.overallScore >= 80) {
+      callCategory = "Average";
+    }
+
+    // Determine pass/fail
+    const passFail = audit.overallScore >= 90 ? "Pass" : "Fail";
+
+    // Determine fatal status and count
+    const auditResults = audit.auditData?.auditResults || [];
+    const fatalCount = auditResults.filter((result: any) =>
+      result?.isFatal || result?.severity === 'fatal'
+    ).length;
+    let fatalStatus = "Non - Fatal";
+    if (fatalCount > 0) {
+      fatalStatus = "Fatal";
+    } else if (audit.overallScore === 0) {
+      fatalStatus = "ZTP"; // Zero Tolerance Policy
+    }
+
+    // Format audit date as DD-MM-YYYY
+    const auditDate = new Date(audit.auditDate);
+    const formattedDate = `${auditDate.getDate().toString().padStart(2, '0')}-${(auditDate.getMonth() + 1).toString().padStart(2, '0')}-${auditDate.getFullYear()}`;
+
+    // Calculate audit duration (if we have start/end times in auditData)
+    let auditDuration = "";
+    let startTime = "";
+    let endTime = "";
+
+    // Try to get timing data from auditData (if available)
+    if (audit.auditData?.startTime && audit.auditData?.endTime) {
+      const start = new Date(audit.auditData.startTime);
+      const end = new Date(audit.auditData.endTime);
+      const durationMs = end.getTime() - start.getTime();
+
+      // Format as HH:MM:SS.sss
+      const hours = Math.floor(durationMs / (1000 * 60 * 60));
+      const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+      const milliseconds = durationMs % 1000;
+      auditDuration = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+
+      startTime = start.toISOString();
+      endTime = end.toISOString();
+    } else {
+      // Fallback: estimate based on createdAt and updatedAt if available
+      // This is a rough estimate assuming the audit was updated when completed
+      const createdAt = audit.auditData?.createdAt ? new Date(audit.auditData.createdAt) : auditDate;
+      const updatedAt = audit.auditData?.updatedAt ? new Date(audit.auditData.updatedAt) : auditDate;
+
+      if (updatedAt > createdAt) {
+        const durationMs = updatedAt.getTime() - createdAt.getTime();
+        const minutes = Math.floor(durationMs / (1000 * 60));
+        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+        auditDuration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.000`;
+
+        startTime = createdAt.toISOString();
+        endTime = updatedAt.toISOString();
+      }
+    }
+
+    // Estimate call duration (if not available, leave empty or use a default)
+    let callDuration = "";
+    if (audit.auditData?.callDuration) {
+      // If call duration is stored in audit data
+      callDuration = audit.auditData.callDuration;
+    } else if (audit.auditData?.audioDuration) {
+      // If audio duration is available
+      const duration = parseFloat(audit.auditData.audioDuration);
+      if (!isNaN(duration)) {
+        const minutes = Math.floor(duration / 60);
+        const seconds = Math.floor(duration % 60);
+        callDuration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    } else if (audit.auditData?.audioDataUri) {
+      // Try to estimate from data URI size (rough approximation)
+      // WAV files are ~44 bytes per second at 16kHz mono
+      try {
+        const dataUriMatch = audit.auditData.audioDataUri.match(/^data:audio\/[^;]+;base64,(.+)$/);
+        if (dataUriMatch) {
+          const base64Data = dataUriMatch[1];
+          const bytes = (base64Data.length * 3) / 4; // Base64 to bytes
+          const estimatedSeconds = Math.floor(bytes / 44000); // Rough WAV estimation
+          if (estimatedSeconds > 0) {
+            const minutes = Math.floor(estimatedSeconds / 60);
+            const seconds = estimatedSeconds % 60;
+            callDuration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          }
+        }
+      } catch (e) {
+        // Ignore estimation errors
+      }
+    }
+
+    // Get parameter scores (assuming auditResults contains parameter data)
+    const parameterScores = auditResults.slice(0, 7).map((result: any) =>
+      result?.score || result?.percentage || ""
+    );
+
+    // Pad parameter scores to 7 columns
+    while (parameterScores.length < 7) {
+      parameterScores.push("");
+    }
+
     const row = [
-      (a as any).callId || a.id,
-      a.agentName,
-      a.campaignName || "",
-      a.auditDate,
-      a.overallScore,
-      a.auditType,
-      `"${(a.auditData?.transcriptionInOriginalLanguage || "").replace(
-        /"/g,
-        '""'
-      )}"`,
-      `"${JSON.stringify(a.auditData?.auditResults || []).replace(
-        /"/g,
-        '""'
-      )}"`,
+      audit.agentUserId || "",
+      audit.campaignName || "",
+      callCategory,
+      audit.agentName || "",
+      audit.id,
+      callDuration,
+      formattedDate,
+      audit.auditType === 'ai' ? 'AI' : 'Manual',
+      passFail,
+      auditDuration,
+      startTime,
+      endTime,
+      audit.overallScore.toString(),
+      fatalStatus,
+      fatalCount.toString(),
+      ...parameterScores
     ];
-    rows.push(row.join(","));
+
+    rows.push(row.map(field => `"${field}"`).join(","));
   });
+
   return rows.join("\n");
 }
 
@@ -242,12 +369,14 @@ function handleDownload(
       availableQaParameterSets,
       currentUser
     );
+
+    // Generate CSV with reasoning included
     const csv = generateCSV(filtered);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `audits_${Date.now()}.csv`);
+    link.setAttribute("download", `Audit Template for QAI.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

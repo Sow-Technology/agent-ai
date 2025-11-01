@@ -1,0 +1,3 @@
+﻿Employee ID,Process/Campaign,Call Category,Associate Name,Audit ID,Call Duration,Audit Date,QA/Audited By,Pass/Fail,Audit Duration,Start Time,End Time,Overall Score,Fatal Status,Fatal Count,Parameter 1 ,Parameter 2,Parameter 3,Parameter 4,Parameter 5,Parameter 6,Parameter 7
+133,NPA Updated,Good,SHARMILA SINDHU,16401,00:02:46,01-10-2025,AI,Pass,13:00.9,2025-10-01 11:28:45.207671+05:30,2025-10-01 11:41:46.100824+05:30,96,Non - Fatal,0,,,,,,,
+180,NPA Updated,Average,JANARDHAN P,16404,00:02:20,01-10-2025,PREETHI  D C,Pass,07:19.6,2025-10-01 11:39:41.965143+05:30,2025-10-01 11:47:01.612987+05:30,94,Non - Fatal,0,,,,,,,

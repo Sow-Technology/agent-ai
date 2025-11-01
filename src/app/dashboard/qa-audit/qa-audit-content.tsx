@@ -298,6 +298,8 @@ export default function QaAuditContent() {
   const [selectedSopId, setSelectedSopId] =
     useState<string>("default_params_sop");
   const [isAuditing, setIsAuditing] = useState<boolean>(false);
+  const [auditStartTime, setAuditStartTime] = useState<Date | null>(null);
+  const [auditEndTime, setAuditEndTime] = useState<Date | null>(null);
   const [auditResult, setAuditResult] = useState<QaAuditOutput | null>(null);
   const [savedAudits, setSavedAudits] = useState<SavedAuditItem[]>([]);
   const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
@@ -473,6 +475,7 @@ export default function QaAuditContent() {
       return;
     }
     setIsAuditing(true);
+    setAuditStartTime(new Date());
     setAuditResult(null);
 
     try {
@@ -516,6 +519,7 @@ export default function QaAuditContent() {
       });
     } finally {
       setIsAuditing(false);
+      setAuditEndTime(new Date());
     }
   };
 
@@ -570,7 +574,11 @@ export default function QaAuditContent() {
       agentUserId: auditData.agentUserId || "N/A",
       campaignName: auditData.campaignName,
       overallScore: auditData.overallScore,
-      auditData: auditData,
+      auditData: {
+        ...auditData,
+        startTime: auditStartTime?.toISOString(),
+        endTime: auditEndTime?.toISOString(),
+      },
       auditType: "ai",
     };
 
@@ -663,6 +671,8 @@ export default function QaAuditContent() {
     setQaAuditParameters(DEFAULT_AUDIT_PARAMETERS);
     setAuditResult(null);
     setIsAuditing(false);
+    setAuditStartTime(null);
+    setAuditEndTime(null);
     toast({
       title: "Form Cleared",
       description: "The QAi Audit form has been reset.",

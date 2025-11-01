@@ -1,0 +1,17 @@
+﻿Employee ID,Agent User ID,
+Process/Campaign,Campaign Name ,
+Call Category,"Good, Average, Bad ","Above 90- Good Call
+Below 80 - 89.9 is Average
+Below 79.9 Is bad Call"
+Associate Name,Agent Name,
+Audit ID,Random 1 2 3 ,
+Call Duration,Can take from where we upload the recoding,
+Audit Date,Date,
+QA/Audited By,AI or Manual ,
+Pass/Fail,"Above 90 Pass, Below 89.9 is fail ",
+Audit Duration,Time taken to complete the aduit ,Time should start from when we click new audit till it get submited 
+Start Time,Audit Start Time ,
+End Time,Audit End Time,
+Overall Score,Overal QA score ,
+Fatal Status,Fatal or Non Fatal Or ZTP,
+Fatal Count,How Many Fatal ,

@@ -288,6 +288,8 @@ export default function ManualAuditContent() {
   const [manualAuditResults, setManualAuditResults] =
     useState<ManualAuditResult>({});
   const [manualOverallScore, setManualOverallScore] = useState<number>(0);
+  const [auditStartTime, setAuditStartTime] = useState<Date | null>(null);
+  const [auditEndTime, setAuditEndTime] = useState<Date | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -505,6 +507,7 @@ export default function ManualAuditContent() {
       return;
     }
     setIsProcessingAudio(true);
+    setAuditStartTime(new Date());
     setAudioAnalysisResult(null);
 
     try {
@@ -555,6 +558,7 @@ export default function ManualAuditContent() {
       });
     } finally {
       setIsProcessingAudio(false);
+      setAuditEndTime(new Date());
     }
   };
 
@@ -650,7 +654,11 @@ export default function ManualAuditContent() {
       agentUserId: manualAgentUserId,
       campaignName: manualCampaignName,
       overallScore: manualOverallScore,
-      auditData: manualAuditForSaving,
+      auditData: {
+        ...manualAuditForSaving,
+        startTime: auditStartTime?.toISOString(),
+        endTime: auditEndTime?.toISOString(),
+      },
       auditType: "manual",
     };
 
