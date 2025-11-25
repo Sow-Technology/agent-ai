@@ -32,7 +32,8 @@ const userSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters.").max(50, "Full name is too long."),
   email: z.string().email("Invalid email address."),
   username: z.string().min(3, "Username must be at least 3 characters.").max(30, "Username is too long."),
-  role: z.enum(['Administrator', 'Manager', 'QA Analyst', 'Agent'], { required_error: 'Role is required' }),
+  role: z.enum(['Administrator', 'Project Admin', 'Manager', 'QA Analyst', 'Auditor', 'Agent'], { required_error: 'Role is required' }),
+  projectId: z.string().optional(),
   password: z.string().optional(),
 });
 
@@ -51,6 +52,7 @@ export default function UserManagementContent() {
       email: '',
       username: '',
       role: 'Agent',
+      projectId: '',
       password: '',
     },
   });
@@ -82,7 +84,7 @@ export default function UserManagementContent() {
 
   const openFormForNew = () => {
     setEditingUser(null);
-    form.reset({ fullName: '', email: '', username: '', role: 'Agent', password: '' });
+    form.reset({ fullName: '', email: '', username: '', role: 'Agent', projectId: '', password: '' });
     setIsFormOpen(true);
   };
 
@@ -209,12 +211,26 @@ export default function UserManagementContent() {
                             <FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
                             <SelectContent>
                               <SelectItem value="Agent">Agent</SelectItem>
+                              <SelectItem value="Auditor">Auditor</SelectItem>
                               <SelectItem value="QA Analyst">QA Analyst</SelectItem>
                               <SelectItem value="Manager">Manager</SelectItem>
+                              <SelectItem value="Project Admin">Project Admin</SelectItem>
                               <SelectItem value="Administrator">Administrator</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
+                          </FormItem>
+                      )}/>
+                       <FormField control={form.control} name="projectId" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Project ID (Optional)</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    placeholder="Leave blank if not assigning to a project" 
+                                    {...field} 
+                                />
+                            </FormControl>
+                            <FormMessage />
                           </FormItem>
                       )}/>
                        <FormField control={form.control} name="password" render={({ field }) => (
