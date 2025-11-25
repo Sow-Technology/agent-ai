@@ -139,7 +139,14 @@ export default function UserManagementContent() {
 
   const openFormForEdit = (user: User) => {
     setEditingUser(user);
-    form.reset({ ...user, password: "" }); // Don't show password on edit
+    form.reset({
+      fullName: user.fullName || "",
+      email: user.email || "",
+      username: user.username || "",
+      role: user.role,
+      projectId: user.projectId || "",
+      password: "",
+    }); // Don't show password on edit
     setIsFormOpen(true);
   };
 
