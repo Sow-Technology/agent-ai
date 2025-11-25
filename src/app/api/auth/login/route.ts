@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { error: 'Username and password are required' },
+        { error: 'Username/Email and password are required' },
         { status: 400 }
       );
     }

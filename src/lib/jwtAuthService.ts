@@ -47,11 +47,14 @@ export function verifyToken(token: string): JWTPayload | null {
 }
 
 // Authenticate user and return JWT token
-export async function authenticateUser(username: string, password: string) {
+export async function authenticateUser(usernameOrEmail: string, password: string) {
   try {
     await connectDB();
 
-    const user = await User.findOne({ username });
+    // Search by username or email
+    const user = await User.findOne({
+      $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
+    });
     if (!user) {
       return { success: false, message: "Invalid credentials" };
     }

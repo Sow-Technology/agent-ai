@@ -28,7 +28,7 @@ export function LoginForm() {
     setIsLoading(true);
 
     if (!username || !password) {
-      setError('Please enter both username and password.');
+      setError('Please enter your username/email and password.');
       setIsLoading(false);
       return;
     }
@@ -88,7 +88,7 @@ export function LoginForm() {
           <Input
             id="username"
             type="text"
-            placeholder="Enter your username"
+            placeholder="Enter your email or username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
