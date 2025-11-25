@@ -826,6 +826,48 @@ function DashboardPageContent() {
           currentUser={currentUser}
           openAuditDetailsModal={openAuditDetailsModal}
         />
+      ) : currentUser?.role === "Auditor" ? (
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => router.push(`/dashboard?tab=${value}`)}
+          className="space-y-4"
+        >
+          <TabsList>
+            <TabsTrigger value="overview">
+              <BarChart2 className="mr-2 h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="manual-dashboard">
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Manual Audit
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <DashboardTabContent
+              key="auditor-overview"
+              auditType="all"
+              savedAudits={savedAudits}
+              dateRange={dateRange}
+              selectedCampaignIdForFilter={selectedCampaignIdForFilter}
+              availableQaParameterSets={availableQaParameterSets}
+              currentUser={currentUser}
+              openAuditDetailsModal={openAuditDetailsModal}
+            />
+          </TabsContent>
+          <TabsContent value="manual-dashboard" className="space-y-4">
+            <DashboardTabContent
+              key="auditor-manual"
+              auditType="manual"
+              savedAudits={savedAudits}
+              dateRange={dateRange}
+              selectedCampaignIdForFilter={selectedCampaignIdForFilter}
+              availableQaParameterSets={availableQaParameterSets}
+              currentUser={currentUser}
+              openAuditDetailsModal={openAuditDetailsModal}
+            />
+          </TabsContent>
+        </Tabs>
       ) : (
         <Tabs
           value={activeTab}
@@ -988,7 +1030,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   const filteredAudits = useMemo(() => {
     let filtered = savedAudits;
 
-    if (currentUser?.role === "Agent") {
+    if (currentUser?.role === "Agent" || currentUser?.role === "Auditor") {
       filtered = filtered.filter(
         (audit) => audit.agentUserId === currentUser.username
       );

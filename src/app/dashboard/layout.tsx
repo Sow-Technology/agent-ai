@@ -95,21 +95,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       icon: ClipboardList,
       type: "collapsible",
       tabName: "audits_group",
-      roles: ["Administrator", "Manager", "QA Analyst"],
+      roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
       subItems: [
         {
           href: "/dashboard/qa-audit",
           label: "QAi Audit Form",
           tabName: "qa-audit",
           icon: Layers,
-          roles: ["Administrator", "Manager", "QA Analyst"],
+          roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
         },
         {
           href: "/dashboard/manual-audit",
           label: "Manual Audit Form",
           tabName: "manual-audit",
           icon: Edit,
-          roles: ["Administrator", "Manager", "QA Analyst"],
+          roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
         },
         // Bulk QA Audit intentionally hidden from sidebar
       ],
