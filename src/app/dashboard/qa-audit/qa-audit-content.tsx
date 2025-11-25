@@ -505,17 +505,17 @@ export default function QaAuditContent() {
 
       const result = responseData.data;
       setAuditResult(result);
-      
+
       // Auto-save the audit after AI processing
       const auditDataWithMeta = {
         ...result,
         agentUserId: qaAgentUserId,
         campaignName: qaCampaignName,
       };
-      
+
       // Call handleSaveAudit to persist the audit
       await handleSaveAuditInternal(auditDataWithMeta);
-      
+
       toast({
         title: "Audit Complete & Saved",
         description: `Successfully audited and saved call for agent ${result.identifiedAgentName}.`,
@@ -635,7 +635,7 @@ export default function QaAuditContent() {
     const updatedAudits = [...savedAudits, newSavedAudit];
     setSavedAudits(updatedAudits);
     resetSingleAuditForm();
-    
+
     return savedAudit;
   };
 
@@ -646,7 +646,9 @@ export default function QaAuditContent() {
       await handleSaveAuditInternal(auditData);
       toast({
         title: "Audit Saved",
-        description: `The AI audit for ${auditData.identifiedAgentName || "Unknown Agent"} has been saved.`,
+        description: `The AI audit for ${
+          auditData.identifiedAgentName || "Unknown Agent"
+        } has been saved.`,
       });
     } catch (error) {
       console.error("Error saving audit:", error);

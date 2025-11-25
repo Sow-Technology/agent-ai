@@ -189,7 +189,10 @@ export async function GET(request: NextRequest) {
     console.log("Current user ID:", currentUserId);
     console.log("Total audits before filter:", audits.length);
     if (audits.length > 0) {
-      console.log("Sample audit auditedBy values:", audits.slice(0, 5).map((a: any) => a.auditedBy));
+      console.log(
+        "Sample audit auditedBy values:",
+        audits.slice(0, 5).map((a: any) => a.auditedBy)
+      );
     }
 
     // Apply role-based filtering to the results
@@ -197,11 +200,14 @@ export async function GET(request: NextRequest) {
     if (currentUserRole === "Agent" || currentUserRole === "Auditor") {
       // Match by username OR user ID (to support old audits with IDs and new audits with usernames)
       filteredAudits = filteredAudits.filter(
-        (audit: any) => 
-          audit.auditedBy === currentUsername || 
+        (audit: any) =>
+          audit.auditedBy === currentUsername ||
           audit.auditedBy === currentUserId
       );
-      console.log("Filtered audits count for Auditor/Agent:", filteredAudits.length);
+      console.log(
+        "Filtered audits count for Auditor/Agent:",
+        filteredAudits.length
+      );
     } else if (currentUserRole === "Project Admin") {
       filteredAudits = filteredAudits.filter(
         (audit: any) => audit.projectId === currentUser?.projectId
@@ -236,11 +242,17 @@ export async function POST(request: NextRequest) {
     const token = authHeader?.replace("Bearer ", "");
     let currentUsername = "Unknown";
 
-    console.log("POST /api/audits - Auth header:", authHeader ? "Present" : "Missing");
+    console.log(
+      "POST /api/audits - Auth header:",
+      authHeader ? "Present" : "Missing"
+    );
 
     if (token) {
       const tokenResult = await validateJWTToken(token);
-      console.log("POST /api/audits - Token validation:", tokenResult.valid ? "Valid" : "Invalid");
+      console.log(
+        "POST /api/audits - Token validation:",
+        tokenResult.valid ? "Valid" : "Invalid"
+      );
       if (tokenResult.valid && tokenResult.user) {
         currentUsername = tokenResult.user.username;
         console.log("POST /api/audits - Current username:", currentUsername);
@@ -303,7 +315,10 @@ export async function POST(request: NextRequest) {
       auditType: validatedData.auditType || "manual",
     };
 
-    console.log("POST /api/audits - Creating audit with auditedBy:", currentUsername);
+    console.log(
+      "POST /api/audits - Creating audit with auditedBy:",
+      currentUsername
+    );
 
     const newAudit = await createAudit(auditData);
 

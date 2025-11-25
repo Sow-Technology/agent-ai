@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
     // Only administrators can use this endpoint
     if (tokenResult.user.role !== "Administrator") {
       return NextResponse.json(
-        { success: false, error: "Only administrators can fix audit ownership" },
+        {
+          success: false,
+          error: "Only administrators can fix audit ownership",
+        },
         { status: 403 }
       );
     }
@@ -98,7 +101,10 @@ export async function PATCH(request: NextRequest) {
     // Only administrators can use this endpoint
     if (tokenResult.user.role !== "Administrator") {
       return NextResponse.json(
-        { success: false, error: "Only administrators can fix audit ownership" },
+        {
+          success: false,
+          error: "Only administrators can fix audit ownership",
+        },
         { status: 403 }
       );
     }
@@ -167,7 +173,10 @@ export async function GET(request: NextRequest) {
     // Only administrators can use this endpoint
     if (tokenResult.user.role !== "Administrator") {
       return NextResponse.json(
-        { success: false, error: "Only administrators can view audit ownership summary" },
+        {
+          success: false,
+          error: "Only administrators can view audit ownership summary",
+        },
         { status: 403 }
       );
     }
