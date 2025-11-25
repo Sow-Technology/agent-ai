@@ -1032,7 +1032,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
     if (currentUser?.role === "Agent" || currentUser?.role === "Auditor") {
       filtered = filtered.filter(
-        (audit) => audit.agentUserId === currentUser.username
+        (audit) => audit.auditedBy === currentUser.username
       );
     }
 
