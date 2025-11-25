@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { authenticateUser } from '@/lib/jwtAuthService';
+import { NextRequest, NextResponse } from "next/server";
+import { authenticateUser } from "@/lib/jwtAuthService";
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { error: 'Username/Email and password are required' },
+        { error: "Username/Email and password are required" },
         { status: 400 }
       );
     }
@@ -21,15 +21,12 @@ export async function POST(request: NextRequest) {
         user: result.user,
       });
     } else {
-      return NextResponse.json(
-        { error: result.message },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: result.message }, { status: 401 });
     }
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

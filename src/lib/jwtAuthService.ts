@@ -47,7 +47,10 @@ export function verifyToken(token: string): JWTPayload | null {
 }
 
 // Authenticate user and return JWT token
-export async function authenticateUser(usernameOrEmail: string, password: string) {
+export async function authenticateUser(
+  usernameOrEmail: string,
+  password: string
+) {
   try {
     await connectDB();
 

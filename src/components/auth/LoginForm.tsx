@@ -1,44 +1,43 @@
+"use client";
 
-'use client';
-
-import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 // Removed direct import of server-side function
-import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { clientStoreToken } from '../../lib/clientAuthService';
+import { useToast } from "@/hooks/use-toast";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { clientStoreToken } from "../../lib/clientAuthService";
 
 export function LoginForm() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     if (!username || !password) {
-      setError('Please enter your username/email and password.');
+      setError("Please enter your username/email and password.");
       setIsLoading(false);
       return;
     }
 
     // Call API route for login
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
@@ -48,28 +47,28 @@ export function LoginForm() {
       if (response.ok && data.success) {
         clientStoreToken(data.token, data.user);
         toast({
-          title: 'Login Successful',
-          description: 'Welcome back!',
+          title: "Login Successful",
+          description: "Welcome back!",
         });
         // Add a small delay to ensure token is stored before redirect
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push("/dashboard");
         }, 100);
       } else {
-        setError(data.error || 'Invalid username or password.');
+        setError(data.error || "Invalid username or password.");
         toast({
-          title: 'Login Failed',
-          description: data.error || 'Invalid username or password.',
-          variant: 'destructive',
+          title: "Login Failed",
+          description: data.error || "Invalid username or password.",
+          variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError('An error occurred during login. Please try again.');
+      console.error("Login error:", error);
+      setError("An error occurred during login. Please try again.");
       toast({
-        title: 'Login Failed',
-        description: 'An error occurred during login. Please try again.',
-        variant: 'destructive',
+        title: "Login Failed",
+        description: "An error occurred during login. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -79,12 +78,21 @@ export function LoginForm() {
   return (
     <div className="w-full">
       <div className="mb-10 text-left">
-        <h1 className="text-4xl font-semibold text-foreground mb-3">Welcome Back!</h1>
-        <p className="text-base text-muted-foreground">Please enter your details to continue.</p>
+        <h1 className="text-4xl font-semibold text-foreground mb-3">
+          Welcome Back!
+        </h1>
+        <p className="text-base text-muted-foreground">
+          Please enter your details to continue.
+        </p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="username" className="text-sm font-medium text-foreground/80">Email or Username</Label>
+          <Label
+            htmlFor="username"
+            className="text-sm font-medium text-foreground/80"
+          >
+            Email or Username
+          </Label>
           <Input
             id="username"
             type="text"
@@ -96,11 +104,16 @@ export function LoginForm() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-medium text-foreground/80">Password</Label>
+          <Label
+            htmlFor="password"
+            className="text-sm font-medium text-foreground/80"
+          >
+            Password
+          </Label>
           <div className="relative">
             <Input
               id="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -122,13 +135,16 @@ export function LoginForm() {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="rememberMe" 
-              checked={rememberMe} 
+            <Checkbox
+              id="rememberMe"
+              checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked as boolean)}
               className="data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground border-muted-foreground/50"
             />
-            <Label htmlFor="rememberMe" className="text-sm font-medium text-muted-foreground cursor-pointer">
+            <Label
+              htmlFor="rememberMe"
+              className="text-sm font-medium text-muted-foreground cursor-pointer"
+            >
               Remember me
             </Label>
           </div>
@@ -148,9 +164,19 @@ export function LoginForm() {
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
-        
-        <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-base py-3 h-12 font-semibold" disabled={isLoading}>
-          {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...</> : 'Login'}
+
+        <Button
+          type="submit"
+          className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-base py-3 h-12 font-semibold"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
+            </>
+          ) : (
+            "Login"
+          )}
         </Button>
       </form>
     </div>
