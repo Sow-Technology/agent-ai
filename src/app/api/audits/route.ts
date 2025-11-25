@@ -7,6 +7,7 @@ import {
   deleteAudit,
   getAuditById,
 } from "@/lib/auditService";
+import { validateJWTToken } from "@/lib/jwtAuthService";
 
 // Validation schemas
 const subParameterResultSchema = z.object({
@@ -143,6 +144,22 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get("limit");
     const offset = searchParams.get("offset");
 
+    // Get current user from JWT token
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    let currentUser = null;
+    let currentUserRole = null;
+    let currentUsername = null;
+
+    if (token) {
+      const tokenResult = await validateJWTToken(token);
+      if (tokenResult.valid && tokenResult.user) {
+        currentUser = tokenResult.user;
+        currentUserRole = tokenResult.user.role;
+        currentUsername = tokenResult.user.username;
+      }
+    }
+
     // Build filter object
     const filters: any = {};
     if (auditType) filters.auditType = auditType;
@@ -162,9 +179,28 @@ export async function GET(request: NextRequest) {
     if (limit) options.limit = parseInt(limit);
     if (offset) options.skip = parseInt(offset);
 
+    // Filter by current user if they are an Agent or Auditor
+    if (currentUserRole === "Agent" || currentUserRole === "Auditor") {
+      filters.auditedBy = currentUsername;
+    } else if (currentUserRole === "Project Admin") {
+      filters.projectId = currentUser?.projectId;
+    }
+
     const audits = await getAllAudits();
 
-    return NextResponse.json({ success: true, data: audits });
+    // Apply role-based filtering to the results
+    let filteredAudits = audits;
+    if (currentUserRole === "Agent" || currentUserRole === "Auditor") {
+      filteredAudits = filteredAudits.filter(
+        (audit: any) => audit.auditedBy === currentUsername
+      );
+    } else if (currentUserRole === "Project Admin") {
+      filteredAudits = filteredAudits.filter(
+        (audit: any) => audit.projectId === currentUser?.projectId
+      );
+    }
+
+    return NextResponse.json({ success: true, data: filteredAudits });
   } catch (error) {
     console.error("Error fetching audits:", error);
     return NextResponse.json(
