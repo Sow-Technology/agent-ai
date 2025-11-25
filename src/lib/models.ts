@@ -7,7 +7,13 @@ export interface UserDocument {
   username: string;
   email?: string;
   fullName?: string;
-  role: 'Administrator' | 'Project Admin' | 'Manager' | 'QA Analyst' | 'Auditor' | 'Agent';
+  role:
+    | "Administrator"
+    | "Project Admin"
+    | "Manager"
+    | "QA Analyst"
+    | "Auditor"
+    | "Agent";
   projectId?: string; // Project ID for project-based access control
   isActive: boolean;
   createdAt: Date;
@@ -31,7 +37,7 @@ export interface AuditDocument {
   transcript?: string;
   audioUrl?: string;
   auditedBy: string;
-  auditType: 'manual' | 'ai';
+  auditType: "manual" | "ai";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,7 +47,7 @@ export interface AuditResultDocument {
   parameterName: string;
   score: number;
   maxScore: number;
-  type: 'Fatal' | 'Non-Fatal' | 'ZTP';
+  type: "Fatal" | "Non-Fatal" | "ZTP";
   comments?: string;
 }
 
@@ -53,7 +59,7 @@ export interface SOPDocument {
   content: string;
   category: string;
   version: string;
-  status: 'Draft' | 'Published' | 'Archived';
+  status: "Draft" | "Published" | "Archived";
   linkedParameterSetId?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -84,5 +90,5 @@ export interface SubParameterDocument {
   id: string;
   name: string;
   weight: number;
-  type: 'Fatal' | 'Non-Fatal' | 'ZTP';
+  type: "Fatal" | "Non-Fatal" | "ZTP";
 }

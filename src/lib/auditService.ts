@@ -1,6 +1,6 @@
-import CallAudit, { ICallAudit } from '../models/CallAudit';
-import { AuditDocument, AuditResultDocument } from './models';
-import mongoose from 'mongoose';
+import CallAudit, { ICallAudit } from "../models/CallAudit";
+import { AuditDocument, AuditResultDocument } from "./models";
+import mongoose from "mongoose";
 
 // Helper function to transform Mongoose document to AuditDocument
 function transformToAuditDocument(doc: any): AuditDocument {
@@ -44,7 +44,7 @@ export async function createAudit(auditData: {
   transcript?: string;
   audioUrl?: string;
   auditedBy: string;
-  auditType: 'manual' | 'ai';
+  auditType: "manual" | "ai";
 }): Promise<AuditDocument | null> {
   try {
     const newAudit = new CallAudit({
@@ -61,9 +61,9 @@ export async function createAudit(auditData: {
       transcript: auditData.transcript,
       audioUrl: auditData.audioUrl,
       auditedBy: auditData.auditedBy,
-      auditType: auditData.auditType
+      auditType: auditData.auditType,
     });
-    
+
     const savedAudit = await newAudit.save();
 
     return {
@@ -87,12 +87,14 @@ export async function createAudit(auditData: {
       updatedAt: savedAudit.updatedAt,
     };
   } catch (error) {
-    console.error('Error creating audit:', error);
+    console.error("Error creating audit:", error);
     return null;
   }
 }
 
-export async function getAuditById(auditId: string): Promise<AuditDocument | null> {
+export async function getAuditById(
+  auditId: string
+): Promise<AuditDocument | null> {
   try {
     const result = await CallAudit.findById(auditId).lean();
     if (result) {
@@ -100,7 +102,7 @@ export async function getAuditById(auditId: string): Promise<AuditDocument | nul
     }
     return null;
   } catch (error) {
-    console.error('Error getting audit by ID:', error);
+    console.error("Error getting audit by ID:", error);
     return null;
   }
 }
@@ -110,57 +112,77 @@ export async function getAllAudits(): Promise<AuditDocument[]> {
     const results = await CallAudit.find({}).sort({ createdAt: -1 }).lean();
     return results.map(transformToAuditDocument);
   } catch (error) {
-    console.error('Error getting all audits:', error);
+    console.error("Error getting all audits:", error);
     return [];
   }
 }
 
-export async function getAuditsByAgent(agentName: string): Promise<AuditDocument[]> {
+export async function getAuditsByAgent(
+  agentName: string
+): Promise<AuditDocument[]> {
   try {
-    const results = await CallAudit.find({ agentName }).sort({ createdAt: -1 }).lean();
+    const results = await CallAudit.find({ agentName })
+      .sort({ createdAt: -1 })
+      .lean();
     return results.map(transformToAuditDocument);
   } catch (error) {
-    console.error('Error getting audits by agent:', error);
+    console.error("Error getting audits by agent:", error);
     return [];
   }
 }
 
-export async function getAuditsByCampaign(campaignId: string): Promise<AuditDocument[]> {
+export async function getAuditsByCampaign(
+  campaignId: string
+): Promise<AuditDocument[]> {
   try {
-    const results = await CallAudit.find({ campaignId }).sort({ createdAt: -1 }).lean();
+    const results = await CallAudit.find({ campaignId })
+      .sort({ createdAt: -1 })
+      .lean();
     return results.map(transformToAuditDocument);
   } catch (error) {
-    console.error('Error getting audits by campaign:', error);
+    console.error("Error getting audits by campaign:", error);
     return [];
   }
 }
 
-export async function getAuditsByDateRange(startDate: Date, endDate: Date): Promise<AuditDocument[]> {
+export async function getAuditsByDateRange(
+  startDate: Date,
+  endDate: Date
+): Promise<AuditDocument[]> {
   try {
     const results = await CallAudit.find({
       callDate: {
         $gte: startDate,
-        $lte: endDate
-      }
-    }).sort({ createdAt: -1 }).lean();
+        $lte: endDate,
+      },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
     return results.map(transformToAuditDocument);
   } catch (error) {
-    console.error('Error getting audits by date range:', error);
+    console.error("Error getting audits by date range:", error);
     return [];
   }
 }
 
-export async function getAuditsByType(auditType: 'manual' | 'ai'): Promise<AuditDocument[]> {
+export async function getAuditsByType(
+  auditType: "manual" | "ai"
+): Promise<AuditDocument[]> {
   try {
-    const results = await CallAudit.find({ auditType }).sort({ createdAt: -1 }).lean();
+    const results = await CallAudit.find({ auditType })
+      .sort({ createdAt: -1 })
+      .lean();
     return results.map(transformToAuditDocument);
   } catch (error) {
-    console.error('Error getting audits by type:', error);
+    console.error("Error getting audits by type:", error);
     return [];
   }
 }
 
-export async function updateAudit(auditId: string, updateData: Partial<AuditDocument>): Promise<AuditDocument | null> {
+export async function updateAudit(
+  auditId: string,
+  updateData: Partial<AuditDocument>
+): Promise<AuditDocument | null> {
   try {
     const result = await CallAudit.findByIdAndUpdate(
       auditId,
@@ -172,7 +194,7 @@ export async function updateAudit(auditId: string, updateData: Partial<AuditDocu
     }
     return null;
   } catch (error) {
-    console.error('Error updating audit:', error);
+    console.error("Error updating audit:", error);
     return null;
   }
 }
@@ -182,27 +204,31 @@ export async function deleteAudit(auditId: string): Promise<boolean> {
     const result = await CallAudit.findByIdAndDelete(auditId);
     return result !== null;
   } catch (error) {
-    console.error('Error deleting audit:', error);
+    console.error("Error deleting audit:", error);
     return false;
   }
 }
 
-export async function searchAudits(searchTerm: string): Promise<AuditDocument[]> {
+export async function searchAudits(
+  searchTerm: string
+): Promise<AuditDocument[]> {
   try {
-    const searchRegex = new RegExp(searchTerm, 'i');
-    
+    const searchRegex = new RegExp(searchTerm, "i");
+
     const results = await CallAudit.find({
       $or: [
         { callId: { $regex: searchRegex } },
         { agentName: { $regex: searchRegex } },
         { customerName: { $regex: searchRegex } },
-        { campaignName: { $regex: searchRegex } }
-      ]
-    }).sort({ createdAt: -1 }).lean();
-    
+        { campaignName: { $regex: searchRegex } },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
     return results.map(transformToAuditDocument);
   } catch (error) {
-    console.error('Error searching audits:', error);
+    console.error("Error searching audits:", error);
     return [];
   }
 }
@@ -217,97 +243,107 @@ export async function getAuditStatistics(): Promise<{
 }> {
   try {
     const totalAudits = await CallAudit.countDocuments();
-    const manualAudits = await CallAudit.countDocuments({ auditType: 'manual' });
-    const aiAudits = await CallAudit.countDocuments({ auditType: 'ai' });
-    
+    const manualAudits = await CallAudit.countDocuments({
+      auditType: "manual",
+    });
+    const aiAudits = await CallAudit.countDocuments({ auditType: "ai" });
+
     // Calculate average score
     const avgResult = await CallAudit.aggregate([
       {
         $group: {
           _id: null,
-          averageScore: { $avg: '$overallScore' }
-        }
-      }
+          averageScore: { $avg: "$overallScore" },
+        },
+      },
     ]);
-    
-    const averageScore = avgResult.length > 0 ? Math.round(avgResult[0].averageScore * 100) / 100 : 0;
-    
+
+    const averageScore =
+      avgResult.length > 0
+        ? Math.round(avgResult[0].averageScore * 100) / 100
+        : 0;
+
     // Score distribution
     const scoreDistribution = await CallAudit.aggregate([
       {
         $bucket: {
-          groupBy: '$overallScore',
+          groupBy: "$overallScore",
           boundaries: [0, 20, 40, 60, 80, 100],
-          default: '100+',
+          default: "100+",
           output: {
-            count: { $sum: 1 }
-          }
-        }
-      }
+            count: { $sum: 1 },
+          },
+        },
+      },
     ]);
-    
-    const formattedDistribution = scoreDistribution.map(bucket => ({
-      range: typeof bucket._id === 'number' ? `${bucket._id}-${bucket._id + 19}` : bucket._id,
-      count: bucket.count
+
+    const formattedDistribution = scoreDistribution.map((bucket) => ({
+      range:
+        typeof bucket._id === "number"
+          ? `${bucket._id}-${bucket._id + 19}`
+          : bucket._id,
+      count: bucket.count,
     }));
-    
+
     return {
       totalAudits,
       manualAudits,
       aiAudits,
       averageScore,
-      scoreDistribution: formattedDistribution
+      scoreDistribution: formattedDistribution,
     };
   } catch (error) {
-    console.error('Error getting audit statistics:', error);
+    console.error("Error getting audit statistics:", error);
     return {
       totalAudits: 0,
       manualAudits: 0,
       aiAudits: 0,
       averageScore: 0,
-      scoreDistribution: []
+      scoreDistribution: [],
     };
   }
 }
 
-export async function getAgentPerformanceStats(): Promise<{
-  agentName: string;
-  totalAudits: number;
-  averageScore: number;
-  passRate: number;
-}[]> {
+export async function getAgentPerformanceStats(): Promise<
+  {
+    agentName: string;
+    totalAudits: number;
+    averageScore: number;
+    passRate: number;
+  }[]
+> {
   try {
     const agentStats = await CallAudit.aggregate([
       {
         $group: {
-          _id: '$agentName',
+          _id: "$agentName",
           totalAudits: { $sum: 1 },
-          averageScore: { $avg: '$overallScore' },
+          averageScore: { $avg: "$overallScore" },
           passCount: {
             $sum: {
-              $cond: [{ $gte: ['$overallScore', 70] }, 1, 0]
-            }
-          }
-        }
+              $cond: [{ $gte: ["$overallScore", 70] }, 1, 0],
+            },
+          },
+        },
       },
       {
         $project: {
-          agentName: '$_id',
+          agentName: "$_id",
           totalAudits: 1,
-          averageScore: { $round: ['$averageScore', 2] },
+          averageScore: { $round: ["$averageScore", 2] },
           passRate: {
             $round: [
-              { $multiply: [{ $divide: ['$passCount', '$totalAudits'] }, 100] },
-              2
-            ]
-          }
-        }
+              { $multiply: [{ $divide: ["$passCount", "$totalAudits"] }, 100] },
+              2,
+            ],
+          },
+        },
       },
       {
-        $sort: { averageScore: -1 }
-      }
+        $sort: { averageScore: -1 },
+      },
     ]);
-    
+
     return agentStats as {
       agentName: string;
       totalAudits: number;
@@ -315,51 +351,58 @@ export async function getAgentPerformanceStats(): Promise<{
       passRate: number;
     }[];
   } catch (error) {
-    console.error('Error getting agent performance stats:', error);
+    console.error("Error getting agent performance stats:", error);
     return [];
   }
 }
 
-export async function getCampaignPerformanceStats(): Promise<{
-  campaignName: string;
-  campaignId: string;
-  totalAudits: number;
-  averageScore: number;
-  complianceRate: number;
-}[]> {
+export async function getCampaignPerformanceStats(): Promise<
+  {
+    campaignName: string;
+    campaignId: string;
+    totalAudits: number;
+    averageScore: number;
+    complianceRate: number;
+  }[]
+> {
   try {
     const campaignStats = await CallAudit.aggregate([
       {
         $group: {
-          _id: { campaignId: '$campaignId', campaignName: '$campaignName' },
+          _id: { campaignId: "$campaignId", campaignName: "$campaignName" },
           totalAudits: { $sum: 1 },
-          averageScore: { $avg: '$overallScore' },
+          averageScore: { $avg: "$overallScore" },
           compliantCount: {
             $sum: {
-              $cond: [{ $gte: ['$overallScore', 70] }, 1, 0]
-            }
-          }
-        }
+              $cond: [{ $gte: ["$overallScore", 70] }, 1, 0],
+            },
+          },
+        },
       },
       {
         $project: {
-          campaignId: '$_id.campaignId',
-          campaignName: '$_id.campaignName',
+          campaignId: "$_id.campaignId",
+          campaignName: "$_id.campaignName",
           totalAudits: 1,
-          averageScore: { $round: ['$averageScore', 2] },
+          averageScore: { $round: ["$averageScore", 2] },
           complianceRate: {
             $round: [
-              { $multiply: [{ $divide: ['$compliantCount', '$totalAudits'] }, 100] },
-              2
-            ]
-          }
-        }
+              {
+                $multiply: [
+                  { $divide: ["$compliantCount", "$totalAudits"] },
+                  100,
+                ],
+              },
+              2,
+            ],
+          },
+        },
       },
       {
-        $sort: { averageScore: -1 }
-      }
+        $sort: { averageScore: -1 },
+      },
     ]);
-    
+
     return campaignStats as {
       campaignName: string;
       campaignId: string;
@@ -368,7 +411,7 @@ export async function getCampaignPerformanceStats(): Promise<{
       complianceRate: number;
     }[];
   } catch (error) {
-    console.error('Error getting campaign performance stats:', error);
+    console.error("Error getting campaign performance stats:", error);
     return [];
   }
 }
