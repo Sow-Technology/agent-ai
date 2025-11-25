@@ -162,6 +162,7 @@ function convertAuditDocumentToSavedAuditItem(
     agentUserId: doc.agentName, // Using agentName as fallback for agentUserId
     campaignName: doc.campaignName,
     overallScore: doc.overallScore,
+    auditedBy: doc.auditedBy, // User ID of who performed the audit
     auditData: {
       agentUserId: doc.agentName,
       campaignName: doc.campaignName,
@@ -212,7 +213,7 @@ function generateCSV(audits: SavedAuditItem[]) {
 
   const rows = [headers.join(",")];
 
-  audits.forEach((audit) => {
+  audits.forEach((audit, index) => {
     // Determine call category based on score
     let callCategory = "Bad";
     if (audit.overallScore >= 90) {
@@ -342,7 +343,7 @@ function generateCSV(audits: SavedAuditItem[]) {
     }
 
     const row = [
-      audit.agentUserId || "",
+      (index + 1).toString(),
       audit.campaignName || "",
       callCategory,
       audit.agentName || "",
@@ -418,8 +419,10 @@ function applyAuditFilters(
 ) {
   let filtered = audits;
 
-  if (currentUser?.role === "Agent") {
-    filtered = filtered.filter((a) => a.agentUserId === currentUser.username);
+  // Only Administrators can see all audits
+  // All other roles (Manager, QA Analyst, Agent) can only see audits they performed
+  if (currentUser && currentUser.role !== "Administrator") {
+    filtered = filtered.filter((a) => a.auditedBy === currentUser.id);
   }
 
   if (auditType !== "all") {

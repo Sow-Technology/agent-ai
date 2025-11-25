@@ -15,4 +15,5 @@ export interface SavedAuditItem {
   overallScore: number;
   auditData: QaAuditOutput;
   auditType: 'ai' | 'manual';
+  auditedBy?: string; // User ID of who performed the audit
 }
