@@ -50,6 +50,7 @@ export async function createSession(userId: string): Promise<string> {
       email: user.email || "",
       fullName: user.fullName || "",
       role: user.role,
+      projectId: user.projectId,
       isActive: user.isActive ?? true,
     };
 

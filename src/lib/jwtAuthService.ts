@@ -11,17 +11,19 @@ export interface JWTPayload {
   username: string;
   email: string;
   role: string;
+  projectId?: string;
   iat?: number;
   exp?: number;
 }
 
 // Generate JWT token
-export function generateToken(user: { id: string; username: string; email: string; role: string }): string {
+export function generateToken(user: { id: string; username: string; email: string; role: string; projectId?: string }): string {
   const payload: JWTPayload = {
     userId: user.id,
     username: user.username,
     email: user.email,
     role: user.role,
+    projectId: user.projectId,
   };
 
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -58,6 +60,7 @@ export async function authenticateUser(username: string, password: string) {
       username: user.username,
       email: user.email,
       role: user.role,
+      projectId: user.projectId,
     };
 
     const token = generateToken(userObj);
@@ -96,6 +99,7 @@ export async function validateJWTToken(token: string) {
         username: user.username,
         email: user.email,
         role: user.role,
+        projectId: user.projectId,
       },
     };
   } catch (error) {
