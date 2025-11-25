@@ -11,6 +11,7 @@ export interface SavedAuditItem {
   agentName: string;
   agentUserId: string;
   campaignName?: string;
+  projectId?: string; // Project ID for project-based access control
   overallScore: number;
   auditData: QaAuditOutput;
   auditType: "ai" | "manual";

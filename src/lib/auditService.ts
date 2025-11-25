@@ -13,6 +13,7 @@ function transformToAuditDocument(doc: any): AuditDocument {
     callDate: doc.callDate,
     campaignId: doc.campaignId,
     campaignName: doc.campaignName,
+    projectId: doc.projectId,
     auditResults: doc.auditResults,
     overallScore: doc.overallScore,
     maxPossibleScore: doc.maxPossibleScore,
@@ -36,6 +37,7 @@ export async function createAudit(auditData: {
   callDate: Date;
   campaignId: string;
   campaignName: string;
+  projectId?: string;
   auditResults: AuditResultDocument[];
   overallScore: number;
   maxPossibleScore: number;
@@ -52,6 +54,7 @@ export async function createAudit(auditData: {
       callDate: auditData.callDate,
       campaignId: auditData.campaignId,
       campaignName: auditData.campaignName,
+      projectId: auditData.projectId,
       auditResults: auditData.auditResults,
       overallScore: auditData.overallScore,
       maxPossibleScore: auditData.maxPossibleScore,
@@ -72,6 +75,7 @@ export async function createAudit(auditData: {
       callDate: savedAudit.callDate,
       campaignId: savedAudit.campaignId,
       campaignName: savedAudit.campaignName,
+      projectId: savedAudit.projectId,
       auditResults: savedAudit.auditResults,
       overallScore: savedAudit.overallScore,
       maxPossibleScore: savedAudit.maxPossibleScore,

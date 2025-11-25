@@ -5,7 +5,8 @@ export interface User {
   username: string;
   email?: string;
   fullName?: string;
-  role: 'Administrator' | 'Manager' | 'QA Analyst' | 'Agent';
+  role: 'Administrator' | 'Project Admin' | 'Manager' | 'QA Analyst' | 'Auditor' | 'Agent';
+  projectId?: string; // Project ID for project-based access control
   isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;

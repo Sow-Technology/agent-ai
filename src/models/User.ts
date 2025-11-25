@@ -6,7 +6,8 @@ export interface IUser extends Document {
   password: string;
   email?: string;
   fullName?: string;
-  role: 'Administrator' | 'Manager' | 'QA Analyst' | 'Agent';
+  role: 'Administrator' | 'Project Admin' | 'Manager' | 'QA Analyst' | 'Auditor' | 'Agent';
+  projectId?: string; // Project ID for project-based access control
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -34,8 +35,12 @@ const UserSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: ['Administrator', 'Manager', 'QA Analyst', 'Agent'],
+    enum: ['Administrator', 'Project Admin', 'Manager', 'QA Analyst', 'Auditor', 'Agent'],
     default: 'Agent',
+  },
+  projectId: {
+    type: String,
+    trim: true,
   },
   isActive: {
     type: Boolean,

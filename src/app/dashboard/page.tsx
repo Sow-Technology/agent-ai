@@ -161,6 +161,7 @@ function convertAuditDocumentToSavedAuditItem(
     agentName: doc.agentName,
     agentUserId: doc.agentName, // Using agentName as fallback for agentUserId
     campaignName: doc.campaignName,
+    projectId: doc.projectId, // Project ID for project-based access control
     overallScore: doc.overallScore,
     auditedBy: doc.auditedBy, // User ID of who performed the audit
     auditData: {
@@ -419,10 +420,20 @@ function applyAuditFilters(
 ) {
   let filtered = audits;
 
-  // Only Administrators can see all audits
-  // All other roles (Manager, QA Analyst, Agent) can only see audits they performed
-  if (currentUser && currentUser.role !== "Administrator") {
-    filtered = filtered.filter((a) => a.auditedBy === currentUser.id);
+  // Role-based access control:
+  // - Administrator: Can see ALL audits across the system
+  // - Project Admin: Can see all audits within their project only
+  // - Manager, QA Analyst, Auditor, Agent: Can only see audits they performed
+  if (currentUser) {
+    if (currentUser.role === "Administrator") {
+      // Administrator can see all audits - no filtering
+    } else if (currentUser.role === "Project Admin") {
+      // Project Admin can see all audits within their project
+      filtered = filtered.filter((a) => a.projectId === currentUser.projectId);
+    } else {
+      // All other roles can only see audits they performed
+      filtered = filtered.filter((a) => a.auditedBy === currentUser.id);
+    }
   }
 
   if (auditType !== "all") {

@@ -8,6 +8,7 @@ export interface ICallAudit extends Document {
   callDate: Date;
   campaignId: string;
   campaignName: string;
+  projectId?: string; // Project ID for project-based access control
   auditResults: {
     parameterId: string;
     parameterName: string;
@@ -52,6 +53,10 @@ const CallAuditSchema = new Schema<ICallAudit>({
   campaignName: {
     type: String,
     required: true,
+    trim: true,
+  },
+  projectId: {
+    type: String,
     trim: true,
   },
   auditResults: [{
@@ -112,6 +117,7 @@ const CallAuditSchema = new Schema<ICallAudit>({
 CallAuditSchema.index({ agentName: 1, createdAt: -1 });
 CallAuditSchema.index({ campaignId: 1, createdAt: -1 });
 CallAuditSchema.index({ auditType: 1, createdAt: -1 });
+CallAuditSchema.index({ projectId: 1, createdAt: -1 });
 CallAuditSchema.index({ callDate: 1 });
 
 const CallAudit = mongoose.models.CallAudit || mongoose.model<ICallAudit>('CallAudit', CallAuditSchema);
