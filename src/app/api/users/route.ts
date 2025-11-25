@@ -8,7 +8,8 @@ const createUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username must be less than 50 characters'),
   email: z.string().email('Invalid email format'),
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100, 'Full name must be less than 100 characters'),
-  role: z.enum(['Administrator', 'Manager', 'QA Analyst', 'Agent'], { required_error: 'Role is required' }),
+  role: z.enum(['Administrator', 'Project Admin', 'Manager', 'QA Analyst', 'Auditor', 'Agent'], { required_error: 'Role is required' }),
+  projectId: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password must be less than 100 characters')
 });
 
@@ -16,7 +17,8 @@ const updateUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username must be less than 50 characters').optional(),
   email: z.string().email('Invalid email format').optional(),
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100, 'Full name must be less than 100 characters').optional(),
-  role: z.enum(['Administrator', 'Manager', 'QA Analyst', 'Agent'], { required_error: 'Role is required' }).optional(),
+  role: z.enum(['Administrator', 'Project Admin', 'Manager', 'QA Analyst', 'Auditor', 'Agent'], { required_error: 'Role is required' }).optional(),
+  projectId: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password must be less than 100 characters').optional(),
   isActive: z.boolean().optional()
 });

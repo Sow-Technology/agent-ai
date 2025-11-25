@@ -16,6 +16,7 @@ export async function getManagedUsers() {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
+      projectId: user.projectId,
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -31,7 +32,8 @@ export async function addUser(userData: {
   password: string;
   email?: string;
   fullName?: string;
-  role?: 'Administrator' | 'Manager' | 'QA Analyst' | 'Agent';
+  role?: 'Administrator' | 'Project Admin' | 'Manager' | 'QA Analyst' | 'Auditor' | 'Agent';
+  projectId?: string;
 }) {
   try {
     await connectDB();
@@ -51,6 +53,7 @@ export async function addUser(userData: {
       email: userData.email,
       fullName: userData.fullName,
       role: userData.role || 'Agent',
+      projectId: userData.projectId,
     });
 
     await user.save();
@@ -61,6 +64,7 @@ export async function addUser(userData: {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
+      projectId: user.projectId,
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -77,7 +81,8 @@ export async function updateUser(userData: {
   password?: string;
   email?: string;
   fullName?: string;
-  role?: 'Administrator' | 'Manager' | 'QA Analyst' | 'Agent';
+  role?: 'Administrator' | 'Project Admin' | 'Manager' | 'QA Analyst' | 'Auditor' | 'Agent';
+  projectId?: string;
   isActive?: boolean;
 }) {
   try {
@@ -89,6 +94,7 @@ export async function updateUser(userData: {
     if (userData.email) updateData.email = userData.email;
     if (userData.fullName) updateData.fullName = userData.fullName;
     if (userData.role) updateData.role = userData.role;
+    if (userData.projectId !== undefined) updateData.projectId = userData.projectId;
     if (userData.isActive !== undefined) updateData.isActive = userData.isActive;
     
     // Hash password if provided
@@ -112,6 +118,7 @@ export async function updateUser(userData: {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
+      projectId: user.projectId,
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
