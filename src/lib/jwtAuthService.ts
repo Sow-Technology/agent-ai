@@ -1,10 +1,10 @@
-import jwt from 'jsonwebtoken';
-import connectDB from './mongoose';
-import User from '../models/User';
-import bcrypt from 'bcryptjs';
+import jwt from "jsonwebtoken";
+import connectDB from "./mongoose";
+import User from "../models/User";
+import bcrypt from "bcryptjs";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret-key';
-const JWT_EXPIRES_IN = '7d'; // Token expires in 7 days
+const JWT_SECRET = process.env.JWT_SECRET || "your-fallback-secret-key";
+const JWT_EXPIRES_IN = "7d"; // Token expires in 7 days
 
 export interface JWTPayload {
   userId: string;
@@ -17,7 +17,13 @@ export interface JWTPayload {
 }
 
 // Generate JWT token
-export function generateToken(user: { id: string; username: string; email: string; role: string; projectId?: string }): string {
+export function generateToken(user: {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  projectId?: string;
+}): string {
   const payload: JWTPayload = {
     userId: user.id,
     username: user.username,
@@ -35,7 +41,7 @@ export function verifyToken(token: string): JWTPayload | null {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
     return decoded;
   } catch (error) {
-    console.error('JWT verification failed:', error);
+    console.error("JWT verification failed:", error);
     return null;
   }
 }
@@ -44,15 +50,15 @@ export function verifyToken(token: string): JWTPayload | null {
 export async function authenticateUser(username: string, password: string) {
   try {
     await connectDB();
-    
+
     const user = await User.findOne({ username });
     if (!user) {
-      return { success: false, message: 'Invalid credentials' };
+      return { success: false, message: "Invalid credentials" };
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      return { success: false, message: 'Invalid credentials' };
+      return { success: false, message: "Invalid credentials" };
     }
 
     const userObj = {
@@ -71,8 +77,8 @@ export async function authenticateUser(username: string, password: string) {
       user: userObj,
     };
   } catch (error) {
-    console.error('Authentication error:', error);
-    return { success: false, message: 'Authentication failed' };
+    console.error("Authentication error:", error);
+    return { success: false, message: "Authentication failed" };
   }
 }
 
@@ -81,15 +87,15 @@ export async function validateJWTToken(token: string) {
   try {
     const decoded = verifyToken(token);
     if (!decoded) {
-      return { valid: false, message: 'Invalid token' };
+      return { valid: false, message: "Invalid token" };
     }
 
     await connectDB();
-    
+
     // Verify user still exists in database
     const user = await User.findById(decoded.userId);
     if (!user) {
-      return { valid: false, message: 'User not found' };
+      return { valid: false, message: "User not found" };
     }
 
     return {
@@ -103,7 +109,7 @@ export async function validateJWTToken(token: string) {
       },
     };
   } catch (error) {
-    console.error('JWT validation error:', error);
-    return { valid: false, message: 'Token validation failed' };
+    console.error("JWT validation error:", error);
+    return { valid: false, message: "Token validation failed" };
   }
 }
