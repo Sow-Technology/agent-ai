@@ -663,20 +663,10 @@ export default function ManualAuditContent() {
     };
 
     try {
-      const userResponse = await fetch("/api/user/profile", {
-        headers: getAuthHeaders(),
-      });
-      let auditedBy = "unknown";
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        if (userData.success && userData.data) {
-          auditedBy = userData.data.id;
-        }
-      }
-
+      // We don't need to fetch user profile - the API will extract username from JWT token
       const createAuditData = convertSavedAuditItemToCreateAuditFormat(
         newSavedAudit,
-        auditedBy
+        "will-be-set-by-api" // API will override this with JWT username
       );
 
       console.log(

@@ -505,9 +505,20 @@ export default function QaAuditContent() {
 
       const result = responseData.data;
       setAuditResult(result);
+      
+      // Auto-save the audit after AI processing
+      const auditDataWithMeta = {
+        ...result,
+        agentUserId: qaAgentUserId,
+        campaignName: qaCampaignName,
+      };
+      
+      // Call handleSaveAudit to persist the audit
+      await handleSaveAuditInternal(auditDataWithMeta);
+      
       toast({
-        title: "Audit Complete",
-        description: `Successfully audited call for agent ${result.identifiedAgentName}.`,
+        title: "Audit Complete & Saved",
+        description: `Successfully audited and saved call for agent ${result.identifiedAgentName}.`,
       });
     } catch (error) {
       console.error("Error during QA audit:", error);
@@ -564,7 +575,8 @@ export default function QaAuditContent() {
     }
   }, [playbackAudioSrc]);
 
-  const handleSaveAudit = async (
+  // Internal save function that doesn't show toast (used for auto-save)
+  const handleSaveAuditInternal = async (
     auditData: QaAuditOutput & { agentUserId?: string; campaignName?: string }
   ) => {
     const newSavedAudit: SavedAuditItem = {
@@ -582,76 +594,76 @@ export default function QaAuditContent() {
       auditType: "ai",
     };
 
+    // We don't need to fetch user profile - the API will extract username from JWT
+    const createAuditData = convertSavedAuditItemToCreateAuditFormat(
+      newSavedAudit,
+      "will-be-set-by-api" // API will override this with JWT username
+    );
+
+    console.log(
+      "Auto-saving audit data to API:",
+      JSON.stringify(createAuditData, null, 2)
+    );
+
+    const response = await fetch("/api/audits", {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(createAuditData),
+    });
+
+    if (response.status === 413) {
+      throw new Error("File too large");
+    }
+
+    let responseData: any = null;
     try {
-      const userResponse = await fetch("/api/user/profile", {
-        headers: getAuthHeaders(),
+      responseData = await response.json();
+    } catch (err) {
+      console.error("Failed to parse response JSON", err);
+      throw new Error("Failed to save audit");
+    }
+
+    if (!response.ok || !responseData.success) {
+      const errorDetails = responseData.details
+        ? JSON.stringify(responseData.details, null, 2)
+        : responseData.error || "Failed to save audit";
+      console.error("API Error:", errorDetails);
+      throw new Error(responseData.error || "Failed to save audit");
+    }
+
+    const savedAudit = responseData.data;
+    const updatedAudits = [...savedAudits, newSavedAudit];
+    setSavedAudits(updatedAudits);
+    resetSingleAuditForm();
+    
+    return savedAudit;
+  };
+
+  const handleSaveAudit = async (
+    auditData: QaAuditOutput & { agentUserId?: string; campaignName?: string }
+  ) => {
+    try {
+      await handleSaveAuditInternal(auditData);
+      toast({
+        title: "Audit Saved",
+        description: `The AI audit for ${auditData.identifiedAgentName || "Unknown Agent"} has been saved.`,
       });
-      let auditedBy = "unknown";
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        if (userData.success && userData.data) {
-          auditedBy = userData.data.id;
-        }
-      }
-
-      const createAuditData = convertSavedAuditItemToCreateAuditFormat(
-        newSavedAudit,
-        auditedBy
-      );
-
-      console.log(
-        "Sending audit data to API:",
-        JSON.stringify(createAuditData, null, 2)
-      );
-
-      const response = await fetch("/api/audits", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(createAuditData),
-      });
-
-      if (response.status === 413) {
-        // Server rejected due to size limits
+    } catch (error) {
+      console.error("Error saving audit:", error);
+      if (error instanceof Error && error.message === "File too large") {
         toast({
           title: "File Too Large",
           description:
             "The uploaded audio file is too large for the server. Please upload a smaller file.",
           variant: "destructive",
         });
-        return;
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to save audit. Please try again.",
+          variant: "destructive",
+        });
       }
-
-      let responseData: any = null;
-      try {
-        responseData = await response.json();
-      } catch (err) {
-        console.error("Failed to parse response JSON", err);
-        throw new Error("Failed to save audit");
-      }
-
-      if (!response.ok || !responseData.success) {
-        const errorDetails = responseData.details
-          ? JSON.stringify(responseData.details, null, 2)
-          : responseData.error || "Failed to save audit";
-        console.error("API Error:", errorDetails);
-        throw new Error(responseData.error || "Failed to save audit");
-      }
-
-      const savedAudit = responseData.data;
-      const updatedAudits = [...savedAudits, newSavedAudit];
-      setSavedAudits(updatedAudits);
-      toast({
-        title: "Audit Saved",
-        description: `The AI audit for ${newSavedAudit.agentName} has been saved.`,
-      });
-      resetSingleAuditForm();
-    } catch (error) {
-      console.error("Error saving audit:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save audit. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
