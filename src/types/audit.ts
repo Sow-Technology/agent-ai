@@ -1,4 +1,3 @@
-
 // Removed direct AI flow import - using API route instead
 // Define QaAuditOutput type locally if needed
 export interface QaAuditOutput {
@@ -14,6 +13,6 @@ export interface SavedAuditItem {
   campaignName?: string;
   overallScore: number;
   auditData: QaAuditOutput;
-  auditType: 'ai' | 'manual';
+  auditType: "ai" | "manual";
   auditedBy?: string; // User ID of who performed the audit
 }
