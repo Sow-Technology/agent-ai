@@ -67,7 +67,8 @@ export async function validateSession(token: string): Promise<User | null> {
       username: result.user.username,
       email: result.user.email,
       fullName: undefined, // Not available from JWT
-      role: result.user.role as 'Administrator' | 'Manager' | 'QA Analyst' | 'Agent',
+      role: result.user.role as 'Administrator' | 'Project Admin' | 'Manager' | 'QA Analyst' | 'Auditor' | 'Agent',
+      projectId: result.user.projectId,
       isActive: true, // Assume active if token is valid
       createdAt: undefined,
       updatedAt: undefined
