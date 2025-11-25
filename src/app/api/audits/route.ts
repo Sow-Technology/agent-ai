@@ -209,8 +209,14 @@ export async function GET(request: NextRequest) {
         filteredAudits.length
       );
     } else if (currentUserRole === "Project Admin") {
+      console.log("Project Admin projectId:", currentUser?.projectId);
+      console.log("Sample audit projectIds:", audits.slice(0, 5).map((a: any) => a.projectId));
       filteredAudits = filteredAudits.filter(
         (audit: any) => audit.projectId === currentUser?.projectId
+      );
+      console.log(
+        "Filtered audits count for Project Admin:",
+        filteredAudits.length
       );
     }
 
@@ -241,6 +247,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
     let currentUsername = "Unknown";
+    let currentUserProjectId: string | undefined = undefined;
 
     console.log(
       "POST /api/audits - Auth header:",
@@ -255,7 +262,9 @@ export async function POST(request: NextRequest) {
       );
       if (tokenResult.valid && tokenResult.user) {
         currentUsername = tokenResult.user.username;
+        currentUserProjectId = tokenResult.user.projectId;
         console.log("POST /api/audits - Current username:", currentUsername);
+        console.log("POST /api/audits - Current user projectId:", currentUserProjectId);
       }
     }
 
@@ -297,6 +306,7 @@ export async function POST(request: NextRequest) {
         : new Date(),
       campaignId: validatedData.qaParameterSetId || "default_campaign", // Using QA parameter set as campaign for now
       campaignName: validatedData.qaParameterSetName || "Default Campaign",
+      projectId: currentUserProjectId, // Set projectId from current user's projectId
       auditResults:
         validatedData.parameters?.flatMap((param) =>
           param.subParameters.map((subParam) => ({
@@ -317,7 +327,9 @@ export async function POST(request: NextRequest) {
 
     console.log(
       "POST /api/audits - Creating audit with auditedBy:",
-      currentUsername
+      currentUsername,
+      "projectId:",
+      currentUserProjectId
     );
 
     const newAudit = await createAudit(auditData);

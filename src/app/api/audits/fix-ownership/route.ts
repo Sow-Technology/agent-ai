@@ -198,15 +198,32 @@ export async function GET(request: NextRequest) {
 
     // Get a sample of audits with details for review
     const sampleAudits = await CallAudit.find({})
-      .select("_id agentName campaignName auditedBy auditType createdAt")
+      .select("_id agentName campaignName auditedBy auditType projectId createdAt")
       .sort({ createdAt: -1 })
       .limit(50)
       .lean();
+
+    // Get summary of audits by projectId
+    const projectSummary = await CallAudit.aggregate([
+      {
+        $group: {
+          _id: "$projectId",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { count: -1 },
+      },
+    ]);
 
     return NextResponse.json({
       success: true,
       summary: summary.map((item) => ({
         auditedBy: item._id,
+        count: item.count,
+      })),
+      projectSummary: projectSummary.map((item) => ({
+        projectId: item._id || "No Project",
         count: item.count,
       })),
       sampleAudits: sampleAudits.map((audit: any) => ({
@@ -215,6 +232,7 @@ export async function GET(request: NextRequest) {
         campaignName: audit.campaignName,
         auditedBy: audit.auditedBy,
         auditType: audit.auditType,
+        projectId: audit.projectId || "No Project",
         createdAt: audit.createdAt,
       })),
     });
@@ -222,6 +240,91 @@ export async function GET(request: NextRequest) {
     console.error("Error getting audit ownership summary:", error);
     return NextResponse.json(
       { success: false, error: "Failed to get audit ownership summary" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/audits/fix-ownership - Update projectId for audits
+// This allows admins to assign audits to a project
+export async function PUT(request: NextRequest) {
+  try {
+    // Get current user from JWT token
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const tokenResult = await validateJWTToken(token);
+    if (!tokenResult.valid || !tokenResult.user) {
+      return NextResponse.json(
+        { success: false, error: "Invalid token" },
+        { status: 401 }
+      );
+    }
+
+    // Only administrators can use this endpoint
+    if (tokenResult.user.role !== "Administrator") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Only administrators can update audit projectId",
+        },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { auditedBy, projectId, auditIds } = body;
+
+    if (!projectId || typeof projectId !== "string") {
+      return NextResponse.json(
+        { success: false, error: "projectId is required" },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    let result;
+
+    if (auditIds && Array.isArray(auditIds) && auditIds.length > 0) {
+      // Update specific audits by IDs
+      result = await CallAudit.updateMany(
+        { _id: { $in: auditIds } },
+        { $set: { projectId: projectId } }
+      );
+      return NextResponse.json({
+        success: true,
+        message: `Updated ${result.modifiedCount} audits with projectId "${projectId}"`,
+        modifiedCount: result.modifiedCount,
+      });
+    } else if (auditedBy && typeof auditedBy === "string") {
+      // Update all audits by a specific user
+      result = await CallAudit.updateMany(
+        { auditedBy: auditedBy },
+        { $set: { projectId: projectId } }
+      );
+      return NextResponse.json({
+        success: true,
+        message: `Updated ${result.modifiedCount} audits by "${auditedBy}" with projectId "${projectId}"`,
+        modifiedCount: result.modifiedCount,
+      });
+    } else {
+      return NextResponse.json(
+        { success: false, error: "Either auditIds or auditedBy is required" },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error("Error updating audit projectId:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to update audit projectId" },
       { status: 500 }
     );
   }
