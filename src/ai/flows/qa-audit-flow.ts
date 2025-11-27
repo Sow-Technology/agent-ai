@@ -74,7 +74,7 @@ const AuditResultItemSchema = z.object({
   parameter: z
     .string()
     .describe(
-      'The specific audit sub-parameter evaluated, combining group and sub-parameter names (e.g., "Greeting and Professionalism - Agent used standard greeting").'
+      'The specific audit sub-parameter evaluated, combining group and sub-parameter names in format "GroupName - SubParameterName" (e.g., "Greeting and Professionalism - Agent used standard greeting"). MUST use exact names from input parameters. NEVER use "Unknown".'
     ),
   score: z
     .number()
@@ -123,12 +123,11 @@ const QaAuditOutputSchema = z.object({
     ),
   englishTranslation: z
     .string()
-    .optional()
     .describe(
-      "If the original call language is not English, this field contains the transcription translated into English, formatted with speaker labels. " +
+      "The transcription translated into English, formatted with speaker labels. " +
         'Speaker labels should be simple and concise (e.g., "Agent (Male): [IdentifiedAgentName]", "Customer (Female):"). ' +
-        "If the original call is already in English, this field is omitted. " +
-        "If audio processing fails, this contains the translated assumed dialogue if applicable."
+        "This field is ALWAYS required - if the original call is already in English, this should be the same as transcriptionInOriginalLanguage. " +
+        "If audio processing fails, this contains the translated assumed dialogue."
     ),
   transcriptionInRequestedLanguage: z
     .string()
@@ -170,10 +169,25 @@ const QaAuditOutputSchema = z.object({
     .describe(
       "The primary language spoken in the call (e.g., Hindi, Tamil, English)."
     ),
+  // Token usage and duration tracking (added by system, not AI)
+  tokenUsage: z
+    .object({
+      inputTokens: z.number().optional(),
+      outputTokens: z.number().optional(),
+      totalTokens: z.number().optional(),
+    })
+    .optional()
+    .describe("Token usage statistics for the AI call."),
+  auditDurationMs: z
+    .number()
+    .optional()
+    .describe("Duration of the audit processing in milliseconds."),
 });
 export type QaAuditOutput = z.infer<typeof QaAuditOutputSchema>;
 
 export async function qaAuditCall(input: QaAuditInput): Promise<QaAuditOutput> {
+  const startTime = Date.now(); // Track audit duration
+  
   const { getModel } = await import("@/ai/genkit");
   const model = getModel();
 
@@ -228,13 +242,15 @@ ${
 ${parametersDesc}
 
 **Audit Instructions:**
-1. **Transcription**: Provide accurate transcriptions in the original language, English (if different), and requested language (if specified). Use clear speaker labels like "Agent (Male): [AgentName]" and "Customer (Female):".
-2. **Audit Scoring**: Evaluate each parameter based on the call content. Be precise and fair in your scoring.
-3. **Root Cause Analysis**: If issues are found, provide thoughtful analysis of why they occurred.
-4. **Summary**: Give constructive feedback highlighting strengths and areas for improvement.
+1. **Transcription**: Provide accurate transcriptions in the original language AND ALWAYS in English. Use clear speaker labels like "Agent (Male): [AgentName]" and "Customer (Female):".
+2. **English Translation**: ALWAYS provide englishTranslation field - if the call is already in English, copy the original transcription. Never skip this field.
+3. **Audit Scoring**: Evaluate each parameter based on the call content. Be precise and fair in your scoring.
+4. **Root Cause Analysis**: If issues are found, provide thoughtful analysis of why they occurred.
+5. **Summary**: Give constructive feedback highlighting strengths and areas for improvement.
 
 **Output Requirements:**
 - Ensure all transcriptions are accurate and properly formatted
+- ALWAYS include englishTranslation (required field)
 - Calculate weighted scores correctly (score × weight ÷ 100)
 - Overall score should be the sum of all weighted scores
 - Provide detailed, actionable feedback
@@ -246,13 +262,13 @@ ${parametersDesc}
   "campaignName": "string (optional)",
   "identifiedAgentName": "string (optional, e.g., 'John Doe' or 'Unknown Agent')",
   "transcriptionInOriginalLanguage": "string (required, formatted with speaker labels)",
-  "englishTranslation": "string (optional, if original language is not English)",
+  "englishTranslation": "string (REQUIRED - always provide English translation, even if original is English)",
   "transcriptionInRequestedLanguage": "string (optional, if transcriptionLanguage was specified)",
   "callSummary": "string (required, concise summary of the call)",
   "rootCauseAnalysis": "string (optional, analysis of any significant issues)",
   "auditResults": [
     {
-      "parameter": "string (e.g., 'Greeting - Agent used standard greeting')",
+      "parameter": "string (MUST be in format: 'GroupName - SubParameterName', using the EXACT group name and sub-parameter name from the Audit Parameters provided above. For example, if the group is 'Greeting and Professionalism' and sub-parameter is 'Agent used standard greeting', then parameter should be 'Greeting and Professionalism - Agent used standard greeting'. NEVER use 'Unknown' or generic names.)",
       "score": number (0-100),
       "weightedScore": number (score * weight / 100),
       "comments": "string",
@@ -262,7 +278,11 @@ ${parametersDesc}
   "overallScore": number (0-100, sum of weightedScore values),
   "summary": "string (required, brief summary highlighting strengths and areas for improvement)",
   "callLanguage": "string (optional)"
-}`;
+}
+
+**CRITICAL**: 
+1. For each parameter in auditResults, you MUST use the EXACT group name and sub-parameter name from the Audit Parameters list above. The format is "GroupName - SubParameterName". Do NOT use "Unknown" or any made-up names.
+2. ALWAYS provide englishTranslation - this field is REQUIRED.`;
 
   // Prepare the content parts with audio
   const parts: any[] = [
@@ -291,6 +311,14 @@ ${parametersDesc}
   const response = result.response;
   const text = response.text();
 
+  // Extract token usage from the response
+  const usageMetadata = response.usageMetadata;
+  const tokenUsage = {
+    inputTokens: usageMetadata?.promptTokenCount || 0,
+    outputTokens: usageMetadata?.candidatesTokenCount || 0,
+    totalTokens: usageMetadata?.totalTokenCount || 0,
+  };
+
   // Extract JSON from the response (handle cases where model adds markdown formatting)
   let jsonText = text.trim();
   if (jsonText.startsWith("```json")) {
@@ -308,6 +336,61 @@ ${parametersDesc}
   if (!output.callLanguage) {
     output.callLanguage = effectiveInput.callLanguage;
   }
+  
+  // Ensure englishTranslation is always present
+  if (!output.englishTranslation) {
+    // If no English translation, use the original transcription as fallback
+    output.englishTranslation = output.transcriptionInOriginalLanguage || "Translation not available";
+  }
+
+  // Fix any "Unknown" parameter names by mapping them to the correct input parameter names
+  // Build a mapping of expected parameter names from input
+  const expectedParameters: { groupName: string; subParamName: string; index: number }[] = [];
+  effectiveInput.auditParameters.forEach((group) => {
+    group.subParameters.forEach((subParam) => {
+      expectedParameters.push({
+        groupName: group.name,
+        subParamName: subParam.name,
+        index: expectedParameters.length,
+      });
+    });
+  });
+
+  // Fix parameter names if they contain "Unknown" or don't match expected format
+  if (output.auditResults && Array.isArray(output.auditResults)) {
+    output.auditResults = output.auditResults.map((result, index) => {
+      // Check if parameter name contains "Unknown" or is missing proper group name
+      if (
+        result.parameter.toLowerCase().includes("unknown") ||
+        !result.parameter.includes(" - ")
+      ) {
+        // Try to match by index or by partial name match
+        if (index < expectedParameters.length) {
+          const expected = expectedParameters[index];
+          result.parameter = `${expected.groupName} - ${expected.subParamName}`;
+        } else {
+          // Try to find a match by checking if the comment or parameter name contains any sub-parameter name
+          const match = expectedParameters.find(
+            (ep) =>
+              result.parameter.toLowerCase().includes(ep.subParamName.toLowerCase()) ||
+              result.comments?.toLowerCase().includes(ep.subParamName.toLowerCase())
+          );
+          if (match) {
+            result.parameter = `${match.groupName} - ${match.subParamName}`;
+          }
+        }
+      }
+      return result;
+    });
+  }
+
+  // Calculate total audit duration at the very end (includes AI time + all system processing)
+  const auditDurationMs = Date.now() - startTime;
+  
+  // Add token usage and duration to output
+  output.tokenUsage = tokenUsage;
+  output.auditDurationMs = auditDurationMs;
 
   return output;
 }
+

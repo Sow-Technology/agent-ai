@@ -4,6 +4,7 @@ export interface ICallAudit extends Document {
   _id: mongoose.Types.ObjectId;
   callId: string;
   agentName: string;
+  agentUserId?: string; // User-entered agent ID from form
   customerName?: string;
   callDate: Date;
   campaignId: string;
@@ -20,9 +21,17 @@ export interface ICallAudit extends Document {
   overallScore: number;
   maxPossibleScore: number;
   transcript?: string;
+  englishTranslation?: string; // English translation of the transcript
   audioUrl?: string;
   auditedBy: string;
   auditType: "manual" | "ai";
+  // AI audit metadata
+  tokenUsage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  auditDurationMs?: number; // Duration of the audit in milliseconds
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +46,10 @@ const CallAuditSchema = new Schema<ICallAudit>(
     agentName: {
       type: String,
       required: true,
+      trim: true,
+    },
+    agentUserId: {
+      type: String,
       trim: true,
     },
     customerName: {
@@ -112,6 +125,17 @@ const CallAuditSchema = new Schema<ICallAudit>(
       enum: ["manual", "ai"],
       required: true,
     },
+    englishTranslation: {
+      type: String,
+    },
+    tokenUsage: {
+      inputTokens: { type: Number },
+      outputTokens: { type: Number },
+      totalTokens: { type: Number },
+    },
+    auditDurationMs: {
+      type: Number,
+    },
   },
   {
     timestamps: true,
@@ -124,6 +148,11 @@ CallAuditSchema.index({ campaignId: 1, createdAt: -1 });
 CallAuditSchema.index({ auditType: 1, createdAt: -1 });
 CallAuditSchema.index({ projectId: 1, createdAt: -1 });
 CallAuditSchema.index({ callDate: 1 });
+
+// Delete cached model in development to pick up schema changes
+if (process.env.NODE_ENV !== 'production') {
+  delete mongoose.models.CallAudit;
+}
 
 const CallAudit =
   mongoose.models.CallAudit ||

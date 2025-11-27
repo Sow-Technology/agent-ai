@@ -198,7 +198,9 @@ export async function GET(request: NextRequest) {
 
     // Get a sample of audits with details for review
     const sampleAudits = await CallAudit.find({})
-      .select("_id agentName campaignName auditedBy auditType projectId createdAt")
+      .select(
+        "_id agentName campaignName auditedBy auditType projectId createdAt"
+      )
       .sort({ createdAt: -1 })
       .limit(50)
       .lean();

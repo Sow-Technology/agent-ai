@@ -38,6 +38,7 @@ import {
   LogOut,
   User as UserIcon,
   UsersRound,
+  Coins,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeSwitcher } from "@/components/common/ThemeSwitcher";
@@ -143,6 +144,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       label: "User Management",
       tabName: "add-user",
       icon: Users,
+      type: "link",
+      roles: ["Administrator"],
+    },
+    {
+      href: "/dashboard/token-analytics",
+      label: "Token Analytics",
+      tabName: "token-analytics",
+      icon: Coins,
       type: "link",
       roles: ["Administrator"],
     },

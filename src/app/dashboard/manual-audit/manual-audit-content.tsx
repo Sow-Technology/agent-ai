@@ -171,7 +171,7 @@ function convertAuditDocumentToSavedAuditItem(
       campaignName: doc.campaignName,
       identifiedAgentName: doc.agentName,
       transcriptionInOriginalLanguage: doc.transcript || "",
-      englishTranslation: undefined,
+      englishTranslation: doc.englishTranslation || "",
       callSummary: `Audit for ${doc.agentName}`,
       auditResults: doc.auditResults.map((result: AuditResultDocument) => ({
         parameter: result.parameterName,
@@ -182,6 +182,8 @@ function convertAuditDocumentToSavedAuditItem(
       })),
       overallScore: doc.overallScore,
       summary: `Overall score: ${doc.overallScore}/${doc.maxPossibleScore}`,
+      tokenUsage: doc.tokenUsage,
+      auditDurationMs: doc.auditDurationMs,
     },
     auditType: doc.auditType,
   };
@@ -228,10 +230,10 @@ function convertSavedAuditItemToCreateAuditFormat(
             {
               id: "audit-results",
               name: "Audit Results",
-              subParameters: auditResults.map((result: any) => ({
-                id: result.parameterId || result.id || "unknown",
-                name: result.parameterName || result.name || "Unknown",
-                weight: result.maxScore || result.weight || 100,
+              subParameters: auditResults.map((result: any, index: number) => ({
+                id: result.parameterId || result.id || `param-${index}`,
+                name: result.parameter || result.parameterName || result.name || "Unknown",
+                weight: result.weightedScore || result.maxScore || result.weight || 100,
                 type: result.type || "Non-Fatal",
                 score: result.score || 0,
                 comments: result.comments || "",

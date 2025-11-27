@@ -56,6 +56,10 @@ const createAuditSchema = z
       .min(1, "Agent name is required")
       .max(100, "Agent name must be less than 100 characters")
       .optional(),
+    agentUserId: z
+      .string()
+      .max(100, "Agent user ID must be less than 100 characters")
+      .optional(),
     customerName: z
       .string()
       .min(1, "Customer name is required")
@@ -67,6 +71,7 @@ const createAuditSchema = z
       .max(50, "Interaction ID must be less than 50 characters")
       .optional(),
     callTranscript: z.string().min(1, "Call transcript is required").optional(),
+    englishTranslation: z.string().optional(),
     parameters: z.array(parameterResultSchema).optional(),
     overallScore: z
       .number()
@@ -77,6 +82,13 @@ const createAuditSchema = z
     auditDate: z.string().datetime().optional(),
     auditorId: z.string().optional(),
     auditorName: z.string().optional(),
+    // AI audit metadata
+    tokenUsage: z.object({
+      inputTokens: z.number().optional(),
+      outputTokens: z.number().optional(),
+      totalTokens: z.number().optional(),
+    }).optional(),
+    auditDurationMs: z.number().optional(),
   })
   .strict()
   .refine(
@@ -210,7 +222,10 @@ export async function GET(request: NextRequest) {
       );
     } else if (currentUserRole === "Project Admin") {
       console.log("Project Admin projectId:", currentUser?.projectId);
-      console.log("Sample audit projectIds:", audits.slice(0, 5).map((a: any) => a.projectId));
+      console.log(
+        "Sample audit projectIds:",
+        audits.slice(0, 5).map((a: any) => a.projectId)
+      );
       filteredAudits = filteredAudits.filter(
         (audit: any) => audit.projectId === currentUser?.projectId
       );
@@ -264,7 +279,10 @@ export async function POST(request: NextRequest) {
         currentUsername = tokenResult.user.username;
         currentUserProjectId = tokenResult.user.projectId;
         console.log("POST /api/audits - Current username:", currentUsername);
-        console.log("POST /api/audits - Current user projectId:", currentUserProjectId);
+        console.log(
+          "POST /api/audits - Current user projectId:",
+          currentUserProjectId
+        );
       }
     }
 
@@ -300,6 +318,7 @@ export async function POST(request: NextRequest) {
     const auditData = {
       callId: validatedData.interactionId,
       agentName: validatedData.agentName,
+      agentUserId: validatedData.agentUserId,
       customerName: validatedData.customerName || "Unknown Customer",
       callDate: validatedData.auditDate
         ? new Date(validatedData.auditDate)
@@ -321,8 +340,11 @@ export async function POST(request: NextRequest) {
       overallScore: validatedData.overallScore || 0,
       maxPossibleScore: 100, // Assuming max score is 100
       transcript: validatedData.callTranscript || "No transcript provided",
+      englishTranslation: validatedData.englishTranslation,
       auditedBy: currentUsername,
       auditType: validatedData.auditType || "manual",
+      tokenUsage: validatedData.tokenUsage,
+      auditDurationMs: validatedData.auditDurationMs,
     };
 
     console.log(
@@ -419,11 +441,11 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/audits/[id] - Delete an audit
+// DELETE /api/audits?id=[id] - Delete an audit
 export async function DELETE(request: NextRequest) {
   try {
     const url = new URL(request.url);
-    const auditId = url.pathname.split("/").pop();
+    const auditId = url.searchParams.get("id");
 
     if (!auditId) {
       return NextResponse.json(

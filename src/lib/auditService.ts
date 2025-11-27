@@ -9,6 +9,7 @@ function transformToAuditDocument(doc: any): AuditDocument {
     id: doc._id.toString(),
     callId: doc.callId,
     agentName: doc.agentName,
+    agentUserId: doc.agentUserId,
     customerName: doc.customerName,
     callDate: doc.callDate,
     campaignId: doc.campaignId,
@@ -18,9 +19,12 @@ function transformToAuditDocument(doc: any): AuditDocument {
     overallScore: doc.overallScore,
     maxPossibleScore: doc.maxPossibleScore,
     transcript: doc.transcript,
+    englishTranslation: doc.englishTranslation,
     audioUrl: doc.audioUrl,
     auditedBy: doc.auditedBy,
     auditType: doc.auditType,
+    tokenUsage: doc.tokenUsage,
+    auditDurationMs: doc.auditDurationMs,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -33,6 +37,7 @@ export type { AuditDocument };
 export async function createAudit(auditData: {
   callId: string;
   agentName: string;
+  agentUserId?: string;
   customerName?: string;
   callDate: Date;
   campaignId: string;
@@ -42,14 +47,22 @@ export async function createAudit(auditData: {
   overallScore: number;
   maxPossibleScore: number;
   transcript?: string;
+  englishTranslation?: string;
   audioUrl?: string;
   auditedBy: string;
   auditType: "manual" | "ai";
+  tokenUsage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  auditDurationMs?: number;
 }): Promise<AuditDocument | null> {
   try {
     const newAudit = new CallAudit({
       callId: auditData.callId,
       agentName: auditData.agentName,
+      agentUserId: auditData.agentUserId,
       customerName: auditData.customerName,
       callDate: auditData.callDate,
       campaignId: auditData.campaignId,
@@ -59,9 +72,12 @@ export async function createAudit(auditData: {
       overallScore: auditData.overallScore,
       maxPossibleScore: auditData.maxPossibleScore,
       transcript: auditData.transcript,
+      englishTranslation: auditData.englishTranslation,
       audioUrl: auditData.audioUrl,
       auditedBy: auditData.auditedBy,
       auditType: auditData.auditType,
+      tokenUsage: auditData.tokenUsage,
+      auditDurationMs: auditData.auditDurationMs,
     });
 
     const savedAudit = await newAudit.save();
@@ -80,9 +96,12 @@ export async function createAudit(auditData: {
       overallScore: savedAudit.overallScore,
       maxPossibleScore: savedAudit.maxPossibleScore,
       transcript: savedAudit.transcript,
+      englishTranslation: savedAudit.englishTranslation,
       audioUrl: savedAudit.audioUrl,
       auditedBy: savedAudit.auditedBy,
       auditType: savedAudit.auditType,
+      tokenUsage: savedAudit.tokenUsage,
+      auditDurationMs: savedAudit.auditDurationMs,
       createdAt: savedAudit.createdAt,
       updatedAt: savedAudit.updatedAt,
     };

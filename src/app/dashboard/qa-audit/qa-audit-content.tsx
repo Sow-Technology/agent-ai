@@ -199,7 +199,7 @@ function convertAuditDocumentToSavedAuditItem(
       campaignName: doc.campaignName,
       identifiedAgentName: doc.agentName,
       transcriptionInOriginalLanguage: doc.transcript || "",
-      englishTranslation: undefined,
+      englishTranslation: doc.englishTranslation || "",
       callSummary: `Audit for ${doc.agentName}`,
       auditResults: doc.auditResults.map((result: AuditResultDocument) => ({
         parameter: result.parameterName,
@@ -210,6 +210,8 @@ function convertAuditDocumentToSavedAuditItem(
       })),
       overallScore: doc.overallScore,
       summary: `Overall score: ${doc.overallScore}/${doc.maxPossibleScore}`,
+      tokenUsage: doc.tokenUsage,
+      auditDurationMs: doc.auditDurationMs,
     },
     auditType: doc.auditType,
   };
@@ -232,9 +234,20 @@ function convertSavedAuditItemToCreateAuditFormat(
     savedAudit.auditData?.transcriptionInOriginalLanguage ||
     "";
 
+  // Extract English translation
+  const englishTranslation =
+    (savedAudit as any).englishTranslation ||
+    savedAudit.auditData?.englishTranslation ||
+    "";
+
+  // Extract token usage and duration
+  const tokenUsage = savedAudit.auditData?.tokenUsage;
+  const auditDurationMs = savedAudit.auditData?.auditDurationMs;
+
   return {
     // Required fields for the API
     agentName: savedAudit.agentName,
+    agentUserId: savedAudit.agentUserId || savedAudit.auditData?.agentUserId,
     interactionId: (savedAudit as any).callId || savedAudit.id,
 
     // Optional fields
@@ -243,11 +256,16 @@ function convertSavedAuditItemToCreateAuditFormat(
     qaParameterSetId: savedAudit.campaignName || "default",
     qaParameterSetName: savedAudit.campaignName || "Unknown Parameter Set",
     callTranscript: transcript,
+    englishTranslation: englishTranslation,
     overallScore: savedAudit.overallScore,
     auditType: savedAudit.auditType,
     auditorId: auditedBy,
     auditorName: "AI Auditor",
     auditDate: new Date(savedAudit.auditDate).toISOString(),
+    
+    // AI audit metadata
+    tokenUsage: tokenUsage,
+    auditDurationMs: auditDurationMs,
 
     // Map auditResults to parameters with subParameters structure
     parameters:
@@ -256,10 +274,10 @@ function convertSavedAuditItemToCreateAuditFormat(
             {
               id: "audit-results",
               name: "Audit Results",
-              subParameters: auditResults.map((result: any) => ({
-                id: result.parameterId || result.id || "unknown",
-                name: result.parameterName || result.name || "Unknown",
-                weight: result.maxScore || result.weight || 100,
+              subParameters: auditResults.map((result: any, index: number) => ({
+                id: result.parameterId || result.id || `param-${index}`,
+                name: result.parameter || result.parameterName || result.name || "Unknown",
+                weight: result.weightedScore || result.maxScore || result.weight || 100,
                 type: result.type || "Non-Fatal",
                 score: result.score || 0,
                 comments: result.comments || "",
@@ -506,19 +524,9 @@ export default function QaAuditContent() {
       const result = responseData.data;
       setAuditResult(result);
 
-      // Auto-save the audit after AI processing
-      const auditDataWithMeta = {
-        ...result,
-        agentUserId: qaAgentUserId,
-        campaignName: qaCampaignName,
-      };
-
-      // Call handleSaveAudit to persist the audit
-      await handleSaveAuditInternal(auditDataWithMeta);
-
       toast({
-        title: "Audit Complete & Saved",
-        description: `Successfully audited and saved call for agent ${result.identifiedAgentName}.`,
+        title: "Audit Complete",
+        description: `Successfully audited call for agent ${result.identifiedAgentName}. Review results below and click Save to persist.`,
       });
     } catch (error) {
       console.error("Error during QA audit:", error);
@@ -1081,7 +1089,11 @@ export default function QaAuditContent() {
             </Collapsible>
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button onClick={() => handleSaveAudit(auditResult)}>
+            <Button onClick={() => handleSaveAudit({
+              ...auditResult,
+              agentUserId: qaAgentUserId,
+              campaignName: qaCampaignName,
+            })}>
               <Save className="mr-2 h-4 w-4" /> Save Audit
             </Button>
           </CardFooter>

@@ -59,6 +59,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import {
@@ -82,6 +92,7 @@ import {
   TrendingDown,
   Briefcase,
   Activity,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -159,17 +170,17 @@ function convertAuditDocumentToSavedAuditItem(
     id: doc.id,
     auditDate,
     agentName: doc.agentName,
-    agentUserId: doc.agentName, // Using agentName as fallback for agentUserId
+    agentUserId: doc.agentUserId || doc.agentName, // Use actual agentUserId from DB, fallback to agentName
     campaignName: doc.campaignName,
     projectId: doc.projectId, // Project ID for project-based access control
     overallScore: doc.overallScore,
     auditedBy: doc.auditedBy, // User ID of who performed the audit
     auditData: {
-      agentUserId: doc.agentName,
+      agentUserId: doc.agentUserId || doc.agentName, // Use actual agentUserId from DB
       campaignName: doc.campaignName,
       identifiedAgentName: doc.agentName,
       transcriptionInOriginalLanguage: doc.transcript || "",
-      englishTranslation: undefined,
+      englishTranslation: doc.englishTranslation || "",
       callSummary: `Audit for ${doc.agentName}`,
       auditResults: doc.auditResults.map((result: AuditResultDocument) => ({
         parameter: result.parameterName,
@@ -180,6 +191,8 @@ function convertAuditDocumentToSavedAuditItem(
       })),
       overallScore: doc.overallScore,
       summary: `Overall score: ${doc.overallScore}/${doc.maxPossibleScore}`,
+      tokenUsage: doc.tokenUsage,
+      auditDurationMs: doc.auditDurationMs,
     },
     auditType: doc.auditType,
   };
@@ -187,6 +200,18 @@ function convertAuditDocumentToSavedAuditItem(
 
 // CSV export helper
 function generateCSV(audits: SavedAuditItem[]) {
+  // Collect all unique parameter names from all audits to create dynamic headers
+  const allParameterNames = new Set<string>();
+  audits.forEach((audit) => {
+    const auditResults = audit.auditData?.auditResults || [];
+    auditResults.forEach((result: any) => {
+      if (result?.parameter) {
+        allParameterNames.add(result.parameter);
+      }
+    });
+  });
+  const parameterNamesList = Array.from(allParameterNames);
+
   const headers = [
     "Employee ID",
     "Process/Campaign",
@@ -203,18 +228,12 @@ function generateCSV(audits: SavedAuditItem[]) {
     "Overall Score",
     "Fatal Status",
     "Fatal Count",
-    "Parameter 1",
-    "Parameter 2",
-    "Parameter 3",
-    "Parameter 4",
-    "Parameter 5",
-    "Parameter 6",
-    "Parameter 7",
+    ...parameterNamesList,
   ];
 
   const rows = [headers.join(",")];
 
-  audits.forEach((audit, index) => {
+  audits.forEach((audit) => {
     // Determine call category based on score
     let callCategory = "Bad";
     if (audit.overallScore >= 90) {
@@ -247,18 +266,46 @@ function generateCSV(audits: SavedAuditItem[]) {
       .toString()
       .padStart(2, "0")}-${auditDate.getFullYear()}`;
 
-    // Calculate audit duration (if we have start/end times in auditData)
+    // Calculate audit duration using auditDurationMs
     let auditDuration = "";
     let startTime = "";
     let endTime = "";
 
-    // Try to get timing data from auditData (if available)
-    if (audit.auditData?.startTime && audit.auditData?.endTime) {
+    if (audit.auditData?.auditDurationMs) {
+      const durationMs = audit.auditData.auditDurationMs;
+      const hours = Math.floor(durationMs / (1000 * 60 * 60));
+      const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+      const milliseconds = durationMs % 1000;
+      auditDuration = `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${milliseconds
+        .toString()
+        .padStart(3, "0")}`;
+      
+      // Calculate start and end time based on audit date and duration
+      const endDate = auditDate;
+      const startDate = new Date(auditDate.getTime() - durationMs);
+      
+      // Format as DD-MM-YYYY HH:MM:SS
+      const formatDateTime = (date: Date) => {
+        const d = date.getDate().toString().padStart(2, "0");
+        const m = (date.getMonth() + 1).toString().padStart(2, "0");
+        const y = date.getFullYear();
+        const hh = date.getHours().toString().padStart(2, "0");
+        const mm = date.getMinutes().toString().padStart(2, "0");
+        const ss = date.getSeconds().toString().padStart(2, "0");
+        return `${d}-${m}-${y} ${hh}:${mm}:${ss}`;
+      };
+      
+      startTime = formatDateTime(startDate);
+      endTime = formatDateTime(endDate);
+    } else if (audit.auditData?.startTime && audit.auditData?.endTime) {
+      // Fallback to explicit start/end times if available
       const start = new Date(audit.auditData.startTime);
       const end = new Date(audit.auditData.endTime);
       const durationMs = end.getTime() - start.getTime();
 
-      // Format as HH:MM:SS.sss
       const hours = Math.floor(durationMs / (1000 * 60 * 60));
       const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
@@ -269,29 +316,19 @@ function generateCSV(audits: SavedAuditItem[]) {
         .toString()
         .padStart(3, "0")}`;
 
-      startTime = start.toISOString();
-      endTime = end.toISOString();
-    } else {
-      // Fallback: estimate based on createdAt and updatedAt if available
-      // This is a rough estimate assuming the audit was updated when completed
-      const createdAt = audit.auditData?.createdAt
-        ? new Date(audit.auditData.createdAt)
-        : auditDate;
-      const updatedAt = audit.auditData?.updatedAt
-        ? new Date(audit.auditData.updatedAt)
-        : auditDate;
-
-      if (updatedAt > createdAt) {
-        const durationMs = updatedAt.getTime() - createdAt.getTime();
-        const minutes = Math.floor(durationMs / (1000 * 60));
-        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
-        auditDuration = `${minutes.toString().padStart(2, "0")}:${seconds
-          .toString()
-          .padStart(2, "0")}.000`;
-
-        startTime = createdAt.toISOString();
-        endTime = updatedAt.toISOString();
-      }
+      // Format as DD-MM-YYYY HH:MM:SS
+      const formatDateTime = (date: Date) => {
+        const d = date.getDate().toString().padStart(2, "0");
+        const m = (date.getMonth() + 1).toString().padStart(2, "0");
+        const y = date.getFullYear();
+        const hh = date.getHours().toString().padStart(2, "0");
+        const mm = date.getMinutes().toString().padStart(2, "0");
+        const ss = date.getSeconds().toString().padStart(2, "0");
+        return `${d}-${m}-${y} ${hh}:${mm}:${ss}`;
+      };
+      
+      startTime = formatDateTime(start);
+      endTime = formatDateTime(end);
     }
 
     // Estimate call duration (if not available, leave empty or use a default)
@@ -333,18 +370,21 @@ function generateCSV(audits: SavedAuditItem[]) {
       }
     }
 
-    // Get parameter scores (assuming auditResults contains parameter data)
-    const parameterScores = auditResults
-      .slice(0, 7)
-      .map((result: any) => result?.score || result?.percentage || "");
+    // Build parameter scores map by parameter name for this audit
+    const parameterScoresMap: Record<string, string> = {};
+    auditResults.forEach((result: any) => {
+      if (result?.parameter) {
+        parameterScoresMap[result.parameter] = result?.score?.toString() || result?.percentage?.toString() || "";
+      }
+    });
 
-    // Pad parameter scores to 7 columns
-    while (parameterScores.length < 7) {
-      parameterScores.push("");
-    }
+    // Get parameter scores in the same order as headers
+    const parameterScores = parameterNamesList.map(
+      (paramName) => parameterScoresMap[paramName] || ""
+    );
 
     const row = [
-      (index + 1).toString(),
+      audit.agentUserId || audit.auditData?.agentUserId || audit.agentName || "",
       audit.campaignName || "",
       callCategory,
       audit.agentName || "",
@@ -493,6 +533,10 @@ function DashboardPageContent() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+  // Delete audit state
+  const [auditToDelete, setAuditToDelete] = useState<SavedAuditItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const activeTab = searchParams.get("tab") || "overview";
 
   const [availableQaParameterSets, setAvailableQaParameterSets] = useState<
@@ -604,6 +648,41 @@ function DashboardPageContent() {
     loadData();
   }, [isClient, dateRange?.from]);
 
+  const handleDeleteAudit = async (audit: SavedAuditItem) => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/audits?id=${audit.id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        setSavedAudits((prev) => prev.filter((a) => a.id !== audit.id));
+        toast({
+          title: "Audit Deleted",
+          description: "The audit has been successfully deleted.",
+        });
+      } else {
+        const data = await response.json();
+        toast({
+          title: "Error",
+          description: data.error || "Failed to delete audit",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to delete audit:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete audit. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setAuditToDelete(null);
+    }
+  };
+
   const openAuditDetailsModal = (audit: SavedAuditItem) => {
     setModalTitle(
       `Audit Details - ${audit.agentName} (${format(
@@ -662,6 +741,22 @@ function DashboardPageContent() {
                   {audit.auditType.toUpperCase()}
                 </Badge>
               </p>
+              {currentUser?.role === "Administrator" && audit.auditType === "ai" && (
+                <>
+                  <p>
+                    <strong>Duration:</strong>{" "}
+                    {audit.auditData?.auditDurationMs 
+                      ? `${(audit.auditData.auditDurationMs / 1000).toFixed(2)}s`
+                      : "N/A"}
+                  </p>
+                  <p>
+                    <strong>Tokens:</strong>{" "}
+                    {audit.auditData?.tokenUsage 
+                      ? `In: ${audit.auditData.tokenUsage.inputTokens || 0} / Out: ${audit.auditData.tokenUsage.outputTokens || 0} / Total: ${audit.auditData.tokenUsage.totalTokens || 0}`
+                      : "N/A"}
+                  </p>
+                </>
+              )}
             </div>
             <Separator />
             <h4 className="font-semibold text-md">Parameter Results</h4>
@@ -825,6 +920,7 @@ function DashboardPageContent() {
           availableQaParameterSets={availableQaParameterSets}
           currentUser={currentUser}
           openAuditDetailsModal={openAuditDetailsModal}
+          setAuditToDelete={setAuditToDelete}
         />
       ) : currentUser?.role === "Auditor" ? (
         <Tabs
@@ -853,6 +949,7 @@ function DashboardPageContent() {
               availableQaParameterSets={availableQaParameterSets}
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
+              setAuditToDelete={setAuditToDelete}
             />
           </TabsContent>
           <TabsContent value="manual-dashboard" className="space-y-4">
@@ -865,6 +962,7 @@ function DashboardPageContent() {
               availableQaParameterSets={availableQaParameterSets}
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
+              setAuditToDelete={setAuditToDelete}
             />
           </TabsContent>
         </Tabs>
@@ -899,6 +997,7 @@ function DashboardPageContent() {
               availableQaParameterSets={availableQaParameterSets}
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
+              setAuditToDelete={setAuditToDelete}
             />
           </TabsContent>
           <TabsContent value="qa-dashboard" className="space-y-4">
@@ -911,6 +1010,7 @@ function DashboardPageContent() {
               availableQaParameterSets={availableQaParameterSets}
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
+              setAuditToDelete={setAuditToDelete}
             />
           </TabsContent>
           <TabsContent value="manual-dashboard" className="space-y-4">
@@ -923,6 +1023,7 @@ function DashboardPageContent() {
               availableQaParameterSets={availableQaParameterSets}
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
+              setAuditToDelete={setAuditToDelete}
             />
           </TabsContent>
         </Tabs>
@@ -947,6 +1048,34 @@ function DashboardPageContent() {
           )}
         </Dialog>
       )}
+
+      <AlertDialog open={!!auditToDelete} onOpenChange={(open) => !open && setAuditToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Audit</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this audit for {auditToDelete?.agentName}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              onClick={() => auditToDelete && handleDeleteAudit(auditToDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -960,6 +1089,7 @@ interface DashboardTabContentProps {
   availableQaParameterSets: QAParameter[];
   currentUser: User | null;
   openAuditDetailsModal: (audit: SavedAuditItem) => void;
+  setAuditToDelete: (audit: SavedAuditItem | null) => void;
 }
 
 const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
@@ -970,6 +1100,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   availableQaParameterSets,
   currentUser,
   openAuditDetailsModal,
+  setAuditToDelete,
 }) => {
   type AgentPerformanceData = {
     topAgents: {
@@ -1420,6 +1551,13 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                 {!isAgentView && <TableHead>Agent</TableHead>}
                 <TableHead>Score</TableHead>
                 <TableHead>Audit Type</TableHead>
+                {currentUser?.role === "Administrator" && (
+                  <>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Tokens (In/Out)</TableHead>
+                  </>
+                )}
+                <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1445,6 +1583,33 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                     >
                       {audit.auditType.toUpperCase()}
                     </Badge>
+                  </TableCell>
+                  {currentUser?.role === "Administrator" && (
+                    <>
+                      <TableCell>
+                        {audit.auditData?.auditDurationMs 
+                          ? `${(audit.auditData.auditDurationMs / 1000).toFixed(1)}s`
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {audit.auditData?.tokenUsage 
+                          ? `${audit.auditData.tokenUsage.inputTokens || 0} / ${audit.auditData.tokenUsage.outputTokens || 0}`
+                          : "-"}
+                      </TableCell>
+                    </>
+                  )}
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAuditToDelete(audit);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

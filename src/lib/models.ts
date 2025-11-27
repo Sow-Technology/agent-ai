@@ -26,6 +26,7 @@ export interface AuditDocument {
   id: string;
   callId: string;
   agentName: string;
+  agentUserId?: string; // User-entered agent ID from form
   customerName?: string;
   callDate: Date;
   campaignId: string;
@@ -35,9 +36,17 @@ export interface AuditDocument {
   overallScore: number;
   maxPossibleScore: number;
   transcript?: string;
+  englishTranslation?: string; // English translation of the transcript
   audioUrl?: string;
   auditedBy: string;
   auditType: "manual" | "ai";
+  // AI audit metadata
+  tokenUsage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  auditDurationMs?: number; // Duration of the audit in milliseconds
   createdAt: Date;
   updatedAt: Date;
 }
