@@ -117,9 +117,7 @@ export default function TokenAnalyticsPage() {
   const filteredAudits = useMemo(() => {
     const days = parseInt(dateRange);
     const cutoffDate = subDays(new Date(), days);
-    return audits.filter(
-      (audit) => new Date(audit.createdAt) >= cutoffDate
-    );
+    return audits.filter((audit) => new Date(audit.createdAt) >= cutoffDate);
   }, [audits, dateRange]);
 
   // Calculate summary statistics
@@ -238,7 +236,9 @@ export default function TokenAnalyticsPage() {
   const calculateCost = (inputTokens: number, outputTokens: number) => {
     const inputCost = parseFloat(inputTokenCost) || 0;
     const outputCost = parseFloat(outputTokenCost) || 0;
-    return (inputTokens / 1000) * inputCost + (outputTokens / 1000) * outputCost;
+    return (
+      (inputTokens / 1000) * inputCost + (outputTokens / 1000) * outputCost
+    );
   };
 
   const chartConfig = {
@@ -310,7 +310,9 @@ export default function TokenAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Tokens/Audit</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg Tokens/Audit
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -333,22 +335,20 @@ export default function TokenAnalyticsPage() {
             <div className="text-2xl font-bold">
               {(stats.avgDuration / 1000).toFixed(1)}s
             </div>
-            <p className="text-xs text-muted-foreground">
-              Per AI audit call
-            </p>
+            <p className="text-xs text-muted-foreground">Per AI audit call</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total AI Audits</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total AI Audits
+            </CardTitle>
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalAudits}</div>
-            <p className="text-xs text-muted-foreground">
-              In selected period
-            </p>
+            <p className="text-xs text-muted-foreground">In selected period</p>
           </CardContent>
         </Card>
       </div>
@@ -361,7 +361,8 @@ export default function TokenAnalyticsPage() {
             Cost Calculator
           </CardTitle>
           <CardDescription>
-            Enter your token pricing to calculate estimated costs (per 1,000 tokens)
+            Enter your token pricing to calculate estimated costs (per 1,000
+            tokens)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -421,9 +422,7 @@ export default function TokenAnalyticsPage() {
               <BarChart3 className="h-5 w-5" />
               Token Usage Over Time
             </CardTitle>
-            <CardDescription>
-              Daily token consumption breakdown
-            </CardDescription>
+            <CardDescription>Daily token consumption breakdown</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[350px] w-full">
@@ -484,7 +483,9 @@ export default function TokenAnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Avg Tokens Per Audit</CardTitle>
-            <CardDescription>Daily average token usage per audit</CardDescription>
+            <CardDescription>
+              Daily average token usage per audit
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
@@ -544,7 +545,10 @@ export default function TokenAnalyticsPage() {
               <TableBody>
                 {auditTableData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={9}
+                      className="text-center text-muted-foreground"
+                    >
                       No AI audits with token data found in the selected period
                     </TableCell>
                   </TableRow>
@@ -571,7 +575,11 @@ export default function TokenAnalyticsPage() {
                           : "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        ${calculateCost(audit.inputTokens, audit.outputTokens).toFixed(4)}
+                        $
+                        {calculateCost(
+                          audit.inputTokens,
+                          audit.outputTokens
+                        ).toFixed(4)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge

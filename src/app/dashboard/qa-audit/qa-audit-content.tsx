@@ -262,7 +262,7 @@ function convertSavedAuditItemToCreateAuditFormat(
     auditorId: auditedBy,
     auditorName: "AI Auditor",
     auditDate: new Date(savedAudit.auditDate).toISOString(),
-    
+
     // AI audit metadata
     tokenUsage: tokenUsage,
     auditDurationMs: auditDurationMs,
@@ -276,8 +276,16 @@ function convertSavedAuditItemToCreateAuditFormat(
               name: "Audit Results",
               subParameters: auditResults.map((result: any, index: number) => ({
                 id: result.parameterId || result.id || `param-${index}`,
-                name: result.parameter || result.parameterName || result.name || "Unknown",
-                weight: result.weightedScore || result.maxScore || result.weight || 100,
+                name:
+                  result.parameter ||
+                  result.parameterName ||
+                  result.name ||
+                  "Unknown",
+                weight:
+                  result.weightedScore ||
+                  result.maxScore ||
+                  result.weight ||
+                  100,
                 type: result.type || "Non-Fatal",
                 score: result.score || 0,
                 comments: result.comments || "",
@@ -1089,11 +1097,15 @@ export default function QaAuditContent() {
             </Collapsible>
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button onClick={() => handleSaveAudit({
-              ...auditResult,
-              agentUserId: qaAgentUserId,
-              campaignName: qaCampaignName,
-            })}>
+            <Button
+              onClick={() =>
+                handleSaveAudit({
+                  ...auditResult,
+                  agentUserId: qaAgentUserId,
+                  campaignName: qaCampaignName,
+                })
+              }
+            >
               <Save className="mr-2 h-4 w-4" /> Save Audit
             </Button>
           </CardFooter>

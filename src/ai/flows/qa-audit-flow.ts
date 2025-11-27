@@ -187,7 +187,7 @@ export type QaAuditOutput = z.infer<typeof QaAuditOutputSchema>;
 
 export async function qaAuditCall(input: QaAuditInput): Promise<QaAuditOutput> {
   const startTime = Date.now(); // Track audit duration
-  
+
   const { getModel } = await import("@/ai/genkit");
   const model = getModel();
 
@@ -336,16 +336,21 @@ ${parametersDesc}
   if (!output.callLanguage) {
     output.callLanguage = effectiveInput.callLanguage;
   }
-  
+
   // Ensure englishTranslation is always present
   if (!output.englishTranslation) {
     // If no English translation, use the original transcription as fallback
-    output.englishTranslation = output.transcriptionInOriginalLanguage || "Translation not available";
+    output.englishTranslation =
+      output.transcriptionInOriginalLanguage || "Translation not available";
   }
 
   // Fix any "Unknown" parameter names by mapping them to the correct input parameter names
   // Build a mapping of expected parameter names from input
-  const expectedParameters: { groupName: string; subParamName: string; index: number }[] = [];
+  const expectedParameters: {
+    groupName: string;
+    subParamName: string;
+    index: number;
+  }[] = [];
   effectiveInput.auditParameters.forEach((group) => {
     group.subParameters.forEach((subParam) => {
       expectedParameters.push({
@@ -372,8 +377,12 @@ ${parametersDesc}
           // Try to find a match by checking if the comment or parameter name contains any sub-parameter name
           const match = expectedParameters.find(
             (ep) =>
-              result.parameter.toLowerCase().includes(ep.subParamName.toLowerCase()) ||
-              result.comments?.toLowerCase().includes(ep.subParamName.toLowerCase())
+              result.parameter
+                .toLowerCase()
+                .includes(ep.subParamName.toLowerCase()) ||
+              result.comments
+                ?.toLowerCase()
+                .includes(ep.subParamName.toLowerCase())
           );
           if (match) {
             result.parameter = `${match.groupName} - ${match.subParamName}`;
@@ -386,11 +395,10 @@ ${parametersDesc}
 
   // Calculate total audit duration at the very end (includes AI time + all system processing)
   const auditDurationMs = Date.now() - startTime;
-  
+
   // Add token usage and duration to output
   output.tokenUsage = tokenUsage;
   output.auditDurationMs = auditDurationMs;
 
   return output;
 }
-

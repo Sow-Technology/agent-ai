@@ -150,7 +150,7 @@ CallAuditSchema.index({ projectId: 1, createdAt: -1 });
 CallAuditSchema.index({ callDate: 1 });
 
 // Delete cached model in development to pick up schema changes
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   delete mongoose.models.CallAudit;
 }
 

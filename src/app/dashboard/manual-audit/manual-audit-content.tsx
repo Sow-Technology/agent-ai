@@ -232,8 +232,16 @@ function convertSavedAuditItemToCreateAuditFormat(
               name: "Audit Results",
               subParameters: auditResults.map((result: any, index: number) => ({
                 id: result.parameterId || result.id || `param-${index}`,
-                name: result.parameter || result.parameterName || result.name || "Unknown",
-                weight: result.weightedScore || result.maxScore || result.weight || 100,
+                name:
+                  result.parameter ||
+                  result.parameterName ||
+                  result.name ||
+                  "Unknown",
+                weight:
+                  result.weightedScore ||
+                  result.maxScore ||
+                  result.weight ||
+                  100,
                 type: result.type || "Non-Fatal",
                 score: result.score || 0,
                 comments: result.comments || "",

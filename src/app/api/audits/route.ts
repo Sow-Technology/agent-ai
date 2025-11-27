@@ -83,11 +83,13 @@ const createAuditSchema = z
     auditorId: z.string().optional(),
     auditorName: z.string().optional(),
     // AI audit metadata
-    tokenUsage: z.object({
-      inputTokens: z.number().optional(),
-      outputTokens: z.number().optional(),
-      totalTokens: z.number().optional(),
-    }).optional(),
+    tokenUsage: z
+      .object({
+        inputTokens: z.number().optional(),
+        outputTokens: z.number().optional(),
+        totalTokens: z.number().optional(),
+      })
+      .optional(),
     auditDurationMs: z.number().optional(),
   })
   .strict()

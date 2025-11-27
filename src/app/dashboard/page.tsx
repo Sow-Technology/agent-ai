@@ -282,11 +282,11 @@ function generateCSV(audits: SavedAuditItem[]) {
         .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${milliseconds
         .toString()
         .padStart(3, "0")}`;
-      
+
       // Calculate start and end time based on audit date and duration
       const endDate = auditDate;
       const startDate = new Date(auditDate.getTime() - durationMs);
-      
+
       // Format as DD-MM-YYYY HH:MM:SS
       const formatDateTime = (date: Date) => {
         const d = date.getDate().toString().padStart(2, "0");
@@ -297,7 +297,7 @@ function generateCSV(audits: SavedAuditItem[]) {
         const ss = date.getSeconds().toString().padStart(2, "0");
         return `${d}-${m}-${y} ${hh}:${mm}:${ss}`;
       };
-      
+
       startTime = formatDateTime(startDate);
       endTime = formatDateTime(endDate);
     } else if (audit.auditData?.startTime && audit.auditData?.endTime) {
@@ -326,7 +326,7 @@ function generateCSV(audits: SavedAuditItem[]) {
         const ss = date.getSeconds().toString().padStart(2, "0");
         return `${d}-${m}-${y} ${hh}:${mm}:${ss}`;
       };
-      
+
       startTime = formatDateTime(start);
       endTime = formatDateTime(end);
     }
@@ -374,7 +374,8 @@ function generateCSV(audits: SavedAuditItem[]) {
     const parameterScoresMap: Record<string, string> = {};
     auditResults.forEach((result: any) => {
       if (result?.parameter) {
-        parameterScoresMap[result.parameter] = result?.score?.toString() || result?.percentage?.toString() || "";
+        parameterScoresMap[result.parameter] =
+          result?.score?.toString() || result?.percentage?.toString() || "";
       }
     });
 
@@ -384,7 +385,10 @@ function generateCSV(audits: SavedAuditItem[]) {
     );
 
     const row = [
-      audit.agentUserId || audit.auditData?.agentUserId || audit.agentName || "",
+      audit.agentUserId ||
+        audit.auditData?.agentUserId ||
+        audit.agentName ||
+        "",
       audit.campaignName || "",
       callCategory,
       audit.agentName || "",
@@ -534,7 +538,9 @@ function DashboardPageContent() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Delete audit state
-  const [auditToDelete, setAuditToDelete] = useState<SavedAuditItem | null>(null);
+  const [auditToDelete, setAuditToDelete] = useState<SavedAuditItem | null>(
+    null
+  );
   const [isDeleting, setIsDeleting] = useState(false);
 
   const activeTab = searchParams.get("tab") || "overview";
@@ -741,22 +747,31 @@ function DashboardPageContent() {
                   {audit.auditType.toUpperCase()}
                 </Badge>
               </p>
-              {currentUser?.role === "Administrator" && audit.auditType === "ai" && (
-                <>
-                  <p>
-                    <strong>Duration:</strong>{" "}
-                    {audit.auditData?.auditDurationMs 
-                      ? `${(audit.auditData.auditDurationMs / 1000).toFixed(2)}s`
-                      : "N/A"}
-                  </p>
-                  <p>
-                    <strong>Tokens:</strong>{" "}
-                    {audit.auditData?.tokenUsage 
-                      ? `In: ${audit.auditData.tokenUsage.inputTokens || 0} / Out: ${audit.auditData.tokenUsage.outputTokens || 0} / Total: ${audit.auditData.tokenUsage.totalTokens || 0}`
-                      : "N/A"}
-                  </p>
-                </>
-              )}
+              {currentUser?.role === "Administrator" &&
+                audit.auditType === "ai" && (
+                  <>
+                    <p>
+                      <strong>Duration:</strong>{" "}
+                      {audit.auditData?.auditDurationMs
+                        ? `${(audit.auditData.auditDurationMs / 1000).toFixed(
+                            2
+                          )}s`
+                        : "N/A"}
+                    </p>
+                    <p>
+                      <strong>Tokens:</strong>{" "}
+                      {audit.auditData?.tokenUsage
+                        ? `In: ${
+                            audit.auditData.tokenUsage.inputTokens || 0
+                          } / Out: ${
+                            audit.auditData.tokenUsage.outputTokens || 0
+                          } / Total: ${
+                            audit.auditData.tokenUsage.totalTokens || 0
+                          }`
+                        : "N/A"}
+                    </p>
+                  </>
+                )}
             </div>
             <Separator />
             <h4 className="font-semibold text-md">Parameter Results</h4>
@@ -1049,12 +1064,16 @@ function DashboardPageContent() {
         </Dialog>
       )}
 
-      <AlertDialog open={!!auditToDelete} onOpenChange={(open) => !open && setAuditToDelete(null)}>
+      <AlertDialog
+        open={!!auditToDelete}
+        onOpenChange={(open) => !open && setAuditToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Audit</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this audit for {auditToDelete?.agentName}? This action cannot be undone.
+              Are you sure you want to delete this audit for{" "}
+              {auditToDelete?.agentName}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1587,13 +1606,17 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                   {currentUser?.role === "Administrator" && (
                     <>
                       <TableCell>
-                        {audit.auditData?.auditDurationMs 
-                          ? `${(audit.auditData.auditDurationMs / 1000).toFixed(1)}s`
+                        {audit.auditData?.auditDurationMs
+                          ? `${(audit.auditData.auditDurationMs / 1000).toFixed(
+                              1
+                            )}s`
                           : "-"}
                       </TableCell>
                       <TableCell>
-                        {audit.auditData?.tokenUsage 
-                          ? `${audit.auditData.tokenUsage.inputTokens || 0} / ${audit.auditData.tokenUsage.outputTokens || 0}`
+                        {audit.auditData?.tokenUsage
+                          ? `${audit.auditData.tokenUsage.inputTokens || 0} / ${
+                              audit.auditData.tokenUsage.outputTokens || 0
+                            }`
                           : "-"}
                       </TableCell>
                     </>
