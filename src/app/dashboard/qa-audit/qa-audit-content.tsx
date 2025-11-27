@@ -552,9 +552,9 @@ export default function QaAuditContent() {
 
   const handlePlayTranslation = async (text: string) => {
     if (!text) return;
-    
+
     // Check if browser supports speech synthesis
-    if (!('speechSynthesis' in window)) {
+    if (!("speechSynthesis" in window)) {
       toast({
         title: "Not Supported",
         description: "Your browser does not support text-to-speech.",
@@ -564,33 +564,33 @@ export default function QaAuditContent() {
     }
 
     setIsGeneratingSpeech(true);
-    
+
     try {
       // Cancel any ongoing speech
       window.speechSynthesis.cancel();
-      
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "en-US";
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
-      
+
       // Try to find a good English voice
       const voices = window.speechSynthesis.getVoices();
-      const englishVoice = voices.find(
-        (voice) => voice.lang.startsWith("en") && voice.name.includes("Google")
-      ) || voices.find(
-        (voice) => voice.lang.startsWith("en")
-      );
-      
+      const englishVoice =
+        voices.find(
+          (voice) =>
+            voice.lang.startsWith("en") && voice.name.includes("Google")
+        ) || voices.find((voice) => voice.lang.startsWith("en"));
+
       if (englishVoice) {
         utterance.voice = englishVoice;
       }
-      
+
       utterance.onend = () => {
         setIsGeneratingSpeech(false);
       };
-      
+
       utterance.onerror = (event) => {
         console.error("Speech synthesis error:", event);
         setIsGeneratingSpeech(false);
@@ -600,7 +600,7 @@ export default function QaAuditContent() {
           variant: "destructive",
         });
       };
-      
+
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.error("TTS Error:", e);
@@ -616,7 +616,7 @@ export default function QaAuditContent() {
 
   // Load voices when component mounts
   useEffect(() => {
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       // Voices may not be loaded immediately
       window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => {
