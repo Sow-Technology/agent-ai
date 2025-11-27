@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Brain, Save, Volume2 } from "lucide-react";
+import { Loader2, Brain, Save, Volume2, VolumeX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -552,38 +552,78 @@ export default function QaAuditContent() {
 
   const handlePlayTranslation = async (text: string) => {
     if (!text) return;
-    setIsGeneratingSpeech(true);
-    setPlaybackAudioSrc(null);
-    try {
-      const response = await fetch("/api/text-to-speech", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ text }),
+    
+    // Check if browser supports speech synthesis
+    if (!('speechSynthesis' in window)) {
+      toast({
+        title: "Not Supported",
+        description: "Your browser does not support text-to-speech.",
+        variant: "destructive",
       });
+      return;
+    }
 
-      if (!response.ok) {
-        throw new Error("Failed to generate speech");
+    setIsGeneratingSpeech(true);
+    
+    try {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      // Try to find a good English voice
+      const voices = window.speechSynthesis.getVoices();
+      const englishVoice = voices.find(
+        (voice) => voice.lang.startsWith("en") && voice.name.includes("Google")
+      ) || voices.find(
+        (voice) => voice.lang.startsWith("en")
+      );
+      
+      if (englishVoice) {
+        utterance.voice = englishVoice;
       }
-
-      const responseData = await response.json();
-      if (!responseData.success) {
-        throw new Error(responseData.error || "Text-to-speech failed");
-      }
-
-      const result = responseData.data;
-      setPlaybackAudioSrc(result.audioDataUri);
+      
+      utterance.onend = () => {
+        setIsGeneratingSpeech(false);
+      };
+      
+      utterance.onerror = (event) => {
+        console.error("Speech synthesis error:", event);
+        setIsGeneratingSpeech(false);
+        toast({
+          title: "Speech Error",
+          description: "Failed to play the text.",
+          variant: "destructive",
+        });
+      };
+      
+      window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.error("TTS Error:", e);
+      setIsGeneratingSpeech(false);
       toast({
         title: "Text-to-Speech Failed",
         description:
           e instanceof Error ? e.message : "Could not generate audio.",
         variant: "destructive",
       });
-    } finally {
-      setIsGeneratingSpeech(false);
     }
   };
+
+  // Load voices when component mounts
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      // Voices may not be loaded immediately
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  }, []);
 
   useEffect(() => {
     if (playbackAudioSrc && audioPlaybackRef.current) {
@@ -1055,19 +1095,24 @@ export default function QaAuditContent() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() =>
-                            handlePlayTranslation(
-                              auditResult.englishTranslation!
-                            )
-                          }
-                          disabled={isGeneratingSpeech}
+                          onClick={() => {
+                            if (isGeneratingSpeech) {
+                              // Stop speaking
+                              window.speechSynthesis.cancel();
+                              setIsGeneratingSpeech(false);
+                            } else {
+                              handlePlayTranslation(
+                                auditResult.englishTranslation!
+                              );
+                            }
+                          }}
                         >
                           {isGeneratingSpeech ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <VolumeX className="mr-2 h-4 w-4" />
                           ) : (
                             <Volume2 className="mr-2 h-4 w-4" />
                           )}
-                          Speak Translation
+                          {isGeneratingSpeech ? "Stop" : "Speak Translation"}
                         </Button>
                       </div>
                       <ScrollArea className="h-64 p-4 border rounded-md bg-muted/50">
