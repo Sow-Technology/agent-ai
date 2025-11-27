@@ -17,8 +17,9 @@ export async function POST(request: NextRequest) {
     const truncatedText =
       text.length > maxLength ? text.slice(0, maxLength) : text;
 
-    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-    
+    const apiKey =
+      process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+
     if (!apiKey) {
       return NextResponse.json(
         { success: false, error: "Google API key not configured" },
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (!ttsResponse.ok) {
       const errorData = await ttsResponse.json().catch(() => ({}));
       console.error("Google TTS API error:", errorData);
-      
+
       // If Studio voice fails, try with a standard voice
       if (ttsResponse.status === 400 && voiceName.includes("Studio")) {
         const fallbackResponse = await fetch(
@@ -98,7 +99,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: errorData.error?.message || "Failed to generate speech from Google TTS API",
+          error:
+            errorData.error?.message ||
+            "Failed to generate speech from Google TTS API",
         },
         { status: ttsResponse.status }
       );
