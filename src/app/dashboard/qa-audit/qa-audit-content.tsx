@@ -569,39 +569,122 @@ export default function QaAuditContent() {
       // Cancel any ongoing speech
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
+      // Wait a bit after cancel to ensure clean state
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Try to find a good English voice
-      const voices = window.speechSynthesis.getVoices();
+      // Get voices
+      let voices = window.speechSynthesis.getVoices();
+      
+      // If voices aren't loaded yet, wait for them
+      if (voices.length === 0) {
+        await new Promise<void>((resolve) => {
+          const checkVoices = () => {
+            voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+              resolve();
+            } else {
+              setTimeout(checkVoices, 100);
+            }
+          };
+          checkVoices();
+        });
+      }
+
       const englishVoice =
         voices.find(
           (voice) =>
             voice.lang.startsWith("en") && voice.name.includes("Google")
-        ) || voices.find((voice) => voice.lang.startsWith("en"));
+        ) ||
+        voices.find(
+          (voice) => voice.lang.startsWith("en-US")
+        ) ||
+        voices.find((voice) => voice.lang.startsWith("en"));
 
-      if (englishVoice) {
-        utterance.voice = englishVoice;
+      // Split text into smaller chunks to avoid Chrome's speech synthesis bug
+      // Chrome has issues with long utterances
+      const maxChunkLength = 200;
+      const sentences = text.match(/[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g) || [text];
+      const chunks: string[] = [];
+      let currentChunk = "";
+
+      for (const sentence of sentences) {
+        if ((currentChunk + sentence).length > maxChunkLength && currentChunk) {
+          chunks.push(currentChunk.trim());
+          currentChunk = sentence;
+        } else {
+          currentChunk += sentence;
+        }
+      }
+      if (currentChunk.trim()) {
+        chunks.push(currentChunk.trim());
       }
 
-      utterance.onend = () => {
-        setIsGeneratingSpeech(false);
+      // If no chunks were created, use the original text
+      if (chunks.length === 0) {
+        chunks.push(text);
+      }
+
+      let currentIndex = 0;
+
+      const speakNextChunk = () => {
+        if (currentIndex >= chunks.length) {
+          setIsGeneratingSpeech(false);
+          return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(chunks[currentIndex]);
+        utterance.lang = "en-US";
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        if (englishVoice) {
+          utterance.voice = englishVoice;
+        }
+
+        utterance.onend = () => {
+          currentIndex++;
+          speakNextChunk();
+        };
+
+        utterance.onerror = (event) => {
+          // Ignore "interrupted" error - this happens when user clicks Stop
+          if (event.error === "interrupted" || event.error === "canceled") {
+            setIsGeneratingSpeech(false);
+            return;
+          }
+          console.error("Speech synthesis error:", event);
+          setIsGeneratingSpeech(false);
+          toast({
+            title: "Speech Error",
+            description: "Failed to play the text.",
+            variant: "destructive",
+          });
+        };
+
+        window.speechSynthesis.speak(utterance);
       };
 
-      utterance.onerror = (event) => {
-        console.error("Speech synthesis error:", event);
-        setIsGeneratingSpeech(false);
-        toast({
-          title: "Speech Error",
-          description: "Failed to play the text.",
-          variant: "destructive",
-        });
-      };
+      // Chrome bug workaround: resume speech synthesis if it gets paused
+      const resumeInterval = setInterval(() => {
+        if (!window.speechSynthesis.speaking) {
+          clearInterval(resumeInterval);
+        } else if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      }, 1000);
 
-      window.speechSynthesis.speak(utterance);
+      // Start speaking
+      speakNextChunk();
+
+      // Clean up interval when speech ends
+      const checkSpeechEnd = setInterval(() => {
+        if (!isGeneratingSpeech || !window.speechSynthesis.speaking) {
+          clearInterval(resumeInterval);
+          clearInterval(checkSpeechEnd);
+        }
+      }, 500);
+
     } catch (e) {
       console.error("TTS Error:", e);
       setIsGeneratingSpeech(false);
