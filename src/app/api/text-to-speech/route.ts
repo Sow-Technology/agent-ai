@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getGoogleAI } from "@/ai/genkit";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text } = body;
+    const { text, languageCode = "en-US", voiceName = "en-US-Studio-O" } = body;
 
     if (!text || typeof text !== "string") {
       return NextResponse.json(
@@ -13,84 +12,100 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Limit text length to prevent abuse
+    // Limit text length to prevent abuse (Cloud TTS has a 5000 byte limit per request)
     const maxLength = 5000;
     const truncatedText =
       text.length > maxLength ? text.slice(0, maxLength) : text;
 
-    const ai = getGoogleAI();
-
-    // Use Gemini 2.0 Flash with audio output
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-      generationConfig: {
-        // @ts-ignore - responseModalities is supported but not in types yet
-        responseModalities: ["AUDIO"],
-        // @ts-ignore - speechConfig is supported but not in types yet
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: "Kore",
-            },
-          },
-        },
-      },
-    });
-
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `Please read the following text aloud clearly and naturally:\n\n${truncatedText}`,
-            },
-          ],
-        },
-      ],
-    });
-
-    const response = result.response;
-
-    // Check if we have audio data in the response
-    const candidate = response.candidates?.[0];
-    if (!candidate?.content?.parts) {
-      throw new Error("No audio content generated");
-    }
-
-    // Find the inline data part with audio
-    let audioDataUri: string | null = null;
-
-    for (const part of candidate.content.parts) {
-      // @ts-ignore - inlineData may contain audio
-      if (part.inlineData?.mimeType?.startsWith("audio/")) {
-        // @ts-ignore
-        const mimeType = part.inlineData.mimeType;
-        // @ts-ignore
-        const base64Data = part.inlineData.data;
-        audioDataUri = `data:${mimeType};base64,${base64Data}`;
-        break;
-      }
-    }
-
-    if (!audioDataUri) {
-      // Fallback: Use Web Speech API on client or return an error
-      // For server-side, we'll use an alternative approach with Google Cloud TTS
-      // For now, return a message that TTS is not available
-      console.log(
-        "No audio in Gemini response, parts:",
-        JSON.stringify(candidate.content.parts, null, 2)
+    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+    
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: "Google API key not configured" },
+        { status: 500 }
       );
+    }
+
+    // Use Google Cloud Text-to-Speech API
+    const ttsResponse = await fetch(
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          input: {
+            text: truncatedText,
+          },
+          voice: {
+            languageCode: languageCode,
+            name: voiceName,
+            ssmlGender: "FEMALE",
+          },
+          audioConfig: {
+            audioEncoding: "MP3",
+            speakingRate: 1.0,
+            pitch: 0,
+          },
+        }),
+      }
+    );
+
+    if (!ttsResponse.ok) {
+      const errorData = await ttsResponse.json().catch(() => ({}));
+      console.error("Google TTS API error:", errorData);
+      
+      // If Studio voice fails, try with a standard voice
+      if (ttsResponse.status === 400 && voiceName.includes("Studio")) {
+        const fallbackResponse = await fetch(
+          `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              input: {
+                text: truncatedText,
+              },
+              voice: {
+                languageCode: languageCode,
+                name: "en-US-Standard-C",
+                ssmlGender: "FEMALE",
+              },
+              audioConfig: {
+                audioEncoding: "MP3",
+                speakingRate: 1.0,
+                pitch: 0,
+              },
+            }),
+          }
+        );
+
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          const audioDataUri = `data:audio/mp3;base64,${fallbackData.audioContent}`;
+          return NextResponse.json({
+            success: true,
+            data: {
+              audioDataUri,
+            },
+          });
+        }
+      }
 
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Text-to-speech audio generation not available. The model did not return audio output.",
+          error: errorData.error?.message || "Failed to generate speech from Google TTS API",
         },
-        { status: 503 }
+        { status: ttsResponse.status }
       );
     }
+
+    const ttsData = await ttsResponse.json();
+    const audioDataUri = `data:audio/mp3;base64,${ttsData.audioContent}`;
 
     return NextResponse.json({
       success: true,
