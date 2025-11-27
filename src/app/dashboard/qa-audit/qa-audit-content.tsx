@@ -574,7 +574,7 @@ export default function QaAuditContent() {
 
       // Get voices
       let voices = window.speechSynthesis.getVoices();
-      
+
       // If voices aren't loaded yet, wait for them
       if (voices.length === 0) {
         await new Promise<void>((resolve) => {
@@ -595,9 +595,7 @@ export default function QaAuditContent() {
           (voice) =>
             voice.lang.startsWith("en") && voice.name.includes("Google")
         ) ||
-        voices.find(
-          (voice) => voice.lang.startsWith("en-US")
-        ) ||
+        voices.find((voice) => voice.lang.startsWith("en-US")) ||
         voices.find((voice) => voice.lang.startsWith("en"));
 
       // Split text into smaller chunks to avoid Chrome's speech synthesis bug
@@ -684,7 +682,6 @@ export default function QaAuditContent() {
           clearInterval(checkSpeechEnd);
         }
       }, 500);
-
     } catch (e) {
       console.error("TTS Error:", e);
       setIsGeneratingSpeech(false);
