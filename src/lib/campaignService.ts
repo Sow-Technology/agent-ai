@@ -14,6 +14,7 @@ interface CreateCampaignParams {
   projectId?: string;
   qaParameterSetId?: string;
   sopId?: string;
+  applyRateLimit?: boolean;
   rows: Record<string, any>[];
 }
 
@@ -38,6 +39,7 @@ export async function createCampaignWithJobs(
     projectId,
     qaParameterSetId,
     sopId,
+    applyRateLimit,
     rows,
   } = params;
   const campaign = await Campaign.create({
@@ -49,6 +51,7 @@ export async function createCampaignWithJobs(
     projectId,
     qaParameterSetId,
     sopId,
+    applyRateLimit: applyRateLimit ?? true,
     startedAt: new Date(),
   });
 

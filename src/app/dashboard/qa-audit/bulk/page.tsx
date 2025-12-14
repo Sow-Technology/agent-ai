@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Loader2, UploadCloud, PlayCircle, XCircle } from "lucide-react";
 
 import type { QAParameter } from "@/types/qa-parameter";
@@ -83,6 +84,7 @@ export default function BulkAuditPage() {
     useState<string>("");
   const [selectedSopId, setSelectedSopId] = useState<string>("");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [applyRateLimit, setApplyRateLimit] = useState<boolean>(true);
 
   const parsedPreview = useMemo(() => rows.slice(0, 5), [rows]);
 
@@ -140,6 +142,7 @@ export default function BulkAuditPage() {
           qaParameterSetId: selectedQaParameterSetId || undefined,
           sopId: selectedSopId || undefined,
           projectId: selectedProjectId || undefined,
+          applyRateLimit,
         }),
       });
       const json = await res.json();
@@ -329,6 +332,22 @@ export default function BulkAuditPage() {
                 onChange={(e) => setSelectedProjectId(e.target.value)}
                 placeholder="Enter project name"
               />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rate-limit"
+                  checked={applyRateLimit}
+                  onCheckedChange={(checked) => setApplyRateLimit(checked as boolean)}
+                />
+                <Label htmlFor="rate-limit" className="text-sm">
+                  Apply rate limiting (10 requests/minute)
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Recommended to avoid API quota limits. Uncheck only if you have higher limits.
+              </p>
             </div>
 
             <div className="space-y-2">

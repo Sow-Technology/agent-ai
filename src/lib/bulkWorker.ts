@@ -14,6 +14,41 @@ import {
 import { createAudit } from "@/lib/auditService";
 import type { QAParameterDocument } from "@/lib/models";
 
+// Rate limiter for Gemini API (10 requests per minute)
+class RateLimiter {
+  private requests: number[] = [];
+  private readonly maxRequests: number;
+  private readonly windowMs: number;
+
+  constructor(maxRequests: number = 10, windowMs: number = 60000) {
+    this.maxRequests = maxRequests;
+    this.windowMs = windowMs;
+  }
+
+  async waitForSlot(): Promise<void> {
+    const now = Date.now();
+    
+    // Remove old requests outside the window
+    this.requests = this.requests.filter(time => now - time < this.windowMs);
+    
+    if (this.requests.length >= this.maxRequests) {
+      // Calculate wait time until oldest request expires
+      const oldestRequest = Math.min(...this.requests);
+      const waitTime = this.windowMs - (now - oldestRequest);
+      
+      if (waitTime > 0) {
+        console.log(`Rate limit reached. Waiting ${waitTime}ms before next request...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+    
+    // Add current request
+    this.requests.push(now);
+  }
+}
+
+const geminiRateLimiter = new RateLimiter(10, 60000); // 10 requests per minute
+
 function getParallelismCap() {
   const max = parseInt(process.env.BULK_AUDIT_MAX_PARALLEL || "3", 10);
   const freeMemRatio = os.freemem() / os.totalmem();
@@ -99,9 +134,10 @@ interface CsvJobPayload {
   file_no?: string;
 }
 
-function mapRowToAuditPayload(row: CsvJobPayload, timezone: string) {
+function mapRowToAuditPayload(row: CsvJobPayload, timezone: string, campaignId?: string) {
   const callDate = parseDateWithTimezone(row.call_datetime, timezone);
-  const callId = row.rid_phone || `call-${Date.now()}`;
+  const baseCallId = row.rid_phone || `call-${Date.now()}-${Math.random()}`;
+  const callId = campaignId ? `${campaignId}-${baseCallId}` : baseCallId;
   const agentName = row.full_name || "Unknown Agent";
   const agentUserId = row.employee_id || agentName;
   const campaignName = row.client_id || "Bulk Campaign";
@@ -150,7 +186,8 @@ export async function runBulkWorkerOnce() {
 
           const mapped = mapRowToAuditPayload(
             job.payload as CsvJobPayload,
-            campaign.timezone || "UTC"
+            campaign.timezone || "UTC",
+            campaign._id.toString()
           );
 
           if (!mapped.audioUrl) {
@@ -158,6 +195,11 @@ export async function runBulkWorkerOnce() {
           }
 
           const audioDataUri = await fetchAudioDataUri(mapped.audioUrl);
+
+          // Apply rate limiting for Gemini API if enabled for this campaign
+          if (campaign.applyRateLimit !== false) {
+            await geminiRateLimiter.waitForSlot();
+          }
 
           const qaResult = await qaAuditCall({
             agentUserId: mapped.agentUserId,

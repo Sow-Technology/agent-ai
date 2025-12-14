@@ -23,6 +23,7 @@ export interface ICampaign extends Document {
   projectId?: string;
   qaParameterSetId?: string;
   sopId?: string;
+  applyRateLimit?: boolean;
   startedAt?: Date;
   finishedAt?: Date;
   createdAt: Date;
@@ -55,6 +56,7 @@ const CampaignSchema = new Schema<ICampaign>(
     projectId: { type: String },
     qaParameterSetId: { type: String },
     sopId: { type: String },
+    applyRateLimit: { type: Boolean, default: true },
     startedAt: { type: Date },
     finishedAt: { type: Date },
   },

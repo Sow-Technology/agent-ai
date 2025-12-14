@@ -17,6 +17,7 @@ const createSchema = z.object({
   qaParameterSetId: z.string().optional(),
   sopId: z.string().optional(),
   projectId: z.string().optional(),
+  applyRateLimit: z.boolean().optional().default(true),
 });
 
 function normalizeRow(row: Record<string, any>) {
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
       projectId: parsed.data.projectId || tokenResult.user.projectId,
       qaParameterSetId: parsed.data.qaParameterSetId,
       sopId: parsed.data.sopId,
+      applyRateLimit: parsed.data.applyRateLimit,
       rows,
     });
 
