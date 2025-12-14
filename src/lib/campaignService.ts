@@ -269,7 +269,7 @@ async function recomputeCampaignProgress(campaignId: string) {
   }
 
   const finishedAt =
-    status === "completed" || status === "failed" || status === "canceled"
+    status === "completed" || status === "completed_with_errors" || status === "canceled"
       ? campaign.finishedAt || new Date()
       : campaign.finishedAt;
 
