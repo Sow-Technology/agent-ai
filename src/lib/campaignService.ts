@@ -95,9 +95,7 @@ export async function cancelCampaign(
   return canceled;
 }
 
-export async function claimJobs(
-  limit: number
-): Promise<ICampaignJob[]> {
+export async function claimJobs(limit: number): Promise<ICampaignJob[]> {
   await ensureDb();
   const claimed: ICampaignJob[] = [];
   for (let i = 0; i < limit; i += 1) {
@@ -188,7 +186,9 @@ export async function getCampaignJobs(
   campaignId: string
 ): Promise<ICampaignJob[]> {
   await ensureDb();
-  return CampaignJob.find({ campaignId }).sort({ rowIndex: 1 }).lean<ICampaignJob[]>();
+  return CampaignJob.find({ campaignId })
+    .sort({ rowIndex: 1 })
+    .lean<ICampaignJob[]>();
 }
 
 export async function getReportRows(campaignId: string) {
@@ -269,7 +269,9 @@ async function recomputeCampaignProgress(campaignId: string) {
   }
 
   const finishedAt =
-    status === "completed" || status === "completed_with_errors" || status === "canceled"
+    status === "completed" ||
+    status === "completed_with_errors" ||
+    status === "canceled"
       ? campaign.finishedAt || new Date()
       : campaign.finishedAt;
 
