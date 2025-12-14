@@ -4,9 +4,12 @@ export function parseRetryDelay(error: any): number {
     // Look for RetryInfo in the error details
     if (error?.details) {
       for (const detail of error.details) {
-        if (detail['@type'] === 'type.googleapis.com/google.rpc.RetryInfo' && detail.retryDelay) {
+        if (
+          detail["@type"] === "type.googleapis.com/google.rpc.RetryInfo" &&
+          detail.retryDelay
+        ) {
           const delay = detail.retryDelay;
-          if (typeof delay === 'string') {
+          if (typeof delay === "string") {
             // Parse duration strings like "29s", "5.5s"
             const match = delay.match(/^(\d+(?:\.\d+)?)s$/);
             if (match) {
@@ -36,10 +39,11 @@ export async function retryGeminiCall<T>(
       lastError = error;
 
       // Check if it's a rate limit error (429)
-      const isRateLimit = error?.status === 429 ||
-        error?.message?.includes('429') ||
-        error?.message?.includes('Too Many Requests') ||
-        error?.message?.includes('quota');
+      const isRateLimit =
+        error?.status === 429 ||
+        error?.message?.includes("429") ||
+        error?.message?.includes("Too Many Requests") ||
+        error?.message?.includes("quota");
 
       if (!isRateLimit || attempt === maxRetries) {
         // Not a rate limit error, or we've exhausted retries
@@ -52,8 +56,12 @@ export async function retryGeminiCall<T>(
         retryDelay = baseDelay * Math.pow(2, attempt); // Exponential backoff
       }
 
-      console.log(`Gemini API rate limit hit (attempt ${attempt + 1}/${maxRetries + 1}). Waiting ${retryDelay}ms before retry...`);
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      console.log(
+        `Gemini API rate limit hit (attempt ${attempt + 1}/${
+          maxRetries + 1
+        }). Waiting ${retryDelay}ms before retry...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
 
