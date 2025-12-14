@@ -51,6 +51,8 @@ import {
   Tooltip,
   Bar,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
 import {
   Dialog,
@@ -1246,6 +1248,18 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     neutral: 0,
     negative: 0,
   });
+  const [fatalErrorsData, setFatalErrorsData] = useState({
+    totalFatalErrors: 0,
+    fatalRate: 0,
+  });
+  
+  // Time series data for line charts
+  const [dailyAuditsData, setDailyAuditsData] = useState<
+    { date: string; audits: number }[]
+  >([]);
+  const [dailyFatalErrorsData, setDailyFatalErrorsData] = useState<
+    { date: string; fatalErrors: number }[]
+  >([]);
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -1514,6 +1528,71 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               )
             : 0,
       });
+
+      // Calculate total fatal errors and fatal rate
+      let totalFatalErrors = 0;
+      filteredAudits.forEach((audit) => {
+        const fatalCount = audit.auditData.auditResults.filter(
+          (r: any) => r.type === "Fatal" && r.score < 80
+        ).length;
+        totalFatalErrors += fatalCount;
+      });
+      
+      const auditsWithFatalErrors = filteredAudits.filter((audit) =>
+        audit.auditData.auditResults.some(
+          (r: any) => r.type === "Fatal" && r.score < 80
+        )
+      ).length;
+
+      setFatalErrorsData({
+        totalFatalErrors,
+        fatalRate:
+          filteredAudits.length > 0
+            ? parseFloat(
+                ((auditsWithFatalErrors / filteredAudits.length) * 100).toFixed(
+                  1
+                )
+              )
+            : 0,
+      });
+
+      // Calculate daily audits and fatal errors
+      const dailyAuditsMap = new Map<string, number>();
+      const dailyFatalErrorsMap = new Map<string, number>();
+
+      filteredAudits.forEach((audit) => {
+        const date = format(new Date(audit.auditDate), "yyyy-MM-dd");
+        
+        // Count audits per day
+        dailyAuditsMap.set(date, (dailyAuditsMap.get(date) || 0) + 1);
+        
+        // Count fatal errors per day
+        const fatalCount = audit.auditData.auditResults.filter(
+          (r: any) => r.type === "Fatal" && r.score < 80
+        ).length;
+        dailyFatalErrorsMap.set(
+          date,
+          (dailyFatalErrorsMap.get(date) || 0) + fatalCount
+        );
+      });
+
+      // Convert maps to sorted arrays
+      const sortedDailyAudits = Array.from(dailyAuditsMap.entries())
+        .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+        .map(([date, audits]) => ({
+          date: format(new Date(date), "MMM dd"),
+          audits,
+        }));
+
+      const sortedDailyFatalErrors = Array.from(dailyFatalErrorsMap.entries())
+        .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+        .map(([date, fatalErrors]) => ({
+          date: format(new Date(date), "MMM dd"),
+          fatalErrors,
+        }));
+
+      setDailyAuditsData(sortedDailyAudits);
+      setDailyFatalErrorsData(sortedDailyFatalErrors);
     } else {
       setOverallQAScore(0);
       setTopIssuesData([
@@ -1533,6 +1612,9 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       });
       setSentimentData({ positive: 0, neutral: 0, negative: 0 });
       setTrainingNeedsData(null);
+      setDailyAuditsData([]);
+      setDailyFatalErrorsData([]);
+      setFatalErrorsData({ totalFatalErrors: 0, fatalRate: 0 });
     }
   }, [filteredAudits]);
 
@@ -1550,6 +1632,14 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
   const chartConfigTopIssues = {
     count: { label: "Count", color: "hsl(var(--chart-2))" },
+  } as const;
+
+  const chartConfigDailyAudits = {
+    audits: { label: "Audits", color: "hsl(var(--chart-1))" },
+  } as const;
+
+  const chartConfigDailyFatalErrors = {
+    fatalErrors: { label: "Fatal Errors", color: "hsl(var(--destructive))" },
   } as const;
 
   const isAgentView = currentUser?.role === "Agent";
@@ -1583,20 +1673,20 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               agents
             </p>
           </OverviewCard>
-          <OverviewCard title="Compliance Rate" icon={ShieldCheck}>
+          <OverviewCard title="No. of Fatal" icon={ShieldCheck}>
             <div className="text-2xl font-bold">
-              {complianceData.complianceRate}%
+              {fatalErrorsData.totalFatalErrors}
             </div>
             <p className="text-xs text-muted-foreground">
-              {complianceData.interactionsWithIssues} interactions with issues
+              Total fatal errors across all audits
             </p>
           </OverviewCard>
-          <OverviewCard title="Sentiment Mix" icon={Smile}>
+          <OverviewCard title="Fatal Rate" icon={Activity}>
             <div className="text-2xl font-bold">
-              {sentimentData.positive}% Positive
+              {fatalErrorsData.fatalRate}%
             </div>
             <p className="text-xs text-muted-foreground">
-              {sentimentData.negative}% Negative calls detected
+              Percentage of audits with fatal errors
             </p>
           </OverviewCard>
           <OverviewCard title="Training Needs" icon={UserCheck}>
@@ -1639,118 +1729,6 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           </OverviewCard>
         </div>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>My Audits</CardTitle>
-          <CardDescription>
-            A list of all audits performed. Click a row to see details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Campaign</TableHead>
-                {!isAgentView && <TableHead>Agent</TableHead>}
-                <TableHead>Score</TableHead>
-                <TableHead>Audit Type</TableHead>
-                {currentUser?.role === "Administrator" && (
-                  <>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Tokens (In/Out)</TableHead>
-                  </>
-                )}
-                <TableHead className="w-[80px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedAudits.map((audit) => (
-                <TableRow
-                  key={audit.id}
-                  onClick={() => openAuditDetailsModal(audit)}
-                  className="cursor-pointer"
-                >
-                  <TableCell>
-                    {format(new Date(audit.auditDate), "PP")}
-                  </TableCell>
-                  <TableCell>{audit.campaignName}</TableCell>
-                  {!isAgentView && <TableCell>{audit.agentName}</TableCell>}
-                  <TableCell className="font-bold">
-                    {audit.overallScore.toFixed(2)}%
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        audit.auditType === "ai" ? "default" : "secondary"
-                      }
-                    >
-                      {audit.auditType.toUpperCase()}
-                    </Badge>
-                  </TableCell>
-                  {currentUser?.role === "Administrator" && (
-                    <>
-                      <TableCell>
-                        {audit.auditData?.auditDurationMs
-                          ? `${(audit.auditData.auditDurationMs / 1000).toFixed(
-                              1
-                            )}s`
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {audit.auditData?.tokenUsage
-                          ? `${audit.auditData.tokenUsage.inputTokens || 0} / ${
-                              audit.auditData.tokenUsage.outputTokens || 0
-                            }`
-                          : "-"}
-                      </TableCell>
-                    </>
-                  )}
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setAuditToDelete(audit);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {/* Pagination Controls */}
-          {filteredAudits.length > ITEMS_PER_PAGE && (
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <div className="text-sm text-muted-foreground mr-4">
-                Page {currentPage} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" /> Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {!isAgentView && (
         <>
@@ -1948,8 +1926,216 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               </CardContent>
             </Card>
           </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="text-primary h-5 w-5" />
+                  Daily Audits Trend
+                </CardTitle>
+                <CardDescription>
+                  Number of audits completed each day.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                <ChartContainer
+                  config={chartConfigDailyAudits}
+                  className="h-[300px] w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={dailyAuditsData}
+                      margin={{ left: 12, top: 20, right: 20, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 12 }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip
+                        cursor={{ stroke: "hsl(var(--muted))" }}
+                        content={<ChartTooltipContent />}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="audits"
+                        stroke="var(--color-audits)"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <ShieldCheck className="h-5 w-5" />
+                  Daily Fatal Errors
+                </CardTitle>
+                <CardDescription>
+                  Fatal errors detected each day across all audits.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pl-2">
+                <ChartContainer
+                  config={chartConfigDailyFatalErrors}
+                  className="h-[300px] w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={dailyFatalErrorsData}
+                      margin={{ left: 12, top: 20, right: 20, bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 12 }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip
+                        cursor={{ stroke: "hsl(var(--muted))" }}
+                        content={<ChartTooltipContent />}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="fatalErrors"
+                        stroke="var(--color-fatalErrors)"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>My Audits</CardTitle>
+          <CardDescription>
+            A list of all audits performed. Click a row to see details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Campaign</TableHead>
+                {!isAgentView && <TableHead>Agent</TableHead>}
+                <TableHead>Score</TableHead>
+                <TableHead>Audit Type</TableHead>
+                {currentUser?.role === "Administrator" && (
+                  <>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Tokens (In/Out)</TableHead>
+                  </>
+                )}
+                <TableHead className="w-[80px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedAudits.map((audit) => (
+                <TableRow
+                  key={audit.id}
+                  onClick={() => openAuditDetailsModal(audit)}
+                  className="cursor-pointer"
+                >
+                  <TableCell>
+                    {format(new Date(audit.auditDate), "PP")}
+                  </TableCell>
+                  <TableCell>{audit.campaignName}</TableCell>
+                  {!isAgentView && <TableCell>{audit.agentName}</TableCell>}
+                  <TableCell className="font-bold">
+                    {audit.overallScore.toFixed(2)}%
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        audit.auditType === "ai" ? "default" : "secondary"
+                      }
+                    >
+                      {audit.auditType.toUpperCase()}
+                    </Badge>
+                  </TableCell>
+                  {currentUser?.role === "Administrator" && (
+                    <>
+                      <TableCell>
+                        {audit.auditData?.auditDurationMs
+                          ? `${(audit.auditData.auditDurationMs / 1000).toFixed(
+                              1
+                            )}s`
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {audit.auditData?.tokenUsage
+                          ? `${audit.auditData.tokenUsage.inputTokens || 0} / ${
+                              audit.auditData.tokenUsage.outputTokens || 0
+                            }`
+                          : "-"}
+                      </TableCell>
+                    </>
+                  )}
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAuditToDelete(audit);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {/* Pagination Controls */}
+          {filteredAudits.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-end space-x-2 py-4">
+              <div className="text-sm text-muted-foreground mr-4">
+                Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" /> Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
