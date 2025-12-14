@@ -9,6 +9,7 @@
 
 import { z } from "zod";
 import { geminiRateLimiter } from "@/lib/geminiRateLimiter";
+import { retryGeminiCall } from "@/lib/geminiRetry";
 
 const ExplainConceptInputSchema = z.object({
   prompt: z
@@ -43,7 +44,9 @@ Respond ONLY with valid JSON in this exact format:
   // Apply rate limiting before calling Gemini API
   await geminiRateLimiter.waitForSlot();
 
-  const result = await model.generateContent(prompt);
+  const result = await retryGeminiCall(async () => {
+    return await model.generateContent(prompt);
+  });
   const responseText = result.response.text().trim();
 
   // Extract JSON from the response

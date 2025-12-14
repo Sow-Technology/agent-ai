@@ -9,6 +9,7 @@
 
 import { z } from "zod";
 import { geminiRateLimiter } from "@/lib/geminiRateLimiter";
+import { retryGeminiCall } from "@/lib/geminiRetry";
 
 // A mock/placeholder for a very short silent WAV audio data URI.
 // In a real scenario, this would come from an actual audio file upload.
@@ -316,8 +317,10 @@ ${parametersDesc}
     await geminiRateLimiter.waitForSlot();
   }
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts }],
+  const result = await retryGeminiCall(async () => {
+    return await model.generateContent({
+      contents: [{ role: "user", parts }],
+    });
   });
   const response = result.response;
   const text = response.text();

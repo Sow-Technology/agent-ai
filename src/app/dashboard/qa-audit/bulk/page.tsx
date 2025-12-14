@@ -344,7 +344,7 @@ export default function BulkAuditPage() {
                   }
                 />
                 <Label htmlFor="rate-limit" className="text-sm">
-                  Apply rate limiting (10 requests/minute)
+                  Apply rate limiting (5 requests/minute)
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground">
