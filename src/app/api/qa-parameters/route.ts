@@ -77,10 +77,8 @@ export async function GET(request: NextRequest) {
       qaParameters = await searchQAParameters(search);
     } else if (active === "true") {
       // Get only active QA parameters
-      const { getActiveQAParameters } = await import(
-        "@/lib/qaParameterService"
-      );
-      qaParameters = await getActiveQAParameters();
+      qaParameters = await getAllQAParameters();
+      qaParameters = qaParameters.filter(p => p.isActive);
     } else {
       // Get all QA parameters
       qaParameters = await getAllQAParameters();

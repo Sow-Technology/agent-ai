@@ -31,7 +31,15 @@ export async function createCampaignWithJobs(
   params: CreateCampaignParams
 ): Promise<ICampaign> {
   await ensureDb();
-  const { name, timezone, createdBy, projectId, qaParameterSetId, sopId, rows } = params;
+  const {
+    name,
+    timezone,
+    createdBy,
+    projectId,
+    qaParameterSetId,
+    sopId,
+    rows,
+  } = params;
   const campaign = await Campaign.create({
     name: name || "Untitled Campaign",
     timezone: timezone || "UTC",

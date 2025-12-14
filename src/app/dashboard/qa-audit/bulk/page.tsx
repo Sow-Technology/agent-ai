@@ -4,12 +4,31 @@ import { useEffect, useMemo, useState, ChangeEvent } from "react";
 import Papa from "papaparse";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/authUtils";
@@ -45,8 +64,6 @@ interface CampaignStatusResponse {
   error?: string;
 }
 
-
-
 export default function BulkAuditPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -58,10 +75,13 @@ export default function BulkAuditPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // New state for QA Params and SOPs
-  const [availableQaParameterSets, setAvailableQaParameterSets] = useState<QAParameter[]>([]);
+  const [availableQaParameterSets, setAvailableQaParameterSets] = useState<
+    QAParameter[]
+  >([]);
   const [availableSops, setAvailableSops] = useState<SOP[]>([]);
   const [availableProjects, setAvailableProjects] = useState<string[]>([]);
-  const [selectedQaParameterSetId, setSelectedQaParameterSetId] = useState<string>("");
+  const [selectedQaParameterSetId, setSelectedQaParameterSetId] =
+    useState<string>("");
   const [selectedSopId, setSelectedSopId] = useState<string>("");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
 
@@ -76,7 +96,9 @@ export default function BulkAuditPage() {
       skipEmptyLines: true,
       complete: (results) => {
         const parsedRows = (results.data || []).filter((row) =>
-          Object.values(row || {}).some((v) => (v ?? "").toString().trim() !== "")
+          Object.values(row || {}).some(
+            (v) => (v ?? "").toString().trim() !== ""
+          )
         );
         setRows(parsedRows);
         if (results.errors && results.errors.length > 0) {
@@ -85,11 +107,18 @@ export default function BulkAuditPage() {
             description: results.errors[0].message,
           });
         } else {
-          toast({ title: "CSV loaded", description: `${parsedRows.length} rows parsed` });
+          toast({
+            title: "CSV loaded",
+            description: `${parsedRows.length} rows parsed`,
+          });
         }
       },
       error: (error) => {
-        toast({ title: "CSV error", description: error.message, variant: "destructive" });
+        toast({
+          title: "CSV error",
+          description: error.message,
+          variant: "destructive",
+        });
       },
     });
   };
@@ -105,25 +134,32 @@ export default function BulkAuditPage() {
       const res = await fetch("/api/audits/bulk", {
         method: "POST",
         headers: { ...authHeaders, "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-           campaignName, 
-           timezone, 
-           rows,
-           qaParameterSetId: selectedQaParameterSetId || undefined,
-           sopId: selectedSopId || undefined,
-           projectId: selectedProjectId || undefined
+        body: JSON.stringify({
+          campaignName,
+          timezone,
+          rows,
+          qaParameterSetId: selectedQaParameterSetId || undefined,
+          sopId: selectedSopId || undefined,
+          projectId: selectedProjectId || undefined,
         }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
         throw new Error(json.error || "Failed to start campaign");
       }
-      toast({ title: "Campaign started", description: `${json.data.totalJobs} jobs queued` });
+      toast({
+        title: "Campaign started",
+        description: `${json.data.totalJobs} jobs queued`,
+      });
       setRows([]);
       router.refresh();
       await fetchCampaigns();
     } catch (err: any) {
-      toast({ title: "Start failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Start failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -144,31 +180,31 @@ export default function BulkAuditPage() {
   };
 
   const fetchOptions = async () => {
-     try {
-        const headers = await getAuthHeaders();
-        // Fetch QA Parameters
-        const paramsRes = await fetch("/api/qa-parameters", { headers });
-        const paramsJson = await paramsRes.json();
-        if (paramsJson.success) {
-           setAvailableQaParameterSets(paramsJson.data || []);
-        }
+    try {
+      const headers = await getAuthHeaders();
+      // Fetch QA Parameters
+      const paramsRes = await fetch("/api/qa-parameters", { headers });
+      const paramsJson = await paramsRes.json();
+      if (paramsJson.success) {
+        setAvailableQaParameterSets(paramsJson.data || []);
+      }
 
-        // Fetch SOPs
-        const sopsRes = await fetch("/api/sops", { headers });
-        const sopsJson = await sopsRes.json();
-        if (sopsJson.success) {
-           setAvailableSops(sopsJson.data || []);
-        }
+      // Fetch SOPs
+      const sopsRes = await fetch("/api/sops", { headers });
+      const sopsJson = await sopsRes.json();
+      if (sopsJson.success) {
+        setAvailableSops(sopsJson.data || []);
+      }
 
-        // Fetch Projects
-        const projectsRes = await fetch("/api/projects", { headers });
-        const projectsJson = await projectsRes.json();
-        if (projectsJson.success) {
-           setAvailableProjects(projectsJson.data || []);
-        }
-     } catch (error) {
-        console.error("Failed to fetch options", error);
-     }
+      // Fetch Projects
+      const projectsRes = await fetch("/api/projects", { headers });
+      const projectsJson = await projectsRes.json();
+      if (projectsJson.success) {
+        setAvailableProjects(projectsJson.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch options", error);
+    }
   };
 
   useEffect(() => {
@@ -178,14 +214,13 @@ export default function BulkAuditPage() {
       await fetch("/api/audits/bulk/worker", { method: "POST" });
     };
 
-    
     // Fetch user
     fetch("/api/auth/user", { headers: { "Content-Type": "application/json" } })
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.success) setCurrentUser(data.user);
       })
-      .catch(err => console.error("Failed to load user", err));
+      .catch((err) => console.error("Failed to load user", err));
 
     fetchOptions();
     tick();
@@ -194,7 +229,8 @@ export default function BulkAuditPage() {
   }, []);
 
   const progressFor = (c: CampaignRow) => {
-    const done = (c.completedJobs || 0) + (c.failedJobs || 0) + (c.canceledJobs || 0);
+    const done =
+      (c.completedJobs || 0) + (c.failedJobs || 0) + (c.canceledJobs || 0);
     if (!c.totalJobs) return 0;
     return Math.round((done / c.totalJobs) * 100);
   };
@@ -208,7 +244,10 @@ export default function BulkAuditPage() {
     return `${minutes} min`;
   };
 
-  const handleDownloadReport = async (campaignId: string, includeTokens: boolean = false) => {
+  const handleDownloadReport = async (
+    campaignId: string,
+    includeTokens: boolean = false
+  ) => {
     try {
       const headers = await getAuthHeaders();
       const query = includeTokens ? "?includeTokens=true" : "";
@@ -216,7 +255,7 @@ export default function BulkAuditPage() {
         headers,
       });
       if (!res.ok) throw new Error("Failed to download report");
-      
+
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -227,8 +266,12 @@ export default function BulkAuditPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-        console.error("Download failed", error);
-        toast({ title: "Download failed", description: "Could not download report", variant: "destructive" });
+      console.error("Download failed", error);
+      toast({
+        title: "Download failed",
+        description: "Could not download report",
+        variant: "destructive",
+      });
     }
   };
 
@@ -238,20 +281,26 @@ export default function BulkAuditPage() {
         <CardHeader>
           <CardTitle>Bulk AI Audit Upload</CardTitle>
           <CardDescription>
-            Upload the provided CSV, set timezone, and start a background AI audit campaign. Drive URLs are supported.
+            Upload the provided CSV, set timezone, and start a background AI
+            audit campaign. Drive URLs are supported.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <Label>Campaign name</Label>
-              <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} />
+              <Input
+                value={campaignName}
+                onChange={(e) => setCampaignName(e.target.value)}
+              />
             </div>
 
-            
             <div className="space-y-2">
               <Label>Audit Parameter Set (Optional)</Label>
-              <Select value={selectedQaParameterSetId} onValueChange={setSelectedQaParameterSetId}>
+              <Select
+                value={selectedQaParameterSetId}
+                onValueChange={setSelectedQaParameterSetId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select parameters" />
                 </SelectTrigger>
@@ -283,7 +332,10 @@ export default function BulkAuditPage() {
 
             <div className="space-y-2">
               <Label>Project (Optional)</Label>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <Select
+                value={selectedProjectId}
+                onValueChange={setSelectedProjectId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
@@ -296,7 +348,7 @@ export default function BulkAuditPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label>CSV file</Label>
               <div className="flex items-center gap-2">
@@ -311,7 +363,12 @@ export default function BulkAuditPage() {
               {rows.length ? `${rows.length} rows ready` : "No rows loaded"}
             </div>
             <Button onClick={startCampaign} disabled={loading || !rows.length}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}Start campaign
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <PlayCircle className="mr-2 h-4 w-4" />
+              )}
+              Start campaign
             </Button>
           </div>
 
@@ -331,11 +388,17 @@ export default function BulkAuditPage() {
                   <TableBody>
                     {parsedPreview.map((row, idx) => (
                       <TableRow key={idx}>
-                        <TableCell>{row["Full_Name"] || row["full_name"] || ""}</TableCell>
+                        <TableCell>
+                          {row["Full_Name"] || row["full_name"] || ""}
+                        </TableCell>
                         <TableCell>{row["employee_id"] || ""}</TableCell>
-                        <TableCell>{row["RID-Phone #"] || row["rid_phone"] || ""}</TableCell>
+                        <TableCell>
+                          {row["RID-Phone #"] || row["rid_phone"] || ""}
+                        </TableCell>
                         <TableCell className="max-w-xs truncate text-blue-600">
-                          {row["(S3) recording_url"] || row["recording_url"] || ""}
+                          {row["(S3) recording_url"] ||
+                            row["recording_url"] ||
+                            ""}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -350,7 +413,9 @@ export default function BulkAuditPage() {
       <Card>
         <CardHeader>
           <CardTitle>Campaigns</CardTitle>
-          <CardDescription>Live status with cancel and report links.</CardDescription>
+          <CardDescription>
+            Live status with cancel and report links.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -367,7 +432,10 @@ export default function BulkAuditPage() {
               <TableBody>
                 {campaigns.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={5}
+                      className="text-center text-sm text-muted-foreground"
+                    >
                       No campaigns yet.
                     </TableCell>
                   </TableRow>
@@ -377,21 +445,25 @@ export default function BulkAuditPage() {
                     <TableCell>
                       <div className="font-medium">{c.name}</div>
                     </TableCell>
-                    <TableCell className="capitalize">{statusLabel(c.status)}</TableCell>
+                    <TableCell className="capitalize">
+                      {statusLabel(c.status)}
+                    </TableCell>
                     <TableCell className="w-64">
                       <Progress value={progressFor(c)} className="h-2" />
                       <div className="text-xs text-muted-foreground mt-1">
-                        {(c.completedJobs || 0) + (c.failedJobs || 0) + (c.canceledJobs || 0)} / {c.totalJobs}
+                        {(c.completedJobs || 0) +
+                          (c.failedJobs || 0) +
+                          (c.canceledJobs || 0)}{" "}
+                        / {c.totalJobs}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {etaLabel(c)}
-                    </TableCell>
+                    <TableCell className="text-sm">{etaLabel(c)}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/dashboard/qa-audit/bulk/${c._id}`}>
                           <Button variant="outline" size="sm">
-                            <Eye className="mr-1 h-4 w-4" />Preview
+                            <Eye className="mr-1 h-4 w-4" />
+                            Preview
                           </Button>
                         </Link>
                         {currentUser?.role === "Administrator" ? (
@@ -403,12 +475,16 @@ export default function BulkAuditPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                               <DropdownMenuItem
-                                onClick={() => handleDownloadReport(c._id, false)}
+                                onClick={() =>
+                                  handleDownloadReport(c._id, false)
+                                }
                               >
                                 Download Standard Report
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleDownloadReport(c._id, true)}
+                                onClick={() =>
+                                  handleDownloadReport(c._id, true)
+                                }
                               >
                                 Download Admin Report (With Tokens)
                               </DropdownMenuItem>
@@ -439,7 +515,8 @@ export default function BulkAuditPage() {
                             await fetchCampaigns();
                           }}
                         >
-                          <XCircle className="mr-1 h-4 w-4" />Cancel
+                          <XCircle className="mr-1 h-4 w-4" />
+                          Cancel
                         </Button>
                       </div>
                     </TableCell>

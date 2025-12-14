@@ -28,7 +28,8 @@ function normalizeRow(row: Record<string, any>) {
       row["Call Type (Connect/Support) (EG)"] ?? row.call_type ?? row.callType,
     sub_dispo: row.Sub_dispo ?? row.sub_dispo ?? row.subDispo,
     email_id: row.email_id ?? row.email ?? row.Email,
-    call_datetime: row.call_datetime ?? row.callDateTime ?? row["call_datetime"],
+    call_datetime:
+      row.call_datetime ?? row.callDateTime ?? row["call_datetime"],
     customer_name: row.customer_name ?? row.customerName,
     client_id: row.client_id ?? row.clientId ?? row.campaign,
     customer_id: row.customer_id ?? row.customerId,
@@ -44,24 +45,36 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
     if (!token) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const tokenResult = await validateJWTToken(token);
     if (!tokenResult.valid || !tokenResult.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: "Validation failed", details: parsed.error.format() },
+        {
+          success: false,
+          error: "Validation failed",
+          details: parsed.error.format(),
+        },
         { status: 400 }
       );
     }
 
-    const rows = parsed.data.rows.map(normalizeRow).filter((r) => r.recording_url);
+    const rows = parsed.data.rows
+      .map(normalizeRow)
+      .filter((r) => r.recording_url);
     if (rows.length === 0) {
       return NextResponse.json(
         { success: false, error: "No valid rows with recording_url" },
@@ -118,7 +131,9 @@ export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
-    const tokenResult = token ? await validateJWTToken(token) : { valid: false as const };
+    const tokenResult = token
+      ? await validateJWTToken(token)
+      : { valid: false as const };
     const role = hasUser(tokenResult) ? tokenResult.user.role : null;
     const userId = hasUser(tokenResult) ? tokenResult.user.username : null;
     const projectId = hasUser(tokenResult) ? tokenResult.user.projectId : null;

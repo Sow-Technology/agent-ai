@@ -6,10 +6,15 @@ export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
-    const tokenResult = token ? await validateJWTToken(token) : { valid: false as const };
+    const tokenResult = token
+      ? await validateJWTToken(token)
+      : { valid: false as const };
 
     if (!tokenResult.valid || !tokenResult.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const role = tokenResult.user.role;
@@ -17,10 +22,16 @@ export async function GET(request: NextRequest) {
     const userProjectId = tokenResult.user.projectId;
 
     // Get campaigns user can access
-    const campaigns = await listCampaigns({ role, userId, projectId: userProjectId });
+    const campaigns = await listCampaigns({
+      role,
+      userId,
+      projectId: userProjectId,
+    });
 
     // Collect unique projectIds
-    const projectIds = [...new Set(campaigns.map((c: any) => c.projectId).filter(Boolean))];
+    const projectIds = [
+      ...new Set(campaigns.map((c: any) => c.projectId).filter(Boolean)),
+    ];
 
     return NextResponse.json({ success: true, data: projectIds });
   } catch (error) {

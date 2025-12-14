@@ -7,7 +7,10 @@ import {
   markJobSucceeded,
   getCampaignById,
 } from "@/lib/campaignService";
-import { getAllQAParameters, getQAParameterById } from "@/lib/qaParameterService";
+import {
+  getAllQAParameters,
+  getQAParameterById,
+} from "@/lib/qaParameterService";
 import { createAudit } from "@/lib/auditService";
 import type { QAParameterDocument } from "@/lib/models";
 
@@ -58,7 +61,12 @@ function toAuditParameters(params: QAParameterDocument[] | null) {
         id: "default",
         name: "Default",
         subParameters: [
-          { id: "default-1", name: "Overall Quality", weight: 100, type: "Non-Fatal" as const },
+          {
+            id: "default-1",
+            name: "Overall Quality",
+            weight: 100,
+            type: "Non-Fatal" as const,
+          },
         ],
       },
     ];
@@ -159,17 +167,20 @@ export async function runBulkWorkerOnce() {
             auditParameters,
           } as any);
 
-          const auditResults = (qaResult.auditResults || []).map((result: any) => ({
-            parameterId: result.parameter || "unknown",
-            parameterName: result.parameter || "Unknown",
-            score: typeof result.score === "number" ? result.score : 0,
-            maxScore:
-              typeof result.weightedScore === "number" && result.weightedScore > 0
-                ? result.weightedScore
-                : 100,
-            type: (result.type as any) || "Non-Fatal",
-            comments: result.comments,
-          }));
+          const auditResults = (qaResult.auditResults || []).map(
+            (result: any) => ({
+              parameterId: result.parameter || "unknown",
+              parameterName: result.parameter || "Unknown",
+              score: typeof result.score === "number" ? result.score : 0,
+              maxScore:
+                typeof result.weightedScore === "number" &&
+                result.weightedScore > 0
+                  ? result.weightedScore
+                  : 100,
+              type: (result.type as any) || "Non-Fatal",
+              comments: result.comments,
+            })
+          );
 
           const savedAudit = await createAudit({
             callId: mapped.callId,
@@ -183,7 +194,9 @@ export async function runBulkWorkerOnce() {
             auditResults,
             overallScore: qaResult.overallScore || 0,
             maxPossibleScore: 100,
-            transcript: qaResult.englishTranslation || qaResult.transcriptionInOriginalLanguage,
+            transcript:
+              qaResult.englishTranslation ||
+              qaResult.transcriptionInOriginalLanguage,
             englishTranslation: qaResult.englishTranslation,
             audioUrl: mapped.audioUrl,
             auditedBy: campaign.createdBy,
@@ -196,9 +209,17 @@ export async function runBulkWorkerOnce() {
             throw new Error("Failed to persist audit");
           }
 
-          await markJobSucceeded(job._id.toString(), savedAudit.id, Date.now() - startedAt);
+          await markJobSucceeded(
+            job._id.toString(),
+            savedAudit.id,
+            Date.now() - startedAt
+          );
         } catch (error: any) {
-          await markJobFailed(job._id.toString(), error?.message || "Job failed", Date.now() - startedAt);
+          await markJobFailed(
+            job._id.toString(),
+            error?.message || "Job failed",
+            Date.now() - startedAt
+          );
         }
       })
     );
