@@ -16,7 +16,7 @@ import type { QAParameterDocument } from "@/lib/models";
 import { audioFetchRateLimiter } from "@/lib/geminiRateLimiter";
 
 function getParallelismCap() {
-  const max = parseInt(process.env.BULK_AUDIT_MAX_PARALLEL || "3", 10);
+  const max = parseInt(process.env.BULK_AUDIT_MAX_PARALLEL || "1", 10);
   const freeMemRatio = os.freemem() / os.totalmem();
   const load = os.loadavg?.()[0] ?? 0;
   const cpuCount = os.cpus()?.length || 1;
