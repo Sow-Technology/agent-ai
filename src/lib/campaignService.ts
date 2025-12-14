@@ -119,6 +119,25 @@ export async function deleteCampaign(campaignId: string): Promise<boolean> {
   return !!deletedCampaign;
 }
 
+export async function cancelCampaign(campaignId: string): Promise<ICampaign | null> {
+  await ensureDb();
+
+  // Cancel only queued/processing jobs; keep completed audits intact
+  await CampaignJob.updateMany(
+    { campaignId, status: { $in: ["queued", "processing"] } },
+    { status: "canceled", finishedAt: new Date() }
+  );
+
+  const canceled = await Campaign.findByIdAndUpdate(
+    campaignId,
+    { status: "canceled", finishedAt: new Date() },
+    { new: true }
+  ).lean<ICampaign | null>();
+
+  await recomputeCampaignProgress(campaignId);
+  return canceled;
+}
+
 export async function claimJobs(limit: number): Promise<ICampaignJob[]> {
   await ensureDb();
   const claimed: ICampaignJob[] = [];

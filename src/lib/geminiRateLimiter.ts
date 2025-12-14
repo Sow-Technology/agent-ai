@@ -10,45 +10,47 @@ class GeminiRateLimiter {
   async waitForSlot(): Promise<void> {
     const now = Date.now();
 
-    // Check each limit tier
+    let waitTime = 0;
+
     for (const limit of this.limits) {
-      // Remove old requests outside the window
-      this.requests = this.requests.filter(
-        (time) => now - time < limit.windowMs
-      );
+      // Remove old requests outside the window for this limit
+      this.requests = this.requests.filter((time) => now - time < limit.windowMs);
 
+      // Enforce even spacing within the window (default spacing = window/maxRequests)
+      const minSpacingMs = Math.floor(limit.windowMs / limit.maxRequests);
+      const lastRequest = this.requests.length > 0 ? Math.max(...this.requests) : null;
+      if (lastRequest !== null) {
+        const spacingWait = minSpacingMs - (now - lastRequest);
+        if (spacingWait > waitTime) {
+          waitTime = spacingWait;
+        }
+      }
+
+      // Enforce count limit
       if (this.requests.length >= limit.maxRequests) {
-        // Calculate wait time until oldest request expires
         const oldestRequest = Math.min(...this.requests);
-        const waitTime = limit.windowMs - (now - oldestRequest);
-
-        if (waitTime > 0) {
-          const windowName =
-            limit.windowMs === 60000
-              ? "minute"
-              : limit.windowMs === 3600000
-              ? "hour"
-              : `${limit.windowMs / 1000}s`;
-          console.log(
-            `Gemini API ${windowName} rate limit reached (${limit.maxRequests} requests/${windowName}). Waiting ${waitTime}ms before next request...`
-          );
-          await new Promise((resolve) => setTimeout(resolve, waitTime));
-          // After waiting, we need to check all limits again
-          return this.waitForSlot();
+        const windowWait = limit.windowMs - (now - oldestRequest);
+        if (windowWait > waitTime) {
+          waitTime = windowWait;
         }
       }
     }
 
-    // Add current request
-    this.requests.push(now);
+    if (waitTime > 0) {
+      console.log(`Gemini API rate limit reached. Waiting ${waitTime}ms before next request...`);
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+      return this.waitForSlot();
+    }
+
+    // Add current request after waits
+    this.requests.push(Date.now());
   }
 }
 
-// Gemini API limits (configurable via env, with higher defaults):
-// - GEMINI_RPM (per-minute limit) defaults to 10
-// - GEMINI_RPH (per-hour limit) defaults to 500
-const GEMINI_RPM = parseInt(process.env.GEMINI_RPM || "10", 10);
-const GEMINI_RPH = parseInt(process.env.GEMINI_RPH || "500", 10);
+// Gemini API limits (configurable via env):
+// Defaults tuned to 3 requests/minute spread evenly (~20s apart), and 200 per hour
+const GEMINI_RPM = parseInt(process.env.GEMINI_RPM || "3", 10);
+const GEMINI_RPH = parseInt(process.env.GEMINI_RPH || "200", 10);
 
 export const geminiRateLimiter = new GeminiRateLimiter([
   { maxRequests: GEMINI_RPM, windowMs: 60000 }, // per minute
@@ -56,10 +58,9 @@ export const geminiRateLimiter = new GeminiRateLimiter([
 ]);
 
 // Audio fetching limits (separate knobs if needed):
-// - AUDIO_RPM defaults to 5
-// - AUDIO_RPH defaults to 200
-const AUDIO_RPM = parseInt(process.env.AUDIO_RPM || "5", 10);
-const AUDIO_RPH = parseInt(process.env.AUDIO_RPH || "200", 10);
+// Defaults: 3 per minute, 120 per hour (more conservative than Gemini)
+const AUDIO_RPM = parseInt(process.env.AUDIO_RPM || "3", 10);
+const AUDIO_RPH = parseInt(process.env.AUDIO_RPH || "120", 10);
 
 export const audioFetchRateLimiter = new GeminiRateLimiter([
   { maxRequests: AUDIO_RPM, windowMs: 60000 }, // per minute

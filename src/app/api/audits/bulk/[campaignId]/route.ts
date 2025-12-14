@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getCampaignStatus,
   deleteCampaign,
+  cancelCampaign,
   getCampaignById,
 } from "@/lib/campaignService";
 import { validateJWTToken } from "@/lib/jwtAuthService";
@@ -33,6 +34,7 @@ export async function DELETE(
   { params }: { params: { campaignId: string } }
 ) {
   try {
+    const action = request.nextUrl.searchParams.get("action") || "delete";
     const authHeader = request.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
     if (!token) {
@@ -70,6 +72,17 @@ export async function DELETE(
       }
     }
 
+    if (action === "cancel") {
+      const canceled = await cancelCampaign(params.campaignId);
+      if (!canceled) {
+        return NextResponse.json(
+          { success: false, error: "Failed to cancel campaign" },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json({ success: true, data: { canceled: true } });
+    }
+
     const deleted = await deleteCampaign(params.campaignId);
     if (!deleted) {
       return NextResponse.json(
@@ -79,9 +92,9 @@ export async function DELETE(
     }
     return NextResponse.json({ success: true, data: { deleted: true } });
   } catch (error) {
-    console.error("Bulk delete error", error);
+    console.error("Bulk delete/cancel error", error);
     return NextResponse.json(
-      { success: false, error: "Failed to delete campaign" },
+      { success: false, error: "Failed to delete/cancel campaign" },
       { status: 500 }
     );
   }
