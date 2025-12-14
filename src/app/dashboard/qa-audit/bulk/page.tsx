@@ -339,14 +339,17 @@ export default function BulkAuditPage() {
                 <Checkbox
                   id="rate-limit"
                   checked={applyRateLimit}
-                  onCheckedChange={(checked) => setApplyRateLimit(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setApplyRateLimit(checked as boolean)
+                  }
                 />
                 <Label htmlFor="rate-limit" className="text-sm">
                   Apply rate limiting (10 requests/minute)
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground">
-                Recommended to avoid API quota limits. Uncheck only if you have higher limits.
+                Recommended to avoid API quota limits. Uncheck only if you have
+                higher limits.
               </p>
             </div>
 

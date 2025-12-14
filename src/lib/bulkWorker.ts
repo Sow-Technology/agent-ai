@@ -27,21 +27,23 @@ class RateLimiter {
 
   async waitForSlot(): Promise<void> {
     const now = Date.now();
-    
+
     // Remove old requests outside the window
-    this.requests = this.requests.filter(time => now - time < this.windowMs);
-    
+    this.requests = this.requests.filter((time) => now - time < this.windowMs);
+
     if (this.requests.length >= this.maxRequests) {
       // Calculate wait time until oldest request expires
       const oldestRequest = Math.min(...this.requests);
       const waitTime = this.windowMs - (now - oldestRequest);
-      
+
       if (waitTime > 0) {
-        console.log(`Rate limit reached. Waiting ${waitTime}ms before next request...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        console.log(
+          `Rate limit reached. Waiting ${waitTime}ms before next request...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     }
-    
+
     // Add current request
     this.requests.push(now);
   }
@@ -134,7 +136,11 @@ interface CsvJobPayload {
   file_no?: string;
 }
 
-function mapRowToAuditPayload(row: CsvJobPayload, timezone: string, campaignId?: string) {
+function mapRowToAuditPayload(
+  row: CsvJobPayload,
+  timezone: string,
+  campaignId?: string
+) {
   const callDate = parseDateWithTimezone(row.call_datetime, timezone);
   const baseCallId = row.rid_phone || `call-${Date.now()}-${Math.random()}`;
   const callId = campaignId ? `${campaignId}-${baseCallId}` : baseCallId;
