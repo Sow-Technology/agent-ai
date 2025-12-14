@@ -30,12 +30,10 @@ export async function GET(request: NextRequest) {
       const campaignProjectIds = campaigns
         .map((c: any) => c.projectId)
         .filter(Boolean);
-      
+
       const users = await getAllUsers();
-      const userProjectIds = users
-        .map((u: any) => u.projectId)
-        .filter(Boolean);
-      
+      const userProjectIds = users.map((u: any) => u.projectId).filter(Boolean);
+
       projectIds = [...new Set([...campaignProjectIds, ...userProjectIds])];
     } else if (role === "Project Admin" && userProjectId) {
       // Project admins can see their own project
