@@ -14,11 +14,14 @@ class GeminiRateLimiter {
 
     for (const limit of this.limits) {
       // Remove old requests outside the window for this limit
-      this.requests = this.requests.filter((time) => now - time < limit.windowMs);
+      this.requests = this.requests.filter(
+        (time) => now - time < limit.windowMs
+      );
 
       // Enforce even spacing within the window (default spacing = window/maxRequests)
       const minSpacingMs = Math.floor(limit.windowMs / limit.maxRequests);
-      const lastRequest = this.requests.length > 0 ? Math.max(...this.requests) : null;
+      const lastRequest =
+        this.requests.length > 0 ? Math.max(...this.requests) : null;
       if (lastRequest !== null) {
         const spacingWait = minSpacingMs - (now - lastRequest);
         if (spacingWait > waitTime) {
@@ -37,7 +40,9 @@ class GeminiRateLimiter {
     }
 
     if (waitTime > 0) {
-      console.log(`Gemini API rate limit reached. Waiting ${waitTime}ms before next request...`);
+      console.log(
+        `Gemini API rate limit reached. Waiting ${waitTime}ms before next request...`
+      );
       await new Promise((resolve) => setTimeout(resolve, waitTime));
       return this.waitForSlot();
     }

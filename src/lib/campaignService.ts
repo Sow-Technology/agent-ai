@@ -119,7 +119,9 @@ export async function deleteCampaign(campaignId: string): Promise<boolean> {
   return !!deletedCampaign;
 }
 
-export async function cancelCampaign(campaignId: string): Promise<ICampaign | null> {
+export async function cancelCampaign(
+  campaignId: string
+): Promise<ICampaign | null> {
   await ensureDb();
 
   // Cancel only queued/processing jobs; keep completed audits intact

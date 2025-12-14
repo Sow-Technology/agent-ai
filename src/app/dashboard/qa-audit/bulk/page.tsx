@@ -558,10 +558,13 @@ export default function BulkAuditPage() {
                             c.status === "completed_with_errors"
                           }
                           onClick={async () => {
-                            await fetch(`/api/audits/bulk/${c._id}?action=cancel`, {
-                              method: "DELETE",
-                              headers: await getAuthHeaders(),
-                            });
+                            await fetch(
+                              `/api/audits/bulk/${c._id}?action=cancel`,
+                              {
+                                method: "DELETE",
+                                headers: await getAuthHeaders(),
+                              }
+                            );
                             await fetchCampaigns();
                           }}
                         >
