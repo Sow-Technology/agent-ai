@@ -34,3 +34,6 @@ class GeminiRateLimiter {
 }
 
 export const geminiRateLimiter = new GeminiRateLimiter(10, 60000); // 10 requests per minute
+
+// Rate limiter for audio fetching (more conservative since audio services are often more restrictive)
+export const audioFetchRateLimiter = new GeminiRateLimiter(5, 60000); // 5 requests per minute

@@ -13,6 +13,7 @@ import {
 } from "@/lib/qaParameterService";
 import { createAudit } from "@/lib/auditService";
 import type { QAParameterDocument } from "@/lib/models";
+import { audioFetchRateLimiter } from "@/lib/geminiRateLimiter";
 
 function getParallelismCap() {
   const max = parseInt(process.env.BULK_AUDIT_MAX_PARALLEL || "3", 10);
@@ -44,6 +45,9 @@ function parseDateWithTimezone(input: string | undefined, timezone: string) {
 }
 
 async function fetchAudioDataUri(audioUrl: string) {
+  // Apply rate limiting before fetching audio
+  await audioFetchRateLimiter.waitForSlot();
+
   const response = await fetch(audioUrl);
   if (!response.ok) {
     throw new Error(`Failed to fetch audio: ${response.status}`);
