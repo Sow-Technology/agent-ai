@@ -93,18 +93,18 @@ export async function getCampaignById(
   return Campaign.findById(campaignId).lean<ICampaign | null>();
 }
 
-export async function deleteCampaign(
-  campaignId: string
-): Promise<boolean> {
+export async function deleteCampaign(campaignId: string): Promise<boolean> {
   await ensureDb();
 
   // Find all campaign jobs for this campaign
-  const campaignJobs = await CampaignJob.find({ campaignId }).lean<ICampaignJob[]>();
+  const campaignJobs = await CampaignJob.find({ campaignId }).lean<
+    ICampaignJob[]
+  >();
 
   // Delete all associated call audits (for successful jobs)
   const auditIdsToDelete = campaignJobs
-    .filter(job => job.status === "succeeded" && job.callAuditId)
-    .map(job => job.callAuditId);
+    .filter((job) => job.status === "succeeded" && job.callAuditId)
+    .map((job) => job.callAuditId);
 
   if (auditIdsToDelete.length > 0) {
     await CallAudit.deleteMany({ _id: { $in: auditIdsToDelete } });

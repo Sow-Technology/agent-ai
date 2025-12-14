@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCampaignStatus, deleteCampaign, getCampaignById } from "@/lib/campaignService";
+import {
+  getCampaignStatus,
+  deleteCampaign,
+  getCampaignById,
+} from "@/lib/campaignService";
 import { validateJWTToken } from "@/lib/jwtAuthService";
 
 export async function GET(
@@ -9,7 +13,10 @@ export async function GET(
   try {
     const status = await getCampaignStatus(params.campaignId);
     if (!status) {
-      return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Not found" },
+        { status: 404 }
+      );
     }
     return NextResponse.json({ success: true, data: status });
   } catch (error) {
@@ -29,16 +36,25 @@ export async function DELETE(
     const authHeader = request.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
     if (!token) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
     const tokenResult = await validateJWTToken(token);
     if (!tokenResult.valid || !tokenResult.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const campaign = await getCampaignById(params.campaignId);
     if (!campaign) {
-      return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Not found" },
+        { status: 404 }
+      );
     }
 
     if (
@@ -47,13 +63,19 @@ export async function DELETE(
       tokenResult.user.role === "QA Analyst"
     ) {
       if (campaign.createdBy !== tokenResult.user.username) {
-        return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+        return NextResponse.json(
+          { success: false, error: "Forbidden" },
+          { status: 403 }
+        );
       }
     }
 
     const deleted = await deleteCampaign(params.campaignId);
     if (!deleted) {
-      return NextResponse.json({ success: false, error: "Failed to delete campaign" }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: "Failed to delete campaign" },
+        { status: 500 }
+      );
     }
     return NextResponse.json({ success: true, data: { deleted: true } });
   } catch (error) {

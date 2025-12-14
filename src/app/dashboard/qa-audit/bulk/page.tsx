@@ -40,7 +40,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Loader2, UploadCloud, PlayCircle, XCircle, Trash2 } from "lucide-react";
+import {
+  Eye,
+  Loader2,
+  UploadCloud,
+  PlayCircle,
+  XCircle,
+  Trash2,
+} from "lucide-react";
 
 import type { QAParameter } from "@/types/qa-parameter";
 import type { SOP } from "@/types/sop";
@@ -270,8 +277,15 @@ export default function BulkAuditPage() {
     }
   };
 
-  const handleDeleteCampaign = async (campaignId: string, campaignName: string) => {
-    if (!confirm(`Are you sure you want to delete the campaign "${campaignName}" and ALL audits created by it? This action cannot be undone.`)) {
+  const handleDeleteCampaign = async (
+    campaignId: string,
+    campaignName: string
+  ) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete the campaign "${campaignName}" and ALL audits created by it? This action cannot be undone.`
+      )
+    ) {
       return;
     }
 
