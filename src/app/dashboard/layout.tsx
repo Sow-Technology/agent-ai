@@ -39,6 +39,7 @@ import {
   User as UserIcon,
   UsersRound,
   Coins,
+  UploadCloud,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeSwitcher } from "@/components/common/ThemeSwitcher";
@@ -112,7 +113,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           icon: Edit,
           roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
         },
-        // Bulk QA Audit intentionally hidden from sidebar
+        {
+          href: "/dashboard/qa-audit/bulk",
+          label: "Bulk AI Audit",
+          tabName: "qa-audit-bulk",
+          icon: UploadCloud,
+          roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
+        },
       ],
     },
     {

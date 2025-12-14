@@ -93,6 +93,8 @@ import {
   Briefcase,
   Activity,
   Trash2,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -103,6 +105,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 // Removed direct AI flow import - using API route instead
 import { useSearchParams, useRouter } from "next/navigation";
 import type {
@@ -199,7 +209,7 @@ function convertAuditDocumentToSavedAuditItem(
 }
 
 // CSV export helper
-function generateCSV(audits: SavedAuditItem[]) {
+function generateCSV(audits: SavedAuditItem[], includeTokens: boolean = false) {
   // Collect all unique parameter names from all audits to create dynamic headers
   const allParameterNames = new Set<string>();
   audits.forEach((audit) => {
@@ -228,8 +238,13 @@ function generateCSV(audits: SavedAuditItem[]) {
     "Overall Score",
     "Fatal Status",
     "Fatal Count",
+    "Fatal Count",
     ...parameterNamesList,
   ];
+  
+  if (includeTokens) {
+    headers.push("Input Tokens", "Output Tokens", "Total Tokens");
+  }
 
   const rows = [headers.join(",")];
 
@@ -404,7 +419,16 @@ function generateCSV(audits: SavedAuditItem[]) {
       fatalStatus,
       fatalCount.toString(),
       ...parameterScores,
+      ...parameterScores,
     ];
+
+    if (includeTokens) {
+       row.push(
+         audit.auditData?.tokenUsage?.inputTokens?.toString() || "0",
+         audit.auditData?.tokenUsage?.outputTokens?.toString() || "0",
+         audit.auditData?.tokenUsage?.totalTokens?.toString() || "0"
+       );
+    }
 
     rows.push(row.map((field) => `"${field}"`).join(","));
   });
@@ -418,7 +442,8 @@ function handleDownload(
   dateRange: DateRange | undefined,
   selectedCampaignIdForFilter: string,
   availableQaParameterSets: QAParameter[],
-  currentUser: User | null
+  currentUser: User | null,
+  includeTokens: boolean = false
 ) {
   try {
     // Compute filtered audits based on current UI filters
@@ -438,7 +463,7 @@ function handleDownload(
     );
 
     // Generate CSV with reasoning included
-    const csv = generateCSV(filtered);
+    const csv = generateCSV(filtered, includeTokens);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -460,7 +485,8 @@ function applyAuditFilters(
   dateRange: DateRange | undefined,
   selectedCampaignIdForFilter: string,
   availableQaParameterSets: QAParameter[],
-  currentUser: User | null
+  currentUser: User | null,
+  includeTokens: boolean = false
 ) {
   let filtered = audits;
 
@@ -907,21 +933,65 @@ function DashboardPageContent() {
               />
             </PopoverContent>
           </Popover>
-          <Button
-            onClick={() =>
-              handleDownload(
-                savedAudits,
-                activeTab,
-                dateRange,
-                selectedCampaignIdForFilter,
-                availableQaParameterSets,
-                currentUser
-              )
-            }
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Download
-          </Button>
+          {currentUser?.role === "Administrator" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleDownload(
+                      savedAudits,
+                      activeTab,
+                      dateRange,
+                      selectedCampaignIdForFilter,
+                      availableQaParameterSets,
+                      currentUser,
+                      false
+                    )
+                  }
+                >
+                  Download Standard Report
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleDownload(
+                      savedAudits,
+                      activeTab,
+                      dateRange,
+                      selectedCampaignIdForFilter,
+                      availableQaParameterSets,
+                      currentUser,
+                      true
+                    )
+                  }
+                >
+                  Download Admin Report (With Tokens)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              onClick={() =>
+                handleDownload(
+                  savedAudits,
+                  activeTab,
+                  dateRange,
+                  selectedCampaignIdForFilter,
+                  availableQaParameterSets,
+                  currentUser,
+                  false
+                )
+              }
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1176,6 +1246,10 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     neutral: 0,
     negative: 0,
   });
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const filteredAudits = useMemo(() => {
     let filtered = savedAudits;
@@ -1462,6 +1536,18 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     }
   }, [filteredAudits]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [auditType, dateRange, selectedCampaignIdForFilter, currentUser]);
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredAudits.length / ITEMS_PER_PAGE);
+  const paginatedAudits = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAudits.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredAudits, currentPage]);
+
   const chartConfigTopIssues = {
     count: { label: "Count", color: "hsl(var(--chart-2))" },
   } as const;
@@ -1580,7 +1666,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAudits.map((audit) => (
+              {paginatedAudits.map((audit) => (
                 <TableRow
                   key={audit.id}
                   onClick={() => openAuditDetailsModal(audit)}
@@ -1638,6 +1724,31 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               ))}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          {filteredAudits.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-end space-x-2 py-4">
+              <div className="text-sm text-muted-foreground mr-4">
+                Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" /> Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
