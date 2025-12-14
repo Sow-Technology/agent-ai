@@ -79,7 +79,6 @@ export default function BulkAuditPage() {
     QAParameter[]
   >([]);
   const [availableSops, setAvailableSops] = useState<SOP[]>([]);
-  const [availableProjects, setAvailableProjects] = useState<string[]>([]);
   const [selectedQaParameterSetId, setSelectedQaParameterSetId] =
     useState<string>("");
   const [selectedSopId, setSelectedSopId] = useState<string>("");
@@ -194,13 +193,6 @@ export default function BulkAuditPage() {
       const sopsJson = await sopsRes.json();
       if (sopsJson.success) {
         setAvailableSops(sopsJson.data || []);
-      }
-
-      // Fetch Projects
-      const projectsRes = await fetch("/api/projects", { headers });
-      const projectsJson = await projectsRes.json();
-      if (projectsJson.success) {
-        setAvailableProjects(projectsJson.data || []);
       }
     } catch (error) {
       console.error("Failed to fetch options", error);
@@ -332,21 +324,11 @@ export default function BulkAuditPage() {
 
             <div className="space-y-2">
               <Label>Project (Optional)</Label>
-              <Select
+              <Input
                 value={selectedProjectId}
-                onValueChange={setSelectedProjectId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableProjects.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(e) => setSelectedProjectId(e.target.value)}
+                placeholder="Enter project name"
+              />
             </div>
 
             <div className="space-y-2">

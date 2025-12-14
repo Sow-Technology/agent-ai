@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     } else if (active === "true") {
       // Get only active QA parameters
       qaParameters = await getAllQAParameters();
-      qaParameters = qaParameters.filter(p => p.isActive);
+      qaParameters = qaParameters.filter((p) => p.isActive);
     } else {
       // Get all QA parameters
       qaParameters = await getAllQAParameters();
