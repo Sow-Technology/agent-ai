@@ -243,7 +243,7 @@ function generateCSV(audits: SavedAuditItem[], includeTokens: boolean = false) {
     "Fatal Count",
     ...parameterNamesList,
   ];
-  
+
   if (includeTokens) {
     headers.push("Input Tokens", "Output Tokens", "Total Tokens");
   }
@@ -425,11 +425,11 @@ function generateCSV(audits: SavedAuditItem[], includeTokens: boolean = false) {
     ];
 
     if (includeTokens) {
-       row.push(
-         audit.auditData?.tokenUsage?.inputTokens?.toString() || "0",
-         audit.auditData?.tokenUsage?.outputTokens?.toString() || "0",
-         audit.auditData?.tokenUsage?.totalTokens?.toString() || "0"
-       );
+      row.push(
+        audit.auditData?.tokenUsage?.inputTokens?.toString() || "0",
+        audit.auditData?.tokenUsage?.outputTokens?.toString() || "0",
+        audit.auditData?.tokenUsage?.totalTokens?.toString() || "0"
+      );
     }
 
     rows.push(row.map((field) => `"${field}"`).join(","));
@@ -1252,7 +1252,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     totalFatalErrors: 0,
     fatalRate: 0,
   });
-  
+
   // Time series data for line charts
   const [dailyAuditsData, setDailyAuditsData] = useState<
     { date: string; audits: number }[]
@@ -1260,7 +1260,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   const [dailyFatalErrorsData, setDailyFatalErrorsData] = useState<
     { date: string; fatalErrors: number }[]
   >([]);
-  
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
@@ -1537,7 +1537,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         ).length;
         totalFatalErrors += fatalCount;
       });
-      
+
       const auditsWithFatalErrors = filteredAudits.filter((audit) =>
         audit.auditData.auditResults.some(
           (r: any) => r.type === "Fatal" && r.score < 80
@@ -1562,10 +1562,10 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
       filteredAudits.forEach((audit) => {
         const date = format(new Date(audit.auditDate), "yyyy-MM-dd");
-        
+
         // Count audits per day
         dailyAuditsMap.set(date, (dailyAuditsMap.get(date) || 0) + 1);
-        
+
         // Count fatal errors per day
         const fatalCount = audit.auditData.auditResults.filter(
           (r: any) => r.type === "Fatal" && r.score < 80
@@ -2127,7 +2127,9 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
               >
                 Next <ArrowRight className="h-4 w-4 ml-1" />
