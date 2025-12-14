@@ -93,21 +93,30 @@ export async function getCampaignById(
   return Campaign.findById(campaignId).lean<ICampaign | null>();
 }
 
-export async function cancelCampaign(
+export async function deleteCampaign(
   campaignId: string
-): Promise<ICampaign | null> {
+): Promise<boolean> {
   await ensureDb();
-  await CampaignJob.updateMany(
-    { campaignId, status: { $in: ["queued", "processing"] } },
-    { status: "canceled", finishedAt: new Date() }
-  );
-  const canceled = await Campaign.findByIdAndUpdate(
-    campaignId,
-    { status: "canceled", finishedAt: new Date() },
-    { new: true }
-  ).lean<ICampaign | null>();
-  await recomputeCampaignProgress(campaignId);
-  return canceled;
+
+  // Find all campaign jobs for this campaign
+  const campaignJobs = await CampaignJob.find({ campaignId }).lean<ICampaignJob[]>();
+
+  // Delete all associated call audits (for successful jobs)
+  const auditIdsToDelete = campaignJobs
+    .filter(job => job.status === "succeeded" && job.callAuditId)
+    .map(job => job.callAuditId);
+
+  if (auditIdsToDelete.length > 0) {
+    await CallAudit.deleteMany({ _id: { $in: auditIdsToDelete } });
+  }
+
+  // Delete all campaign jobs
+  await CampaignJob.deleteMany({ campaignId });
+
+  // Delete the campaign itself
+  const deletedCampaign = await Campaign.findByIdAndDelete(campaignId);
+
+  return !!deletedCampaign;
 }
 
 export async function claimJobs(limit: number): Promise<ICampaignJob[]> {

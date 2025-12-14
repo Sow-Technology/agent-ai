@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Loader2, UploadCloud, PlayCircle, XCircle } from "lucide-react";
+import { Eye, Loader2, UploadCloud, PlayCircle, XCircle, Trash2 } from "lucide-react";
 
 import type { QAParameter } from "@/types/qa-parameter";
 import type { SOP } from "@/types/sop";
@@ -265,6 +265,37 @@ export default function BulkAuditPage() {
       toast({
         title: "Download failed",
         description: "Could not download report",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteCampaign = async (campaignId: string, campaignName: string) => {
+    if (!confirm(`Are you sure you want to delete the campaign "${campaignName}" and ALL audits created by it? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/audits/bulk/${campaignId}`, {
+        method: "DELETE",
+        headers: await getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete campaign");
+      }
+
+      toast({
+        title: "Campaign deleted",
+        description: `Campaign "${campaignName}" and all its audits have been deleted successfully.`,
+      });
+
+      await fetchCampaigns();
+    } catch (error) {
+      console.error("Delete failed", error);
+      toast({
+        title: "Delete failed",
+        description: "Could not delete campaign",
         variant: "destructive",
       });
     }
@@ -521,6 +552,14 @@ export default function BulkAuditPage() {
                         >
                           <XCircle className="mr-1 h-4 w-4" />
                           Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteCampaign(c._id, c.name)}
+                        >
+                          <Trash2 className="mr-1 h-4 w-4" />
+                          Delete
                         </Button>
                       </div>
                     </TableCell>

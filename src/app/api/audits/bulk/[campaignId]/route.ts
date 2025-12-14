@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCampaignStatus, cancelCampaign, getCampaignById } from "@/lib/campaignService";
+import { getCampaignStatus, deleteCampaign, getCampaignById } from "@/lib/campaignService";
 import { validateJWTToken } from "@/lib/jwtAuthService";
 
 export async function GET(
@@ -51,12 +51,15 @@ export async function DELETE(
       }
     }
 
-    const canceled = await cancelCampaign(params.campaignId);
-    return NextResponse.json({ success: true, data: canceled });
+    const deleted = await deleteCampaign(params.campaignId);
+    if (!deleted) {
+      return NextResponse.json({ success: false, error: "Failed to delete campaign" }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, data: { deleted: true } });
   } catch (error) {
-    console.error("Bulk cancel error", error);
+    console.error("Bulk delete error", error);
     return NextResponse.json(
-      { success: false, error: "Failed to cancel campaign" },
+      { success: false, error: "Failed to delete campaign" },
       { status: 500 }
     );
   }
