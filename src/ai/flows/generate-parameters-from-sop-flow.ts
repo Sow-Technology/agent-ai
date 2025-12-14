@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import { geminiRateLimiter } from "@/lib/geminiRateLimiter";
 
 const IndividualParameterItemSchema = z.object({
   name: z.string().describe("The name of the audit parameter."),
@@ -85,6 +86,9 @@ Respond ONLY with valid JSON in this exact format:
     }
   ]
 }`;
+
+  // Apply rate limiting before calling Gemini API
+  await geminiRateLimiter.waitForSlot();
 
   const result = await model.generateContent(prompt);
   const responseText = result.response.text().trim();

@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import { geminiRateLimiter } from "@/lib/geminiRateLimiter";
 
 // A mock/placeholder for a very short silent WAV audio data URI.
 // In a real scenario, this would come from an actual audio file upload.
@@ -67,6 +68,11 @@ const QaAuditInputSchema = z.object({
     .array(ParameterGroupInputSchema)
     .min(1)
     .describe("A list of audit parameter groups, each with sub-parameters."),
+  applyRateLimit: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Whether to apply rate limiting to the Gemini API call."),
 });
 export type QaAuditInput = z.infer<typeof QaAuditInputSchema>;
 
@@ -303,6 +309,11 @@ ${parametersDesc}
     // If using mock audio, add a note that this is a simulated audit
     parts[0].text +=
       "\n\n**NOTE**: No real audio provided. Please generate a realistic sample audit based on the parameters provided.";
+  }
+
+  // Apply rate limiting before calling Gemini API if enabled
+  if (effectiveInput.applyRateLimit !== false) {
+    await geminiRateLimiter.waitForSlot();
   }
 
   const result = await model.generateContent({
