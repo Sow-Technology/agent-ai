@@ -389,12 +389,11 @@ export default function BulkAuditPage() {
                   }
                 />
                 <Label htmlFor="rate-limit" className="text-sm">
-                  Apply rate limiting (5 requests/minute)
+                  Apply rate limiting (defaults: 10 requests/minute, 500 requests/hour)
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground">
-                Recommended to avoid API quota limits. Uncheck only if you have
-                higher limits.
+                Recommended to avoid API quota limits (minute & hourly). Uncheck only if your quota supports higher throughput.
               </p>
             </div>
 

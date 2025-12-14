@@ -16,7 +16,8 @@ export const getGoogleAI = () => {
   return genAI;
 };
 
-export const getModel = (modelName: string = "gemini-2.0-flash-exp") => {
+// Default to stable model; override by passing modelName.
+export const getModel = (modelName: string = "gemini-2.0-flash-001") => {
   const ai = getGoogleAI();
   return ai.getGenerativeModel({ model: modelName });
 };
