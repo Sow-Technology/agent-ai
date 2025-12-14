@@ -12,6 +12,8 @@ interface CreateCampaignParams {
   timezone: string;
   createdBy: string;
   projectId?: string;
+  qaParameterSetId?: string;
+  sopId?: string;
   rows: Record<string, any>[];
 }
 
@@ -29,7 +31,7 @@ export async function createCampaignWithJobs(
   params: CreateCampaignParams
 ): Promise<ICampaign> {
   await ensureDb();
-  const { name, timezone, createdBy, projectId, rows } = params;
+  const { name, timezone, createdBy, projectId, qaParameterSetId, sopId, rows } = params;
   const campaign = await Campaign.create({
     name: name || "Untitled Campaign",
     timezone: timezone || "UTC",
@@ -37,6 +39,8 @@ export async function createCampaignWithJobs(
     totalJobs: rows.length,
     createdBy,
     projectId,
+    qaParameterSetId,
+    sopId,
     startedAt: new Date(),
   });
 

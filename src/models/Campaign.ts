@@ -21,6 +21,8 @@ export interface ICampaign extends Document {
   lastError?: string;
   createdBy: string;
   projectId?: string;
+  qaParameterSetId?: string;
+  sopId?: string;
   startedAt?: Date;
   finishedAt?: Date;
   createdAt: Date;
@@ -51,6 +53,8 @@ const CampaignSchema = new Schema<ICampaign>(
     lastError: { type: String },
     createdBy: { type: String, required: true },
     projectId: { type: String },
+    qaParameterSetId: { type: String },
+    sopId: { type: String },
     startedAt: { type: Date },
     finishedAt: { type: Date },
   },

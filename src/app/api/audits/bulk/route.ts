@@ -14,6 +14,9 @@ const createSchema = z.object({
   campaignName: z.string().min(1).max(200),
   timezone: z.string().min(1).max(100).default("UTC"),
   rows: z.array(rowSchema).min(1),
+  qaParameterSetId: z.string().optional(),
+  sopId: z.string().optional(),
+  projectId: z.string().optional(),
 });
 
 function normalizeRow(row: Record<string, any>) {
@@ -70,7 +73,9 @@ export async function POST(request: NextRequest) {
       name: parsed.data.campaignName,
       timezone: parsed.data.timezone,
       createdBy: tokenResult.user.username,
-      projectId: tokenResult.user.projectId,
+      projectId: parsed.data.projectId || tokenResult.user.projectId,
+      qaParameterSetId: parsed.data.qaParameterSetId,
+      sopId: parsed.data.sopId,
       rows,
     });
 

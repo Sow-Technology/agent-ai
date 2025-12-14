@@ -60,8 +60,10 @@ export default function BulkAuditPage() {
   // New state for QA Params and SOPs
   const [availableQaParameterSets, setAvailableQaParameterSets] = useState<QAParameter[]>([]);
   const [availableSops, setAvailableSops] = useState<SOP[]>([]);
+  const [availableProjects, setAvailableProjects] = useState<string[]>([]);
   const [selectedQaParameterSetId, setSelectedQaParameterSetId] = useState<string>("");
   const [selectedSopId, setSelectedSopId] = useState<string>("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
 
   const parsedPreview = useMemo(() => rows.slice(0, 5), [rows]);
 
@@ -108,7 +110,8 @@ export default function BulkAuditPage() {
            timezone, 
            rows,
            qaParameterSetId: selectedQaParameterSetId || undefined,
-           sopId: selectedSopId || undefined
+           sopId: selectedSopId || undefined,
+           projectId: selectedProjectId || undefined
         }),
       });
       const json = await res.json();
@@ -155,6 +158,13 @@ export default function BulkAuditPage() {
         const sopsJson = await sopsRes.json();
         if (sopsJson.success) {
            setAvailableSops(sopsJson.data || []);
+        }
+
+        // Fetch Projects
+        const projectsRes = await fetch("/api/projects", { headers });
+        const projectsJson = await projectsRes.json();
+        if (projectsJson.success) {
+           setAvailableProjects(projectsJson.data || []);
         }
      } catch (error) {
         console.error("Failed to fetch options", error);
@@ -232,7 +242,7 @@ export default function BulkAuditPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <Label>Campaign name</Label>
               <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} />
@@ -265,6 +275,22 @@ export default function BulkAuditPage() {
                   {availableSops.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Project (Optional)</Label>
+              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableProjects.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
                     </SelectItem>
                   ))}
                 </SelectContent>

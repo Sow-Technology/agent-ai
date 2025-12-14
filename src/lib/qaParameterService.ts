@@ -71,13 +71,16 @@ export async function getAllQAParameters(): Promise<QAParameterDocument[]> {
   }
 }
 
-export async function getActiveQAParameters(): Promise<QAParameterDocument[]> {
+export async function getQAParameterById(id: string): Promise<QAParameterDocument | null> {
   try {
-    const results = await QAParameter.find({ isActive: true }).sort({ updatedAt: -1 }).lean();
-    return results.map(transformToQAParameterDocument);
+    const result = await QAParameter.findById(id).lean();
+    if (result) {
+      return transformToQAParameterDocument(result);
+    }
+    return null;
   } catch (error) {
-    console.error('Error getting active QA parameters:', error);
-    return [];
+    console.error('Error getting QA parameter by id:', error);
+    return null;
   }
 }
 

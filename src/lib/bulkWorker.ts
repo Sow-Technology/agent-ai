@@ -7,7 +7,7 @@ import {
   markJobSucceeded,
   getCampaignById,
 } from "@/lib/campaignService";
-import { getActiveQAParameters } from "@/lib/qaParameterService";
+import { getAllQAParameters, getQAParameterById } from "@/lib/qaParameterService";
 import { createAudit } from "@/lib/auditService";
 import type { QAParameterDocument } from "@/lib/models";
 
@@ -116,8 +116,6 @@ export async function runBulkWorkerOnce() {
   await connectDB();
   const limit = getParallelismCap();
   let processedTotal = 0;
-  const activeParams = await getActiveQAParameters();
-  const auditParameters = toAuditParameters(activeParams);
 
   // Process in batches to avoid long single requests, but drain queue when possible
   while (true) {
@@ -132,6 +130,15 @@ export async function runBulkWorkerOnce() {
           if (!campaign) {
             throw new Error("Campaign missing");
           }
+
+          let activeParams;
+          if (campaign.qaParameterSetId) {
+            const param = await getQAParameterById(campaign.qaParameterSetId);
+            activeParams = param ? [param] : await getAllQAParameters();
+          } else {
+            activeParams = await getAllQAParameters();
+          }
+          const auditParameters = toAuditParameters(activeParams);
 
           const mapped = mapRowToAuditPayload(
             job.payload as CsvJobPayload,
