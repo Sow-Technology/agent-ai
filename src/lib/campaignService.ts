@@ -238,15 +238,18 @@ export async function retryFailedJobs(campaignId: string) {
   return result.modifiedCount;
 }
 
-export async function resetStuckProcessingJobs(campaignId: string, maxAgeMinutes: number = 30) {
+export async function resetStuckProcessingJobs(
+  campaignId: string,
+  maxAgeMinutes: number = 30
+) {
   await ensureDb();
   const cutoffTime = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
-  
+
   const result = await CampaignJob.updateMany(
     {
       campaignId,
       status: "processing",
-      startedAt: { $lt: cutoffTime }
+      startedAt: { $lt: cutoffTime },
     },
     {
       status: "queued",
@@ -257,7 +260,7 @@ export async function resetStuckProcessingJobs(campaignId: string, maxAgeMinutes
       retries: 0,
     }
   );
-  
+
   if (result.modifiedCount > 0) {
     await recomputeCampaignProgress(campaignId);
   }

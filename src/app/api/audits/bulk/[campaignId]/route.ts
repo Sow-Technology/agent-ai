@@ -156,13 +156,13 @@ export async function POST(
       const retriedCount = await retryFailedJobs(params.campaignId);
       return NextResponse.json({
         success: true,
-        data: { retried: retriedCount }
+        data: { retried: retriedCount },
       });
     } else if (action === "reset-stuck") {
       const resetCount = await resetStuckProcessingJobs(params.campaignId);
       return NextResponse.json({
         success: true,
-        data: { reset: resetCount }
+        data: { reset: resetCount },
       });
     }
   } catch (error) {

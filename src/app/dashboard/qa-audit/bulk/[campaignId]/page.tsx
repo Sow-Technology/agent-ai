@@ -3,16 +3,41 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/authUtils";
 
-import { ArrowLeft, ArrowRight, Download, RefreshCcw, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Download,
+  RefreshCcw,
+  RotateCcw,
+} from "lucide-react";
 import type { User } from "@/types/auth";
 
 interface CampaignDetail {
@@ -81,7 +106,7 @@ export default function CampaignPreviewPage() {
   const [loading, setLoading] = useState(false);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobRow | null>(null);
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
@@ -98,7 +123,10 @@ export default function CampaignPreviewPage() {
 
   const progress = useMemo(() => {
     if (!campaign || !campaign.totalJobs) return 0;
-    const done = (campaign.completedJobs || 0) + (campaign.failedJobs || 0) + (campaign.canceledJobs || 0);
+    const done =
+      (campaign.completedJobs || 0) +
+      (campaign.failedJobs || 0) +
+      (campaign.canceledJobs || 0);
     return Math.round((done / campaign.totalJobs) * 100);
   }, [campaign]);
 
@@ -125,7 +153,11 @@ export default function CampaignPreviewPage() {
       }
       setCampaign(json.data?.campaign || null);
     } catch (err: any) {
-      toast({ title: "Load failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Load failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -159,7 +191,11 @@ export default function CampaignPreviewPage() {
       }
       setJobs(json.data || []);
     } catch (err: any) {
-      toast({ title: "Jobs failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Jobs failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setJobsLoading(false);
     }
@@ -201,10 +237,13 @@ export default function CampaignPreviewPage() {
   const handleResetStuckJobs = async () => {
     if (!campaignId) return;
     try {
-      const res = await fetch(`/api/audits/bulk/${campaignId}?action=reset-stuck`, {
-        method: "POST",
-        headers: await getAuthHeaders(),
-      });
+      const res = await fetch(
+        `/api/audits/bulk/${campaignId}?action=reset-stuck`,
+        {
+          method: "POST",
+          headers: await getAuthHeaders(),
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Failed to reset stuck jobs");
@@ -236,16 +275,27 @@ export default function CampaignPreviewPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/qa-audit/bulk")}> 
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/dashboard/qa-audit/bulk")}
+          >
             <ArrowLeft className="mr-1 h-4 w-4" /> Back
           </Button>
           <div>
             <div className="text-lg font-semibold">Campaign preview</div>
-            <div className="text-sm text-muted-foreground">Job-level progress and scores</div>
+            <div className="text-sm text-muted-foreground">
+              Job-level progress and scores
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={refreshAll} disabled={loading || jobsLoading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshAll}
+            disabled={loading || jobsLoading}
+          >
             <RefreshCcw className="mr-1 h-4 w-4" /> Refresh
           </Button>
           {(campaign?.failedJobs || 0) > 0 && (
@@ -271,7 +321,9 @@ export default function CampaignPreviewPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open(`/api/audits/bulk/${campaignId}/report`, "_blank")}
+            onClick={() =>
+              window.open(`/api/audits/bulk/${campaignId}/report`, "_blank")
+            }
           >
             <Download className="mr-1 h-4 w-4" /> Report
           </Button>
@@ -282,14 +334,18 @@ export default function CampaignPreviewPage() {
         <CardHeader>
           <CardTitle>{campaign?.name || "Loading campaign..."}</CardTitle>
           <CardDescription>
-            {campaign ? `${campaign.timezone} · ${statusLabel(campaign.status)}` : "Fetching details"}
+            {campaign
+              ? `${campaign.timezone} · ${statusLabel(campaign.status)}`
+              : "Fetching details"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">Status</div>
-              <div className="text-base font-medium capitalize">{campaign ? statusLabel(campaign.status) : "-"}</div>
+              <div className="text-base font-medium capitalize">
+                {campaign ? statusLabel(campaign.status) : "-"}
+              </div>
             </div>
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">Progress</div>
@@ -297,14 +353,20 @@ export default function CampaignPreviewPage() {
                 <Progress value={progress} className="h-2" />
                 <div className="text-xs text-muted-foreground mt-1">
                   {campaign
-                    ? `${(campaign.completedJobs || 0) + (campaign.failedJobs || 0) + (campaign.canceledJobs || 0)} / ${campaign.totalJobs}`
+                    ? `${
+                        (campaign.completedJobs || 0) +
+                        (campaign.failedJobs || 0) +
+                        (campaign.canceledJobs || 0)
+                      } / ${campaign.totalJobs}`
                     : "-"}
                 </div>
               </div>
             </div>
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">ETA</div>
-              <div className="text-base font-medium">{campaign ? etaLabel(campaign.etaSeconds) : "-"}</div>
+              <div className="text-base font-medium">
+                {campaign ? etaLabel(campaign.etaSeconds) : "-"}
+              </div>
             </div>
           </div>
           <Separator />
@@ -327,7 +389,11 @@ export default function CampaignPreviewPage() {
             </div>
             <div>
               <div className="font-medium text-foreground">Started</div>
-              <div>{campaign?.startedAt ? new Date(campaign.startedAt).toLocaleString() : "-"}</div>
+              <div>
+                {campaign?.startedAt
+                  ? new Date(campaign.startedAt).toLocaleString()
+                  : "-"}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -336,13 +402,17 @@ export default function CampaignPreviewPage() {
       <Card>
         <CardHeader>
           <CardTitle>Jobs</CardTitle>
-          <CardDescription>Row-by-row status, scores, and recording links.</CardDescription>
+          <CardDescription>
+            Row-by-row status, scores, and recording links.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {jobsLoading ? (
             <div className="text-sm text-muted-foreground">Loading jobs...</div>
           ) : jobs.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No jobs found for this campaign yet.</div>
+            <div className="text-sm text-muted-foreground">
+              No jobs found for this campaign yet.
+            </div>
           ) : (
             <div className="rounded-md border max-h-[70vh] overflow-auto">
               <Table>
@@ -365,8 +435,12 @@ export default function CampaignPreviewPage() {
                       className="cursor-pointer"
                       onClick={() => setSelectedJob(job)}
                     >
-                      <TableCell className="font-mono text-xs">{job.rowIndex + 1}</TableCell>
-                      <TableCell className="capitalize">{statusLabel(job.status)}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {job.rowIndex + 1}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {statusLabel(job.status)}
+                      </TableCell>
                       <TableCell>{job.agentName || "-"}</TableCell>
                       <TableCell>{job.agentUserId || "-"}</TableCell>
                       <TableCell>{job.callId || "-"}</TableCell>
@@ -394,25 +468,27 @@ export default function CampaignPreviewPage() {
               </Table>
               {jobs.length > ITEMS_PER_PAGE && (
                 <div className="flex items-center justify-end space-x-2 py-4 px-2">
-                    <div className="text-sm text-muted-foreground mr-4">
-                        Page {currentPage} of {totalPages}
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-1" /> Previous
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next <ArrowRight className="h-4 w-4 ml-1" />
-                    </Button>
+                  <div className="text-sm text-muted-foreground mr-4">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Next <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
                 </div>
               )}
             </div>
@@ -428,9 +504,15 @@ export default function CampaignPreviewPage() {
       >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Job Details - {selectedJob?.agentName || "Unknown"}</DialogTitle>
+            <DialogTitle>
+              Job Details - {selectedJob?.agentName || "Unknown"}
+            </DialogTitle>
             <DialogDescription>
-              {selectedJob ? `Row ${selectedJob.rowIndex + 1} · ${statusLabel(selectedJob.status)}` : ""}
+              {selectedJob
+                ? `Row ${selectedJob.rowIndex + 1} · ${statusLabel(
+                    selectedJob.status
+                  )}`
+                : ""}
             </DialogDescription>
           </DialogHeader>
           {selectedJob && (
@@ -443,7 +525,8 @@ export default function CampaignPreviewPage() {
                   <strong>Agent ID:</strong> {selectedJob.agentUserId || "-"}
                 </p>
                 <p>
-                  <strong>Campaign:</strong> {selectedJob.campaignName || campaign?.name || "-"}
+                  <strong>Campaign:</strong>{" "}
+                  {selectedJob.campaignName || campaign?.name || "-"}
                 </p>
                 <p>
                   <strong>Overall Score:</strong>{" "}
@@ -453,28 +536,35 @@ export default function CampaignPreviewPage() {
                 </p>
                 <p>
                   <strong>Status:</strong>{" "}
-                  <span className="capitalize">{statusLabel(selectedJob.status)}</span>
+                  <span className="capitalize">
+                    {statusLabel(selectedJob.status)}
+                  </span>
                 </p>
                 <p>
-                   <strong>Duration:</strong>{" "}
-                    {selectedJob.auditDurationMs
-                      ? `${(selectedJob.auditDurationMs / 1000).toFixed(2)}s`
-                      : "-"}
+                  <strong>Duration:</strong>{" "}
+                  {selectedJob.auditDurationMs
+                    ? `${(selectedJob.auditDurationMs / 1000).toFixed(2)}s`
+                    : "-"}
                 </p>
-                 {currentUser?.role === "Administrator" && (
-                   <p>
-                      <strong>Tokens:</strong>{" "}
-                      {selectedJob.tokenUsage
-                        ? `In: ${selectedJob.tokenUsage.inputTokens || 0} / Out: ${selectedJob.tokenUsage.outputTokens || 0} / Total: ${selectedJob.tokenUsage.totalTokens || 0}`
-                        : "-"}
-                    </p>
-                 )}
+                {currentUser?.role === "Administrator" && (
+                  <p>
+                    <strong>Tokens:</strong>{" "}
+                    {selectedJob.tokenUsage
+                      ? `In: ${
+                          selectedJob.tokenUsage.inputTokens || 0
+                        } / Out: ${
+                          selectedJob.tokenUsage.outputTokens || 0
+                        } / Total: ${selectedJob.tokenUsage.totalTokens || 0}`
+                      : "-"}
+                  </p>
+                )}
               </div>
-              
+
               <Separator />
-              
+
               <h4 className="font-semibold text-md">Parameter Results</h4>
-               {selectedJob.auditResults && selectedJob.auditResults.length > 0 ? (
+              {selectedJob.auditResults &&
+              selectedJob.auditResults.length > 0 ? (
                 <div className="rounded-md border max-h-48 overflow-auto">
                   <Table>
                     <TableHeader>
@@ -487,79 +577,122 @@ export default function CampaignPreviewPage() {
                     <TableBody>
                       {selectedJob.auditResults.map((r) => (
                         <TableRow key={r.parameterId}>
-                          <TableCell className="font-medium">{r.parameterName}</TableCell>
-                          <TableCell className="text-center">{r.score} / {r.maxScore}</TableCell>
-                          <TableCell className="max-w-xs truncate">{r.comments || "-"}</TableCell>
+                          <TableCell className="font-medium">
+                            {r.parameterName}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {r.score} / {r.maxScore}
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {r.comments || "-"}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
-               ) : (
-                  <div className="text-sm text-muted-foreground">No parameter results available.</div>
-               )}
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No parameter results available.
+                </div>
+              )}
 
               <Separator />
-              
-              <div className="space-y-4">
-                   <div className="flex justify-between items-center">
-                      <h4 className="font-semibold text-md">Transcription & Details</h4>
-                      {selectedJob.recordingUrl && (
-                         <a
-                            href={selectedJob.recordingUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm text-blue-600 underline flex items-center gap-1"
-                          >
-                            <Download className="h-3 w-3" /> Recording
-                          </a>
-                      )}
-                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">Original Transcription</div>
-                      <div className="h-48 rounded-md border bg-muted/40 p-3 overflow-auto text-xs whitespace-pre-wrap">
-                          {selectedJob.transcript || "No transcript"}
-                      </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-semibold text-md">
+                    Transcription & Details
+                  </h4>
+                  {selectedJob.recordingUrl && (
+                    <a
+                      href={selectedJob.recordingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-blue-600 underline flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" /> Recording
+                    </a>
+                  )}
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">
+                      Original Transcription
                     </div>
-                    <div className="space-y-2">
-                       <div className="text-sm font-medium">English Translation</div>
-                       <div className="h-48 rounded-md border bg-muted/40 p-3 overflow-auto text-xs whitespace-pre-wrap">
-                          {selectedJob.englishTranslation || "No translation"}
-                       </div>
+                    <div className="h-48 rounded-md border bg-muted/40 p-3 overflow-auto text-xs whitespace-pre-wrap">
+                      {selectedJob.transcript || "No transcript"}
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">
+                      English Translation
+                    </div>
+                    <div className="h-48 rounded-md border bg-muted/40 p-3 overflow-auto text-xs whitespace-pre-wrap">
+                      {selectedJob.englishTranslation || "No translation"}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <Separator />
 
               <div className="space-y-2">
-                   <h4 className="font-semibold text-md">Technical Details</h4>
-                   <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                          <div><strong>Row Index:</strong> {selectedJob.rowIndex + 1}</div>
-                          <div><strong>Call ID:</strong> {selectedJob.callId || "-"}</div>
-                          <div><strong>Customer:</strong> {selectedJob.customerName || "-"}</div>
-                          <div><strong>Retries:</strong> {selectedJob.retries ?? 0}</div>
-                           <div><strong>Created:</strong> {selectedJob.createdAt ? new Date(selectedJob.createdAt).toLocaleString() : "-"}</div>
-                           <div><strong>Finished:</strong> {selectedJob.finishedAt ? new Date(selectedJob.finishedAt).toLocaleString() : "-"}</div>
-                           <div className="col-span-2"><strong>Error:</strong> {selectedJob.error || "None"}</div>
-                      </div>
+                <h4 className="font-semibold text-md">Technical Details</h4>
+                <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <strong>Row Index:</strong> {selectedJob.rowIndex + 1}
+                    </div>
+                    <div>
+                      <strong>Call ID:</strong> {selectedJob.callId || "-"}
+                    </div>
+                    <div>
+                      <strong>Customer:</strong>{" "}
+                      {selectedJob.customerName || "-"}
+                    </div>
+                    <div>
+                      <strong>Retries:</strong> {selectedJob.retries ?? 0}
+                    </div>
+                    <div>
+                      <strong>Created:</strong>{" "}
+                      {selectedJob.createdAt
+                        ? new Date(selectedJob.createdAt).toLocaleString()
+                        : "-"}
+                    </div>
+                    <div>
+                      <strong>Finished:</strong>{" "}
+                      {selectedJob.finishedAt
+                        ? new Date(selectedJob.finishedAt).toLocaleString()
+                        : "-"}
+                    </div>
+                    <div className="col-span-2">
+                      <strong>Error:</strong> {selectedJob.error || "None"}
+                    </div>
+                  </div>
 
-                      {selectedJob.payload && Object.keys(selectedJob.payload).length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-border/50">
-                              <div className="font-semibold mb-1">Payload Data (CSV Row):</div>
-                              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                                {Object.entries(selectedJob.payload).map(([key, value]) => (
-                                  <div key={key} className="break-all">
-                                    <span className="font-medium text-foreground/80">{key}:</span> {String(value ?? "")}
-                                  </div>
-                                ))}
+                  {selectedJob.payload &&
+                    Object.keys(selectedJob.payload).length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-border/50">
+                        <div className="font-semibold mb-1">
+                          Payload Data (CSV Row):
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                          {Object.entries(selectedJob.payload).map(
+                            ([key, value]) => (
+                              <div key={key} className="break-all">
+                                <span className="font-medium text-foreground/80">
+                                  {key}:
+                                </span>{" "}
+                                {String(value ?? "")}
                               </div>
-                          </div>
-                      )}
-                   </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+                </div>
               </div>
             </div>
           )}

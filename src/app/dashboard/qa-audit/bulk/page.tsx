@@ -353,10 +353,13 @@ export default function BulkAuditPage() {
     campaignName: string
   ) => {
     try {
-      const res = await fetch(`/api/audits/bulk/${campaignId}?action=reset-stuck`, {
-        method: "POST",
-        headers: await getAuthHeaders(),
-      });
+      const res = await fetch(
+        `/api/audits/bulk/${campaignId}?action=reset-stuck`,
+        {
+          method: "POST",
+          headers: await getAuthHeaders(),
+        }
+      );
 
       if (!res.ok) {
         throw new Error("Failed to reset stuck jobs");
