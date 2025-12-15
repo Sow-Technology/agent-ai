@@ -19,6 +19,7 @@ interface OverviewCardProps {
   contentClassName?: string;
   headerClassName?: string;
   footerClassName?: string;
+  onClick?: () => void;
 }
 
 export function OverviewCard({
@@ -34,9 +35,10 @@ export function OverviewCard({
   contentClassName,
   headerClassName,
   footerClassName,
+  onClick,
 }: OverviewCardProps) {
   return (
-    <Card className={cn("shadow-lg flex flex-col", className)}>
+    <Card className={cn("shadow-lg flex flex-col", className)} onClick={onClick}>
       <CardHeader className={cn("pb-4", headerClassName)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

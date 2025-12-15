@@ -53,6 +53,9 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  ComposedChart,
+  ReferenceLine,
+  LabelList,
 } from "recharts";
 import {
   Dialog,
@@ -60,6 +63,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -97,6 +101,7 @@ import {
   Trash2,
   ArrowLeft,
   ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -1219,12 +1224,24 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   }[];
 
   const [overallQAScore, setOverallQAScore] = useState(0);
-  const [topIssuesData, setTopIssuesData] = useState([
+  const [topIssuesData, setTopIssuesData] = useState<any[]>([
     {
       id: "issue_default_1",
       reason: "Awaiting audit data...",
       count: 0,
       critical: false,
+      subParameters: [],
+      suggestion: "",
+    },
+  ]);
+  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [paretoData, setParetoData] = useState([
+    {
+      parameter: "No data",
+      count: 0,
+      frequencyPercentage: 0,
+      cumulative: 0,
+      percentage: 0,
     },
   ]);
   const [agentPerformanceData, setAgentPerformanceData] =
@@ -1243,6 +1260,16 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     agentName: string;
     lowestParam: string;
   } | null>(null);
+  const [trainingNeedsList, setTrainingNeedsList] = useState<
+    {
+      agentName: string;
+      agentId: string;
+      score: number;
+      lowestParam: string;
+      lowestParamScore: number;
+    }[]
+  >([]);
+  const [isTrainingNeedsModalOpen, setIsTrainingNeedsModalOpen] = useState(false);
   const [sentimentData, setSentimentData] = useState({
     positive: 0,
     neutral: 0,
@@ -1405,7 +1432,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       // Top Issues
       const issuesMap = new Map<
         string,
-        { count: number; criticalCount: number }
+        { count: number; criticalCount: number; subParams: Map<string, number> }
       >();
       const agentParamScores = new Map<
         string,
@@ -1416,13 +1443,92 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         audit.auditData.auditResults.forEach((res: any) => {
           // Top Issues Calculation
           if (res.score < 80) {
-            const existing = issuesMap.get(res.parameter) || {
+            let mainParamName = res.parameter;
+            let subParamName = "";
+            let found = false;
+
+            // Try to parse Main Parameter from "Main - Sub" format using availableQaParameterSets
+            if (audit.campaignName) {
+              const campaignParams = availableQaParameterSets.find(
+                (p) => p.name === audit.campaignName
+              );
+              if (campaignParams) {
+                // Iterate over groups and sub-params to find a match
+                for (const group of campaignParams.parameters) {
+                  // Sort sub-parameters by length descending to match longest first
+                  const sortedSubParams = [...group.subParameters].sort(
+                    (a, b) => b.name.length - a.name.length
+                  );
+
+                  for (const sub of sortedSubParams) {
+                    // Check if res.parameter matches "Group - Sub" pattern
+                    // We check if res.parameter includes the sub-parameter name AND the group name
+                    const combined = `${group.name} - ${sub.name}`;
+
+                    // Check for exact match or if it contains the combined string
+                    if (
+                      res.parameter === combined ||
+                      res.parameter.includes(combined)
+                    ) {
+                      mainParamName = group.name;
+                      subParamName = sub.name;
+                      found = true;
+                      break;
+                    }
+
+                    // Fallback: Check if it ends with sub-parameter name and starts with group name
+                    if (
+                      res.parameter.startsWith(group.name) &&
+                      res.parameter.endsWith(sub.name)
+                    ) {
+                      mainParamName = group.name;
+                      subParamName = sub.name;
+                      found = true;
+                      break;
+                    }
+                  }
+                  if (found) break;
+                }
+              }
+            }
+
+            // Fallback if not found but looks like "A - B"
+            if (!found && res.parameter.includes(" - ")) {
+              // Heuristic: Split by first " - "
+              const parts = res.parameter.split(" - ");
+              if (parts.length >= 2) {
+                mainParamName = parts[0];
+                subParamName = parts.slice(1).join(" - ");
+              }
+            }
+
+            const existing = issuesMap.get(mainParamName) || {
               count: 0,
               criticalCount: 0,
+              subParams: new Map(),
             };
             existing.count++;
             if (res.score < 50) existing.criticalCount++;
-            issuesMap.set(res.parameter, existing);
+
+            if (subParamName) {
+              existing.subParams.set(
+                subParamName,
+                (existing.subParams.get(subParamName) || 0) + 1
+              );
+            }
+
+            if (res.subParameters && Array.isArray(res.subParameters)) {
+              res.subParameters.forEach((sub: any) => {
+                if (sub.score < 80) {
+                  existing.subParams.set(
+                    sub.name,
+                    (existing.subParams.get(sub.name) || 0) + 1
+                  );
+                }
+              });
+            }
+
+            issuesMap.set(mainParamName, existing);
           }
 
           // Training Needs Calculation
@@ -1440,12 +1546,28 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       const sortedIssues = Array.from(issuesMap.entries())
         .sort(([, a], [, b]) => b.count - a.count)
         .slice(0, 5)
-        .map(([reason, data]) => ({
-          id: reason,
-          reason,
-          count: data.count,
-          critical: data.criticalCount > 0,
-        }));
+        .map(([reason, data]) => {
+          const subParamsList = Array.from(data.subParams.entries())
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, count]) => ({ name, count }));
+
+          return {
+            id: reason,
+            reason,
+            count: data.count,
+            critical: data.criticalCount > 0,
+            subParameters: subParamsList,
+            suggestion:
+              subParamsList.length > 0
+                ? `Focus on improving: ${subParamsList
+                    .slice(0, 3)
+                    .map((s) => s.name)
+                    .join(
+                      ", "
+                    )}. Review relevant SOPs and provide targeted coaching.`
+                : "Review general guidelines for this parameter.",
+          };
+        });
       if (sortedIssues.length > 0) setTopIssuesData(sortedIssues);
       else
         setTopIssuesData([
@@ -1454,8 +1576,47 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             reason: "No significant QA failures identified.",
             count: 0,
             critical: false,
+            subParameters: [],
+            suggestion: "",
           },
         ]);
+
+      // Pareto Chart Data
+      const totalFailures = Array.from(issuesMap.values()).reduce(
+        (sum, data) => sum + data.count,
+        0
+      );
+      if (totalFailures > 0) {
+        const paretoIssues = Array.from(issuesMap.entries())
+          .sort(([, a], [, b]) => b.count - a.count)
+          .slice(0, 10); // Top 10 parameters
+
+        let cumulative = 0;
+        const paretoChartData = paretoIssues.map(([parameter, data]) => {
+          cumulative += data.count;
+          return {
+            parameter:
+              parameter.length > 20
+                ? parameter.substring(0, 20) + "..."
+                : parameter,
+            count: data.count,
+            frequencyPercentage: (data.count / totalFailures) * 100,
+            cumulative,
+            percentage: (cumulative / totalFailures) * 100,
+          };
+        });
+        setParetoData(paretoChartData);
+      } else {
+        setParetoData([
+          {
+            parameter: "No failures",
+            count: 0,
+            frequencyPercentage: 0,
+            cumulative: 0,
+            percentage: 0,
+          },
+        ]);
+      }
 
       // Finalize Training Needs
       let lowestAvg = 101;
@@ -1469,6 +1630,41 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         }
       });
       setTrainingNeedsData(tniResult);
+
+      // Calculate Training Needs List for Modal (Bottom 5 Agents)
+      if (avgAgentScores.length > 0) {
+        const bottomAgents = avgAgentScores
+          .filter((a) => a.score < 80)
+          .slice(-5)
+          .reverse();
+
+        const needsList = bottomAgents.map((agent) => {
+          let worstParam = "";
+          let worstParamScore = 101;
+
+          // Find worst parameter for this agent
+          agentParamScores.forEach((data, key) => {
+            if (key.startsWith(`${agent.id}__`)) {
+              const avg = data.totalScore / data.count;
+              if (avg < worstParamScore) {
+                worstParamScore = avg;
+                worstParam = key.split("__")[1];
+              }
+            }
+          });
+
+          return {
+            agentName: agent.name,
+            agentId: agent.id,
+            score: agent.score,
+            lowestParam: worstParam || "N/A",
+            lowestParamScore: worstParamScore === 101 ? 0 : parseFloat(worstParamScore.toFixed(1)),
+          };
+        });
+        setTrainingNeedsList(needsList);
+      } else {
+        setTrainingNeedsList([]);
+      }
 
       // Compliance
       const fatalAudits = filteredAudits.filter((a) =>
@@ -1616,7 +1812,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       setDailyFatalErrorsData([]);
       setFatalErrorsData({ totalFatalErrors: 0, fatalRate: 0 });
     }
-  }, [filteredAudits]);
+  }, [filteredAudits, availableQaParameterSets]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -1631,7 +1827,12 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   }, [filteredAudits, currentPage]);
 
   const chartConfigTopIssues = {
-    count: { label: "Count", color: "hsl(var(--chart-2))" },
+    count: { label: "Count", color: "hsl(var(--chart-5))" },
+  } as const;
+
+  const chartConfigPareto = {
+    count: { label: "Failures", color: "hsl(var(--chart-5))" },
+    percentage: { label: "Cumulative %", color: "hsl(var(--chart-2))" },
   } as const;
 
   const chartConfigDailyAudits = {
@@ -1689,7 +1890,12 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               Percentage of audits with fatal errors
             </p>
           </OverviewCard>
-          <OverviewCard title="Training Needs" icon={UserCheck}>
+          <OverviewCard 
+            title="Training Needs" 
+            icon={UserCheck} 
+            className="cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setIsTrainingNeedsModalOpen(true)}
+          >
             <div className="text-xl font-bold truncate">
               {trainingNeedsData?.agentName || "N/A"}
             </div>
@@ -1732,8 +1938,8 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
       {!isAgentView && (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-full lg:col-span-4 shadow-lg">
+          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+            <Card className="col-span-full lg:col-span-1 shadow-lg">
               <CardHeader>
                 <CardTitle>Top QA Issues</CardTitle>
                 <CardDescription>
@@ -1749,14 +1955,15 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                     <BarChart
                       layout="vertical"
                       data={topIssuesData}
-                      margin={{ left: 120, top: 20, right: 20, bottom: 20 }}
+                      margin={{ left: 200, top: 20, right: 20, bottom: 20 }}
                     >
                       <CartesianGrid horizontal={false} />
                       <XAxis type="number" dataKey="count" />
                       <YAxis
                         dataKey="reason"
                         type="category"
-                        tick={{ fontSize: 12, width: 200, textAnchor: "start" }}
+                        tick={{ fontSize: 12, width: 180 }}
+                        width={180}
                         interval={0}
                       />
                       <Tooltip
@@ -1767,61 +1974,102 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                         dataKey="count"
                         layout="vertical"
                         radius={4}
-                        fill="var(--color-count)"
+                        fill="hsl(249, 81%, 67%)"
+                        onClick={(data) => setSelectedIssue(data)}
+                        className="cursor-pointer hover:opacity-80"
                       />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
               </CardContent>
             </Card>
-            <Card className="col-span-full lg:col-span-3 shadow-lg">
+            <Card className="col-span-full lg:col-span-1 shadow-lg">
               <CardHeader>
-                <CardTitle>Campaign Performance</CardTitle>
+                <CardTitle>Pareto Analysis</CardTitle>
                 <CardDescription>
-                  Performance & compliance scores by campaign.
+                  Parameter-wise failure distribution (80/20 rule).
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-[350px] w-full">
-                <ScrollArea className="h-full">
-                  <div className="min-h-[350px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Campaign</TableHead>
-                          <TableHead className="text-right">QA Score</TableHead>
-                          <TableHead className="text-right">
-                            Compliance
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {campaignPerformanceData.map((c) => (
-                          <TableRow key={c.name}>
-                            <TableCell className="font-medium">
-                              {c.name}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {c.score}%
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {c.compliance}%
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {campaignPerformanceData.length === 0 && (
-                          <TableRow>
-                            <TableCell
-                              colSpan={3}
-                              className="text-center text-muted-foreground"
-                            >
-                              No campaign data available.
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </ScrollArea>
+              <CardContent className="pl-2">
+                <ChartContainer
+                  config={chartConfigPareto}
+                  className="h-[350px] w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                      data={paretoData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="parameter"
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        fontSize={12}
+                      />
+                      <YAxis
+                        yAxisId="left"
+                        label={{
+                          value: "Frequency %",
+                          angle: -90,
+                          position: "insideLeft",
+                        }}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        label={{
+                          value: "Cumulative %",
+                          angle: 90,
+                          position: "insideRight",
+                        }}
+                      />
+                      <Tooltip
+                        content={<ChartTooltipContent />}
+                        formatter={(value, name) => [
+                          name === "frequencyPercentage"
+                            ? `${Number(value).toFixed(1)}%`
+                            : `${Number(value).toFixed(1)}%`,
+                          name === "frequencyPercentage"
+                            ? "Frequency"
+                            : "Cumulative %",
+                        ]}
+                      />
+                      <Bar
+                        yAxisId="left"
+                        dataKey="frequencyPercentage"
+                        fill="hsl(249, 81%, 67%)"
+                        radius={2}
+                      >
+                        <LabelList
+                          dataKey="frequencyPercentage"
+                          position="top"
+                          formatter={(value: number) => `${value.toFixed(1)}%`}
+                        />
+                      </Bar>
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="percentage"
+                        stroke="hsl(47.9, 95.8%, 53.1%)"
+                        strokeWidth={3}
+                        dot={{
+                          fill: "hsl(47.9, 95.8%, 53.1%)",
+                          strokeWidth: 2,
+                          r: 4,
+                        }}
+                      />
+                      <ReferenceLine
+                        yAxisId="right"
+                        y={80}
+                        label="80% Cut off"
+                        stroke="green"
+                        strokeDasharray="3 3"
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
               </CardContent>
             </Card>
           </div>
@@ -1879,7 +2127,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
                   <TrendingDown className="h-5 w-5" />
-                  Needs Improvement
+                  <span className="text-white">Needs Improvement</span>
                 </CardTitle>
                 <CardDescription>
                   Agents with opportunities for growth.
@@ -2022,6 +2270,55 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               </CardContent>
             </Card>
           </div>
+
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Campaign Performance</CardTitle>
+              <CardDescription>
+                Performance & compliance scores by campaign.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[350px] w-full">
+              <ScrollArea className="h-full">
+                <div className="min-h-[350px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Campaign</TableHead>
+                        <TableHead className="text-right">QA Score</TableHead>
+                        <TableHead className="text-right">Compliance</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {campaignPerformanceData.map((c) => (
+                        <TableRow key={c.name}>
+                          <TableCell className="font-medium">
+                            {c.name}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {c.score}%
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {c.compliance}%
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {campaignPerformanceData.length === 0 && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={3}
+                            className="text-center text-muted-foreground"
+                          >
+                            No campaign data available.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </>
       )}
 
@@ -2138,6 +2435,120 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!selectedIssue}
+        onOpenChange={(open) => !open && setSelectedIssue(null)}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Issue Breakdown</DialogTitle>
+            <DialogDescription>
+              Detailed analysis of failures for this parameter group.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="border rounded-lg p-4 bg-card">
+              <div className="font-bold text-lg mb-4 flex items-center gap-2 text-primary border-b pb-2">
+                <Target className="h-5 w-5" />
+                {selectedIssue?.reason}
+              </div>
+              
+              <div className="space-y-3">
+                <div className="font-semibold text-sm text-muted-foreground flex items-center justify-between">
+                  <span>Sub-parameter</span>
+                  <span>Failure Count</span>
+                </div>
+                {selectedIssue?.subParameters && selectedIssue.subParameters.length > 0 ? (
+                  <div className="grid gap-2">
+                    {selectedIssue.subParameters.map((sub: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50 transition-colors">
+                        <span className="text-sm font-medium">{sub.name}</span>
+                        <Badge variant="secondary" className="ml-2">{sub.count}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground italic text-sm p-2">No specific sub-parameter data available.</div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <div className="flex items-center gap-2 font-semibold mb-2 text-primary">
+                <Sparkles className="h-4 w-4" />
+                AI Improvement Suggestion
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {selectedIssue?.suggestion ||
+                  "Analyze the specific interactions where this parameter failed to identify root causes."}
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setSelectedIssue(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isTrainingNeedsModalOpen} onOpenChange={setIsTrainingNeedsModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Training Needs Analysis</DialogTitle>
+            <DialogDescription>
+              Agents requiring immediate attention based on recent audit performance.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Agent Name</TableHead>
+                  <TableHead>Overall Score</TableHead>
+                  <TableHead>Critical Weakness</TableHead>
+                  <TableHead className="text-right">Param Score</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trainingNeedsList.length > 0 ? (
+                  trainingNeedsList.map((agent) => (
+                    <TableRow key={agent.agentId}>
+                      <TableCell className="font-medium">
+                        <div>{agent.agentName}</div>
+                        <div className="text-xs text-muted-foreground">{agent.agentId}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={agent.score < 70 ? "destructive" : "secondary"}>
+                          {agent.score}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-destructive font-medium">
+                        {agent.lowestParam}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {agent.lowestParamScore}%
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
+                      No agents currently flagged for critical training needs.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setIsTrainingNeedsModalOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
