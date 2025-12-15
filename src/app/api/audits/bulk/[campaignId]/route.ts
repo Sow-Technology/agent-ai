@@ -4,6 +4,8 @@ import {
   deleteCampaign,
   cancelCampaign,
   getCampaignById,
+  retryFailedJobs,
+  resetStuckProcessingJobs,
 } from "@/lib/campaignService";
 import { validateJWTToken } from "@/lib/jwtAuthService";
 
@@ -95,6 +97,78 @@ export async function DELETE(
     console.error("Bulk delete/cancel error", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete/cancel campaign" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { campaignId: string } }
+) {
+  try {
+    const action = request.nextUrl.searchParams.get("action");
+    if (action !== "retry" && action !== "reset-stuck") {
+      return NextResponse.json(
+        { success: false, error: "Invalid action" },
+        { status: 400 }
+      );
+    }
+
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const tokenResult = await validateJWTToken(token);
+    if (!tokenResult.valid || !tokenResult.user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const campaign = await getCampaignById(params.campaignId);
+    if (!campaign) {
+      return NextResponse.json(
+        { success: false, error: "Not found" },
+        { status: 404 }
+      );
+    }
+
+    if (
+      tokenResult.user.role === "Agent" ||
+      tokenResult.user.role === "Auditor" ||
+      tokenResult.user.role === "QA Analyst"
+    ) {
+      if (campaign.createdBy !== tokenResult.user.username) {
+        return NextResponse.json(
+          { success: false, error: "Forbidden" },
+          { status: 403 }
+        );
+      }
+    }
+
+    if (action === "retry") {
+      const retriedCount = await retryFailedJobs(params.campaignId);
+      return NextResponse.json({
+        success: true,
+        data: { retried: retriedCount }
+      });
+    } else if (action === "reset-stuck") {
+      const resetCount = await resetStuckProcessingJobs(params.campaignId);
+      return NextResponse.json({
+        success: true,
+        data: { reset: resetCount }
+      });
+    }
+  } catch (error) {
+    console.error("Bulk action error", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to perform action" },
       { status: 500 }
     );
   }

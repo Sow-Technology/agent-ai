@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/authUtils";
 
-import { ArrowLeft, ArrowRight, Download, RefreshCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, RefreshCcw, RotateCcw } from "lucide-react";
 import type { User } from "@/types/auth";
 
 interface CampaignDetail {
@@ -24,6 +24,7 @@ interface CampaignDetail {
   completedJobs?: number;
   failedJobs?: number;
   canceledJobs?: number;
+  processingJobs?: number;
   etaSeconds?: number;
   createdAt?: string;
   startedAt?: string;
@@ -168,6 +169,64 @@ export default function CampaignPreviewPage() {
     await Promise.all([fetchCampaign(), fetchJobs(), fetchCurrentUser()]);
   };
 
+  const handleRetryFailedJobs = async () => {
+    if (!campaignId) return;
+    try {
+      const res = await fetch(`/api/audits/bulk/${campaignId}?action=retry`, {
+        method: "POST",
+        headers: await getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to retry failed jobs");
+      }
+
+      const json = await res.json();
+      toast({
+        title: "Retry initiated",
+        description: `Retried ${json.data.retried} failed jobs.`,
+      });
+
+      await refreshAll();
+    } catch (error) {
+      console.error("Retry failed", error);
+      toast({
+        title: "Retry failed",
+        description: "Could not retry failed jobs",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResetStuckJobs = async () => {
+    if (!campaignId) return;
+    try {
+      const res = await fetch(`/api/audits/bulk/${campaignId}?action=reset-stuck`, {
+        method: "POST",
+        headers: await getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to reset stuck jobs");
+      }
+
+      const json = await res.json();
+      toast({
+        title: "Reset initiated",
+        description: `Reset ${json.data.reset} stuck processing jobs.`,
+      });
+
+      await refreshAll();
+    } catch (error) {
+      console.error("Reset failed", error);
+      toast({
+        title: "Reset failed",
+        description: "Could not reset stuck jobs",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     refreshAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -189,6 +248,26 @@ export default function CampaignPreviewPage() {
           <Button variant="outline" size="sm" onClick={refreshAll} disabled={loading || jobsLoading}>
             <RefreshCcw className="mr-1 h-4 w-4" /> Refresh
           </Button>
+          {(campaign?.failedJobs || 0) > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetryFailedJobs}
+              disabled={loading || jobsLoading}
+            >
+              <RotateCcw className="mr-1 h-4 w-4" /> Retry Failed
+            </Button>
+          )}
+          {(campaign?.processingJobs || 0) > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetStuckJobs}
+              disabled={loading || jobsLoading}
+            >
+              <RotateCcw className="mr-1 h-4 w-4" /> Reset Stuck
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -229,7 +308,7 @@ export default function CampaignPreviewPage() {
             </div>
           </div>
           <Separator />
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 text-sm text-muted-foreground">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5 text-sm text-muted-foreground">
             <div>
               <div className="font-medium text-foreground">Completed</div>
               <div>{campaign?.completedJobs ?? "-"}</div>
@@ -237,6 +316,10 @@ export default function CampaignPreviewPage() {
             <div>
               <div className="font-medium text-foreground">Failed</div>
               <div>{campaign?.failedJobs ?? "-"}</div>
+            </div>
+            <div>
+              <div className="font-medium text-foreground">Processing</div>
+              <div>{campaign?.processingJobs ?? "-"}</div>
             </div>
             <div>
               <div className="font-medium text-foreground">Canceled</div>

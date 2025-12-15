@@ -47,6 +47,7 @@ import {
   PlayCircle,
   XCircle,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 
 import type { QAParameter } from "@/types/qa-parameter";
@@ -62,6 +63,7 @@ interface CampaignRow {
   completedJobs?: number;
   failedJobs?: number;
   canceledJobs?: number;
+  processingJobs?: number;
   etaSeconds?: number;
   createdAt?: string;
 }
@@ -315,6 +317,68 @@ export default function BulkAuditPage() {
     }
   };
 
+  const handleRetryFailedJobs = async (
+    campaignId: string,
+    campaignName: string
+  ) => {
+    try {
+      const res = await fetch(`/api/audits/bulk/${campaignId}?action=retry`, {
+        method: "POST",
+        headers: await getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to retry failed jobs");
+      }
+
+      const json = await res.json();
+      toast({
+        title: "Retry initiated",
+        description: `Retried ${json.data.retried} failed jobs in campaign "${campaignName}".`,
+      });
+
+      await fetchCampaigns();
+    } catch (error) {
+      console.error("Retry failed", error);
+      toast({
+        title: "Retry failed",
+        description: "Could not retry failed jobs",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResetStuckJobs = async (
+    campaignId: string,
+    campaignName: string
+  ) => {
+    try {
+      const res = await fetch(`/api/audits/bulk/${campaignId}?action=reset-stuck`, {
+        method: "POST",
+        headers: await getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to reset stuck jobs");
+      }
+
+      const json = await res.json();
+      toast({
+        title: "Reset initiated",
+        description: `Reset ${json.data.reset} stuck processing jobs in campaign "${campaignName}".`,
+      });
+
+      await fetchCampaigns();
+    } catch (error) {
+      console.error("Reset failed", error);
+      toast({
+        title: "Reset failed",
+        description: "Could not reset stuck jobs",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -547,6 +611,26 @@ export default function BulkAuditPage() {
                             onClick={() => handleDownloadReport(c._id, false)}
                           >
                             Download
+                          </Button>
+                        )}
+                        {(c.failedJobs || 0) > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRetryFailedJobs(c._id, c.name)}
+                          >
+                            <RotateCcw className="mr-1 h-4 w-4" />
+                            Retry Failed
+                          </Button>
+                        )}
+                        {(c.processingJobs || 0) > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleResetStuckJobs(c._id, c.name)}
+                          >
+                            <RotateCcw className="mr-1 h-4 w-4" />
+                            Reset Stuck
                           </Button>
                         )}
                         <Button

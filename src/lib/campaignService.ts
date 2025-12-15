@@ -219,6 +219,51 @@ export async function markJobCanceled(jobId: string) {
   }
 }
 
+export async function retryFailedJobs(campaignId: string) {
+  await ensureDb();
+  const result = await CampaignJob.updateMany(
+    { campaignId, status: "failed" },
+    {
+      status: "queued",
+      error: null,
+      durationMs: null,
+      startedAt: null,
+      finishedAt: null,
+      retries: 0,
+    }
+  );
+  if (result.modifiedCount > 0) {
+    await recomputeCampaignProgress(campaignId);
+  }
+  return result.modifiedCount;
+}
+
+export async function resetStuckProcessingJobs(campaignId: string, maxAgeMinutes: number = 30) {
+  await ensureDb();
+  const cutoffTime = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
+  
+  const result = await CampaignJob.updateMany(
+    {
+      campaignId,
+      status: "processing",
+      startedAt: { $lt: cutoffTime }
+    },
+    {
+      status: "queued",
+      error: null,
+      durationMs: null,
+      startedAt: null,
+      finishedAt: null,
+      retries: 0,
+    }
+  );
+  
+  if (result.modifiedCount > 0) {
+    await recomputeCampaignProgress(campaignId);
+  }
+  return result.modifiedCount;
+}
+
 export async function getCampaignStatus(campaignId: string) {
   await ensureDb();
   const campaign = await Campaign.findById(campaignId).lean<ICampaign | null>();
@@ -293,6 +338,7 @@ async function recomputeCampaignProgress(campaignId: string) {
   const completedJobs = countByStatus.succeeded || 0;
   const failedJobs = countByStatus.failed || 0;
   const canceledJobs = countByStatus.canceled || 0;
+  const processingJobs = countByStatus.processing || 0;
   const totalJobs = campaign.totalJobs;
   const remainingJobs = Math.max(
     totalJobs - completedJobs - failedJobs - canceledJobs,
@@ -333,6 +379,7 @@ async function recomputeCampaignProgress(campaignId: string) {
     completedJobs,
     failedJobs,
     canceledJobs,
+    processingJobs,
     remainingJobs,
     etaSeconds,
     status,
