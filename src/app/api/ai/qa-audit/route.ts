@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import connectDB from "@/lib/mongoose";
+import { getAuditByAudioHash } from "@/lib/auditService";
 
 // Increase the API body parser limit so larger base64 audio payloads (data URIs)
 // can be accepted. Keep the route-level validation for a practical maximum.
@@ -8,6 +11,16 @@ import { NextRequest, NextResponse } from "next/server";
 const MAX_AUDIO_SIZE = 100 * 1024 * 1024; // 100MB limit
 const RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 1000;
+
+// Create a hash of the audio content for caching
+function createAudioHash(audioDataUri: string): string {
+  // Extract the base64 portion from the data URI
+  const base64Match = audioDataUri.match(/^data:[^;]+;base64,(.+)$/);
+  const audioData = base64Match ? base64Match[1] : audioDataUri;
+  
+  // Create a SHA-256 hash of the audio content
+  return crypto.createHash("sha256").update(audioData).digest("hex");
+}
 
 async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -67,7 +80,56 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
+    // Check for cached audit based on audio hash
+    let audioHash: string | undefined;
+    let fromCache = false;
+    
+    if (body.audioDataUri && body.audioDataUri !== "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=") {
+      await connectDB();
+      audioHash = createAudioHash(body.audioDataUri);
+      
+      // Check for existing audit with same audio + campaign
+      const cachedAudit = await getAuditByAudioHash(audioHash, body.campaignName);
+      
+      if (cachedAudit) {
+        console.log(`[Cache Hit] Returning cached audit for audio hash: ${audioHash.substring(0, 16)}...`);
+        fromCache = true;
+        
+        // Transform cached audit back to AI response format
+        const cachedResult = {
+          agentUserId: cachedAudit.agentUserId,
+          campaignName: cachedAudit.campaignName,
+          identifiedAgentName: cachedAudit.agentName,
+          transcriptionInOriginalLanguage: cachedAudit.transcript,
+          englishTranslation: cachedAudit.englishTranslation || cachedAudit.transcript,
+          callSummary: "Cached audit result",
+          auditResults: cachedAudit.auditResults.map((r: any) => ({
+            parameter: r.parameterName,
+            score: r.score,
+            weightedScore: r.maxScore,
+            comments: r.comments,
+            type: r.type,
+          })),
+          overallScore: cachedAudit.overallScore,
+          summary: "This audit was retrieved from cache for consistency.",
+          callLanguage: "English",
+          tokenUsage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+          auditDurationMs: 0,
+          audioHash,
+          fromCache: true,
+        };
+        
+        return NextResponse.json(cachedResult);
+      }
+    }
+
     const result = await callAiWithRetry(body);
+    
+    // Add audio hash to result for storage
+    if (audioHash) {
+      result.audioHash = audioHash;
+    }
+    result.fromCache = false;
 
     console.log("QA audit processing completed successfully");
 

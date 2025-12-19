@@ -1,5 +1,16 @@
 import os from "os";
+import crypto from "crypto";
 import { qaAuditCall } from "@/ai/flows/qa-audit-flow";
+
+// Create a hash of the audio content for caching
+function createAudioHash(audioDataUri: string): string {
+  // Extract the base64 portion from the data URI
+  const base64Match = audioDataUri.match(/^data:[^;]+;base64,(.+)$/);
+  const audioData = base64Match ? base64Match[1] : audioDataUri;
+  
+  // Create a SHA-256 hash of the audio content
+  return crypto.createHash("sha256").update(audioData).digest("hex");
+}
 import connectDB from "@/lib/mongoose";
 import {
   claimJobs,
@@ -11,7 +22,7 @@ import {
   getAllQAParameters,
   getQAParameterById,
 } from "@/lib/qaParameterService";
-import { createAudit } from "@/lib/auditService";
+import { createAudit, getAuditByAudioHash } from "@/lib/auditService";
 import type { QAParameterDocument } from "@/lib/models";
 import { audioFetchRateLimiter } from "@/lib/geminiRateLimiter";
 
@@ -168,15 +179,45 @@ export async function runBulkWorkerOnce() {
           }
 
           const audioDataUri = await fetchAudioDataUri(mapped.audioUrl);
-
-          const qaResult = await qaAuditCall({
-            agentUserId: mapped.agentUserId,
-            campaignName: mapped.campaignName,
-            audioDataUri,
-            callLanguage: "English",
-            auditParameters,
-            applyRateLimit: campaign.applyRateLimit,
-          } as any);
+          
+          // Create audio hash for caching
+          const audioHash = createAudioHash(audioDataUri);
+          
+          // Check for cached audit with same audio content + campaign
+          const cachedAudit = await getAuditByAudioHash(audioHash, mapped.campaignName);
+          
+          let qaResult: any;
+          let fromCache = false;
+          
+          if (cachedAudit) {
+            // Use cached results - transform back to qaAuditCall format
+            console.log(`[Cache Hit] Using cached audit for audio hash: ${audioHash.substring(0, 16)}...`);
+            fromCache = true;
+            qaResult = {
+              auditResults: cachedAudit.auditResults.map((r: any) => ({
+                parameter: r.parameterName,
+                score: r.score,
+                weightedScore: r.maxScore,
+                comments: r.comments,
+                type: r.type,
+              })),
+              overallScore: cachedAudit.overallScore,
+              englishTranslation: cachedAudit.englishTranslation,
+              transcriptionInOriginalLanguage: cachedAudit.transcript,
+              tokenUsage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+              auditDurationMs: 0,
+            };
+          } else {
+            // Run AI audit
+            qaResult = await qaAuditCall({
+              agentUserId: mapped.agentUserId,
+              campaignName: mapped.campaignName,
+              audioDataUri,
+              callLanguage: "English",
+              auditParameters,
+              applyRateLimit: campaign.applyRateLimit,
+            } as any);
+          }
 
           const auditResults = (qaResult.auditResults || []).map(
             (result: any) => ({
@@ -212,8 +253,9 @@ export async function runBulkWorkerOnce() {
             audioUrl: mapped.audioUrl,
             auditedBy: campaign.createdBy,
             auditType: "ai",
-            tokenUsage: qaResult.tokenUsage,
-            auditDurationMs: qaResult.auditDurationMs,
+            tokenUsage: fromCache ? undefined : qaResult.tokenUsage,
+            auditDurationMs: fromCache ? undefined : qaResult.auditDurationMs,
+            audioHash,
           });
 
           if (!savedAudit) {

@@ -1,8 +1,14 @@
+"use client";
 
-'use client';
-
-import type { ReactNode, ElementType } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ReactNode, ElementType } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -38,28 +44,42 @@ export function OverviewCard({
   onClick,
 }: OverviewCardProps) {
   return (
-    <Card className={cn("shadow-lg flex flex-col", className)} onClick={onClick}>
+    <Card
+      className={cn("shadow-lg flex flex-col", className)}
+      onClick={onClick}
+    >
       <CardHeader className={cn("pb-4", headerClassName)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {Icon && <Icon className="h-5 w-5 text-primary" />}
-            <CardTitle className={cn("text-lg font-semibold", titleClassName)}>{title}</CardTitle>
+            <CardTitle className={cn("text-lg font-semibold", titleClassName)}>
+              {title}
+            </CardTitle>
           </div>
           {/* Optional: Add actions like a dropdown menu here */}
         </div>
-        {description && <CardDescription className={cn(descriptionClassName)}>{description}</CardDescription>}
+        {description && (
+          <CardDescription className={cn(descriptionClassName)}>
+            {description}
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent className={cn("flex-grow", contentClassName)}>
         {children}
       </CardContent>
-      {footerText && footerAction && ( // Ensure footerAction is present to render the button
-        <CardFooter className={cn("pt-4", footerClassName)}>
-          <Button variant="ghost" size="sm" className="w-full text-primary hover:bg-primary/10" onClick={footerAction}>
-            {footerText}
-          </Button>
-        </CardFooter>
-      )}
+      {footerText &&
+        footerAction && ( // Ensure footerAction is present to render the button
+          <CardFooter className={cn("pt-4", footerClassName)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-primary hover:bg-primary/10"
+              onClick={footerAction}
+            >
+              {footerText}
+            </Button>
+          </CardFooter>
+        )}
     </Card>
   );
 }
-

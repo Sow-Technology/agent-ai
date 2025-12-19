@@ -102,6 +102,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
+  Search,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -185,6 +186,7 @@ function convertAuditDocumentToSavedAuditItem(
 
   return {
     id: doc.id,
+    callId: doc.callId,
     auditDate,
     agentName: doc.agentName,
     agentUserId: doc.agentUserId || doc.agentName, // Use actual agentUserId from DB, fallback to agentName
@@ -270,7 +272,7 @@ function generateCSV(audits: SavedAuditItem[], includeTokens: boolean = false) {
     // Determine fatal status and count
     const auditResults = audit.auditData?.auditResults || [];
     const fatalCount = auditResults.filter(
-      (result: any) => result?.isFatal || result?.severity === "fatal"
+      (result: any) => result?.type === "Fatal"
     ).length;
     let fatalStatus = "Non - Fatal";
     if (fatalCount > 0) {
@@ -585,6 +587,7 @@ function DashboardPageContent() {
     useState([{ id: "all", name: "All Campaigns" }]);
   const [selectedCampaignIdForFilter, setSelectedCampaignIdForFilter] =
     useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Effect for setting isClient
   useEffect(() => {
@@ -596,21 +599,51 @@ function DashboardPageContent() {
     if (!isClient) return;
 
     const loadData = async () => {
-      // Load user details
-      try {
-        const userResponse = await fetch("/api/auth/user", {
-          headers: getAuthHeaders(),
-        });
+      // Load all data in parallel for better performance
+      const [userPromise, qaPromise, sopPromise, auditsPromise] =
+        await Promise.allSettled([
+          // Load user details
+          fetch("/api/auth/user", { headers: getAuthHeaders() })
+            .then((res) => res.json())
+            .catch((e) => {
+              console.error("Failed to load user details", e);
+              return null;
+            }),
 
-        const userData = await userResponse.json();
-        console.log(userData);
-        if (userResponse.ok && userData.success) {
-          setCurrentUser(userData.user);
-        }
-      } catch (e) {
-        console.error("Failed to load user details", e);
+          // Load QA Parameters from database
+          fetch("/api/qa-parameters", { headers: getAuthHeaders() })
+            .then((res) => res.json())
+            .catch((e) => {
+              console.error(
+                "Failed to load QA Parameter Sets from database",
+                e
+              );
+              return null;
+            }),
+
+          // Load SOPs from database
+          fetch("/api/sops", { headers: getAuthHeaders() })
+            .then((res) => res.json())
+            .catch((e) => {
+              console.error("Failed to load SOPs from database", e);
+              return null;
+            }),
+
+          // Load saved audits from API
+          fetch("/api/audits", { headers: getAuthHeaders() })
+            .then((res) => res.json())
+            .catch((e) => {
+              console.error("Failed to load saved audits from API", e);
+              return null;
+            }),
+        ]);
+
+      // Process user data
+      if (userPromise.status === "fulfilled" && userPromise.value?.success) {
+        setCurrentUser(userPromise.value.user);
       }
 
+      // Set default date range if not set
       if (!dateRange?.from) {
         const today = new Date();
         const firstDayOfMonth = new Date(
@@ -626,66 +659,38 @@ function DashboardPageContent() {
         setDateRange({ from: firstDayOfMonth, to: lastDayOfMonth });
       }
 
-      try {
-        // Load QA Parameters from database
-        const qaResponse = await fetch("/api/qa-parameters", {
-          headers: getAuthHeaders(),
-        });
-        const qaData = await qaResponse.json();
-        if (qaResponse.ok && qaData.success) {
-          const activeCampaigns = qaData.data.filter(
-            (p: QAParameterDocument) => p.isActive
-          );
-          setAvailableQaParameterSets(
-            activeCampaigns.map(convertQAParameterDocumentToQAParameter)
-          );
-          const campaignOptions = activeCampaigns.map(
-            (p: QAParameterDocument) => ({ id: p.id, name: p.name })
-          );
-          setAvailableCampaignsForFilter([
-            { id: "all", name: "All Campaigns" },
-            ...campaignOptions,
-          ]);
-        }
-      } catch (e) {
-        console.error("Failed to load QA Parameter Sets from database", e);
+      // Process QA parameters
+      if (qaPromise.status === "fulfilled" && qaPromise.value?.success) {
+        const activeCampaigns = qaPromise.value.data.filter(
+          (p: QAParameterDocument) => p.isActive
+        );
+        setAvailableQaParameterSets(
+          activeCampaigns.map(convertQAParameterDocumentToQAParameter)
+        );
+        const campaignOptions = activeCampaigns.map(
+          (p: QAParameterDocument) => ({ id: p.id, name: p.name })
+        );
+        setAvailableCampaignsForFilter([
+          { id: "all", name: "All Campaigns" },
+          ...campaignOptions,
+        ]);
       }
 
-      try {
-        // Load SOPs from database
-        const sopResponse = await fetch("/api/sops", {
-          headers: getAuthHeaders(),
-        });
-        const sopData = await sopResponse.json();
-        if (sopResponse.ok && sopData.success) {
-          // setAvailableSops(sopData.data);
-        }
-      } catch (e) {
-        console.error("Failed to load SOPs from database", e);
-      }
-
-      try {
-        // Load saved audits from API
-        const response = await fetch("/api/audits", {
-          headers: getAuthHeaders(),
-        });
-        if (response.ok) {
-          const auditData = await response.json();
-          if (auditData.success && auditData.data) {
-            // Convert database audits to SavedAuditItem format
-            const savedAuditsData: SavedAuditItem[] = auditData.data.map(
-              convertAuditDocumentToSavedAuditItem
-            );
-            setSavedAudits(savedAuditsData);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to load saved audits from API", e);
+      // Process audits
+      if (
+        auditsPromise.status === "fulfilled" &&
+        auditsPromise.value?.success &&
+        auditsPromise.value.data
+      ) {
+        const savedAuditsData: SavedAuditItem[] = auditsPromise.value.data.map(
+          convertAuditDocumentToSavedAuditItem
+        );
+        setSavedAudits(savedAuditsData);
       }
     };
 
     loadData();
-  }, [isClient, dateRange?.from]);
+  }, [isClient]); // Removed dateRange?.from dependency
 
   const handleDeleteAudit = async (audit: SavedAuditItem) => {
     setIsDeleting(true);
@@ -1013,6 +1018,8 @@ function DashboardPageContent() {
           currentUser={currentUser}
           openAuditDetailsModal={openAuditDetailsModal}
           setAuditToDelete={setAuditToDelete}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
         />
       ) : currentUser?.role === "Auditor" ? (
         <Tabs
@@ -1042,6 +1049,8 @@ function DashboardPageContent() {
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
               setAuditToDelete={setAuditToDelete}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
             />
           </TabsContent>
           <TabsContent value="manual-dashboard" className="space-y-4">
@@ -1055,6 +1064,8 @@ function DashboardPageContent() {
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
               setAuditToDelete={setAuditToDelete}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
             />
           </TabsContent>
         </Tabs>
@@ -1090,6 +1101,8 @@ function DashboardPageContent() {
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
               setAuditToDelete={setAuditToDelete}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
             />
           </TabsContent>
           <TabsContent value="qa-dashboard" className="space-y-4">
@@ -1103,6 +1116,8 @@ function DashboardPageContent() {
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
               setAuditToDelete={setAuditToDelete}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
             />
           </TabsContent>
           <TabsContent value="manual-dashboard" className="space-y-4">
@@ -1116,6 +1131,8 @@ function DashboardPageContent() {
               currentUser={currentUser}
               openAuditDetailsModal={openAuditDetailsModal}
               setAuditToDelete={setAuditToDelete}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
             />
           </TabsContent>
         </Tabs>
@@ -1186,6 +1203,8 @@ interface DashboardTabContentProps {
   currentUser: User | null;
   openAuditDetailsModal: (audit: SavedAuditItem) => void;
   setAuditToDelete: (audit: SavedAuditItem | null) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
 }
 
 const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
@@ -1197,6 +1216,8 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   currentUser,
   openAuditDetailsModal,
   setAuditToDelete,
+  searchTerm,
+  setSearchTerm,
 }) => {
   type AgentPerformanceData = {
     topAgents: {
@@ -1269,7 +1290,15 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       lowestParamScore: number;
     }[]
   >([]);
-  const [isTrainingNeedsModalOpen, setIsTrainingNeedsModalOpen] = useState(false);
+  const [isTrainingNeedsModalOpen, setIsTrainingNeedsModalOpen] =
+    useState(false);
+  const [selectedTrainingAgent, setSelectedTrainingAgent] = useState<{
+    agentName: string;
+    agentId: string;
+    score: number;
+    lowestParam: string;
+    lowestParamScore: number;
+  } | null>(null);
   const [sentimentData, setSentimentData] = useState({
     positive: 0,
     neutral: 0,
@@ -1278,6 +1307,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   const [fatalErrorsData, setFatalErrorsData] = useState({
     totalFatalErrors: 0,
     fatalRate: 0,
+    fatalAuditsCount: 0,
   });
 
   // Time series data for line charts
@@ -1324,6 +1354,16 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         );
       }
     }
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (audit) =>
+          audit.agentName.toLowerCase().includes(term) ||
+          audit.id.toLowerCase().includes(term) ||
+          audit.agentUserId.toLowerCase().includes(term) ||
+          (audit.callId && audit.callId.toLowerCase().includes(term))
+      );
+    }
     return filtered;
   }, [
     savedAudits,
@@ -1332,6 +1372,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     selectedCampaignIdForFilter,
     availableQaParameterSets,
     currentUser,
+    searchTerm,
   ]);
 
   useEffect(() => {
@@ -1497,8 +1538,36 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               // Heuristic: Split by first " - "
               const parts = res.parameter.split(" - ");
               if (parts.length >= 2) {
-                mainParamName = parts[0];
+                const rawMainParam = parts[0];
                 subParamName = parts.slice(1).join(" - ");
+                
+                // Try to find a matching group name across all available QA parameter sets
+                // This handles cases where stored data has "Call" but the group is named "Call-handling"
+                let matchedGroupName = rawMainParam;
+                for (const paramSet of availableQaParameterSets) {
+                  for (const group of paramSet.parameters) {
+                    // Check for exact match first
+                    if (group.name === rawMainParam) {
+                      matchedGroupName = group.name;
+                      found = true;
+                      break;
+                    }
+                    // Check if the raw param is a prefix of the group name (e.g., "Call" matches "Call-handling")
+                    if (group.name.toLowerCase().startsWith(rawMainParam.toLowerCase())) {
+                      matchedGroupName = group.name;
+                      found = true;
+                      break;
+                    }
+                    // Check if the group name starts with the raw param followed by common separators
+                    if (group.name.toLowerCase().replace(/[-\s]/g, '').startsWith(rawMainParam.toLowerCase().replace(/[-\s]/g, ''))) {
+                      matchedGroupName = group.name;
+                      found = true;
+                      break;
+                    }
+                  }
+                  if (found) break;
+                }
+                mainParamName = matchedGroupName;
               }
             }
 
@@ -1545,6 +1614,14 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       });
       const sortedIssues = Array.from(issuesMap.entries())
         .sort(([, a], [, b]) => b.count - a.count)
+        .filter(([parameter]) => {
+          // Exclude "FATAL/CRITICAL" group with zero weightage from Top QA Issues
+          const normalizedParam = parameter.toUpperCase().replace(/\s/g, "");
+          if (normalizedParam === "FATAL/CRITICAL") {
+            return false;
+          }
+          return true;
+        })
         .slice(0, 5)
         .map(([reason, data]) => {
           const subParamsList = Array.from(data.subParams.entries())
@@ -1589,16 +1666,21 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       if (totalFailures > 0) {
         const paretoIssues = Array.from(issuesMap.entries())
           .sort(([, a], [, b]) => b.count - a.count)
+          .filter(([parameter]) => {
+            // Exclude "Fatal / Critical" or "FATAL/CRITICAL" group with zero weightage
+            const normalizedParam = parameter.toUpperCase().replace(/\s/g, "");
+            if (normalizedParam === "FATAL/CRITICAL") {
+              return false;
+            }
+            return true;
+          })
           .slice(0, 10); // Top 10 parameters
 
         let cumulative = 0;
         const paretoChartData = paretoIssues.map(([parameter, data]) => {
           cumulative += data.count;
           return {
-            parameter:
-              parameter.length > 20
-                ? parameter.substring(0, 20) + "..."
-                : parameter,
+            parameter: parameter, // Use full parameter name without truncation
             count: data.count,
             frequencyPercentage: (data.count / totalFailures) * 100,
             cumulative,
@@ -1658,7 +1740,10 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             agentId: agent.id,
             score: agent.score,
             lowestParam: worstParam || "N/A",
-            lowestParamScore: worstParamScore === 101 ? 0 : parseFloat(worstParamScore.toFixed(1)),
+            lowestParamScore:
+              worstParamScore === 101
+                ? 0
+                : parseFloat(worstParamScore.toFixed(1)),
           };
         });
         setTrainingNeedsList(needsList);
@@ -1729,19 +1814,18 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       let totalFatalErrors = 0;
       filteredAudits.forEach((audit) => {
         const fatalCount = audit.auditData.auditResults.filter(
-          (r: any) => r.type === "Fatal" && r.score < 80
+          (r: any) => r.type === "Fatal"
         ).length;
         totalFatalErrors += fatalCount;
       });
 
       const auditsWithFatalErrors = filteredAudits.filter((audit) =>
-        audit.auditData.auditResults.some(
-          (r: any) => r.type === "Fatal" && r.score < 80
-        )
+        audit.auditData.auditResults.some((r: any) => r.type === "Fatal")
       ).length;
 
       setFatalErrorsData({
         totalFatalErrors,
+        fatalAuditsCount: auditsWithFatalErrors,
         fatalRate:
           filteredAudits.length > 0
             ? parseFloat(
@@ -1764,7 +1848,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
         // Count fatal errors per day
         const fatalCount = audit.auditData.auditResults.filter(
-          (r: any) => r.type === "Fatal" && r.score < 80
+          (r: any) => r.type === "Fatal"
         ).length;
         dailyFatalErrorsMap.set(
           date,
@@ -1810,14 +1894,18 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       setTrainingNeedsData(null);
       setDailyAuditsData([]);
       setDailyFatalErrorsData([]);
-      setFatalErrorsData({ totalFatalErrors: 0, fatalRate: 0 });
+      setFatalErrorsData({
+        totalFatalErrors: 0,
+        fatalRate: 0,
+        fatalAuditsCount: 0,
+      });
     }
   }, [filteredAudits, availableQaParameterSets]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [auditType, dateRange, selectedCampaignIdForFilter, currentUser]);
+  }, [auditType, dateRange, selectedCampaignIdForFilter, currentUser, searchTerm]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredAudits.length / ITEMS_PER_PAGE);
@@ -1825,6 +1913,144 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredAudits.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredAudits, currentPage]);
+
+  // Compute agent-specific chart data for Training Needs modal
+  const agentSpecificChartData = useMemo(() => {
+    if (!selectedTrainingAgent) return { topIssues: [], paretoData: [] };
+
+    // Filter audits for the selected agent
+    const agentAudits = filteredAudits.filter(
+      (audit) => audit.agentUserId === selectedTrainingAgent.agentId || 
+                 audit.agentName === selectedTrainingAgent.agentName
+    );
+
+    // Compute Top Issues for this agent
+    const issuesMap = new Map<
+      string,
+      { count: number; criticalCount: number; subParams: Map<string, number> }
+    >();
+
+    agentAudits.forEach((audit) => {
+      audit.auditData.auditResults.forEach((res: any) => {
+        if (res.score < 80) {
+          let mainParamName = res.parameter;
+          let subParamName = "";
+          let found = false;
+
+          // Try to parse Main Parameter from "Main - Sub" format
+          if (audit.campaignName) {
+            const campaignParams = availableQaParameterSets.find(
+              (p) => p.name === audit.campaignName
+            );
+            if (campaignParams) {
+              for (const group of campaignParams.parameters) {
+                const sortedSubParams = [...group.subParameters].sort(
+                  (a, b) => b.name.length - a.name.length
+                );
+                for (const sub of sortedSubParams) {
+                  const combined = `${group.name} - ${sub.name}`;
+                  if (res.parameter === combined || res.parameter.includes(combined)) {
+                    mainParamName = group.name;
+                    subParamName = sub.name;
+                    found = true;
+                    break;
+                  }
+                }
+                if (found) break;
+              }
+            }
+          }
+
+          // Fallback if not found
+          if (!found && res.parameter.includes(" - ")) {
+            const parts = res.parameter.split(" - ");
+            if (parts.length >= 2) {
+              const rawMainParam = parts[0];
+              subParamName = parts.slice(1).join(" - ");
+              let matchedGroupName = rawMainParam;
+              for (const paramSet of availableQaParameterSets) {
+                for (const group of paramSet.parameters) {
+                  if (group.name === rawMainParam || 
+                      group.name.toLowerCase().startsWith(rawMainParam.toLowerCase())) {
+                    matchedGroupName = group.name;
+                    break;
+                  }
+                }
+              }
+              mainParamName = matchedGroupName;
+            }
+          }
+
+          const existing = issuesMap.get(mainParamName) || {
+            count: 0,
+            criticalCount: 0,
+            subParams: new Map(),
+          };
+          existing.count++;
+          if (res.score < 50) existing.criticalCount++;
+          if (subParamName) {
+            existing.subParams.set(
+              subParamName,
+              (existing.subParams.get(subParamName) || 0) + 1
+            );
+          }
+          issuesMap.set(mainParamName, existing);
+        }
+      });
+    });
+
+    // Build Top Issues data
+    const topIssues = Array.from(issuesMap.entries())
+      .sort(([, a], [, b]) => b.count - a.count)
+      .filter(([parameter]) => {
+        const normalizedParam = parameter.toUpperCase().replace(/\s/g, "");
+        return normalizedParam !== "FATAL/CRITICAL";
+      })
+      .slice(0, 5)
+      .map(([reason, data]) => {
+        const subParamsList = Array.from(data.subParams.entries())
+          .sort((a, b) => b[1] - a[1])
+          .map(([name, count]) => ({ name, count }));
+        return {
+          id: reason,
+          reason,
+          count: data.count,
+          critical: data.criticalCount > 0,
+          subParameters: subParamsList,
+        };
+      });
+
+    // Build Pareto data
+    const totalFailures = Array.from(issuesMap.values()).reduce(
+      (sum, data) => sum + data.count,
+      0
+    );
+
+    let paretoData: { parameter: string; count: number; frequencyPercentage: number; cumulative: number; percentage: number }[] = [];
+    if (totalFailures > 0) {
+      const paretoIssues = Array.from(issuesMap.entries())
+        .sort(([, a], [, b]) => b.count - a.count)
+        .filter(([parameter]) => {
+          const normalizedParam = parameter.toUpperCase().replace(/\s/g, "");
+          return normalizedParam !== "FATAL/CRITICAL";
+        })
+        .slice(0, 10);
+
+      let cumulative = 0;
+      paretoData = paretoIssues.map(([parameter, data]) => {
+        cumulative += data.count;
+        return {
+          parameter,
+          count: data.count,
+          frequencyPercentage: (data.count / totalFailures) * 100,
+          cumulative,
+          percentage: (cumulative / totalFailures) * 100,
+        };
+      });
+    }
+
+    return { topIssues, paretoData };
+  }, [selectedTrainingAgent, filteredAudits, availableQaParameterSets]);
 
   const chartConfigTopIssues = {
     count: { label: "Count", color: "hsl(var(--chart-5))" },
@@ -1874,12 +2100,12 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               agents
             </p>
           </OverviewCard>
-          <OverviewCard title="No. of Fatal" icon={ShieldCheck}>
+          <OverviewCard title="No. of Fatal Audits" icon={ShieldCheck}>
             <div className="text-2xl font-bold">
-              {fatalErrorsData.totalFatalErrors}
+              {fatalErrorsData.fatalAuditsCount}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total fatal errors across all audits
+              Audits with at least one fatal parameter
             </p>
           </OverviewCard>
           <OverviewCard title="Fatal Rate" icon={Activity}>
@@ -1890,9 +2116,9 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               Percentage of audits with fatal errors
             </p>
           </OverviewCard>
-          <OverviewCard 
-            title="Training Needs" 
-            icon={UserCheck} 
+          <OverviewCard
+            title="Training Needs"
+            icon={UserCheck}
             className="cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => setIsTrainingNeedsModalOpen(true)}
           >
@@ -1939,7 +2165,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       {!isAgentView && (
         <>
           <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-            <Card className="col-span-full lg:col-span-1 shadow-lg">
+            <Card className="col-span-full  lg:col-span-1 shadow-lg">
               <CardHeader>
                 <CardTitle>Top QA Issues</CardTitle>
                 <CardDescription>
@@ -1955,15 +2181,22 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                     <BarChart
                       layout="vertical"
                       data={topIssuesData}
-                      margin={{ left: 200, top: 20, right: 20, bottom: 20 }}
+                      margin={{ left: 20, top: 20, right: 40, bottom: 40 }}
                     >
                       <CartesianGrid horizontal={false} />
-                      <XAxis type="number" dataKey="count" />
+                      <XAxis
+                        type="number"
+                        dataKey="count"
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(value: number) =>
+                          Number.isInteger(value) ? value.toString() : value.toFixed(1)
+                        }
+                      />
                       <YAxis
                         dataKey="reason"
                         type="category"
-                        tick={{ fontSize: 12, width: 180 }}
-                        width={180}
+                        tick={{ fontSize: 12 }}
+                        width={140}
                         interval={0}
                       />
                       <Tooltip
@@ -2064,7 +2297,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                         yAxisId="right"
                         y={80}
                         label="80% Cut off"
-                        stroke="green"
+                        stroke="hsl(var(--chart-1))"
                         strokeDasharray="3 3"
                       />
                     </ComposedChart>
@@ -2077,7 +2310,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="text-green-500 h-5 w-5" />
+                  <TrendingUp className="text-green-600 dark:text-green-400 h-5 w-5" />
                   Top Performers
                 </CardTitle>
                 <CardDescription>
@@ -2096,9 +2329,22 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                   </TableHeader>
                   <TableBody>
                     {agentPerformanceData.topAgents.map((agent) => (
-                      <TableRow key={agent.id}>
+                      <TableRow 
+                        key={agent.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => {
+                          setSelectedTrainingAgent({
+                            agentName: agent.name,
+                            agentId: agent.id,
+                            score: agent.score,
+                            lowestParam: "N/A",
+                            lowestParamScore: 0,
+                          });
+                          setIsTrainingNeedsModalOpen(true);
+                        }}
+                      >
                         <TableCell>{agent.name}</TableCell>
-                        <TableCell className="text-right font-bold text-green-600">
+                        <TableCell className="text-right font-bold text-green-700 dark:text-green-400">
                           {agent.score}%
                         </TableCell>
                         <TableCell className="text-right">
@@ -2125,9 +2371,9 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             </Card>
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <TrendingDown className="h-5 w-5" />
-                  <span className="text-white">Needs Improvement</span>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingDown className="h-5 w-5 text-destructive" />
+                  Needs Improvement
                 </CardTitle>
                 <CardDescription>
                   Agents with opportunities for growth.
@@ -2145,9 +2391,22 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                   </TableHeader>
                   <TableBody>
                     {agentPerformanceData.underperformingAgents.map((agent) => (
-                      <TableRow key={agent.id}>
+                      <TableRow 
+                        key={agent.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => {
+                          setSelectedTrainingAgent({
+                            agentName: agent.name,
+                            agentId: agent.id,
+                            score: agent.score,
+                            lowestParam: "N/A",
+                            lowestParamScore: 0,
+                          });
+                          setIsTrainingNeedsModalOpen(true);
+                        }}
+                      >
                         <TableCell>{agent.name}</TableCell>
-                        <TableCell className="text-right font-bold text-red-600">
+                        <TableCell className="text-right font-bold text-red-700 dark:text-red-400">
                           {agent.score}%
                         </TableCell>
                         <TableCell className="text-right">
@@ -2328,6 +2587,17 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           <CardDescription>
             A list of all audits performed. Click a row to see details.
           </CardDescription>
+          <div className="flex items-center space-x-2">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by agent name, agent ID, audit ID, or call ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -2454,23 +2724,35 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                 <Target className="h-5 w-5" />
                 {selectedIssue?.reason}
               </div>
-              
+
               <div className="space-y-3">
                 <div className="font-semibold text-sm text-muted-foreground flex items-center justify-between">
                   <span>Sub-parameter</span>
                   <span>Failure Count</span>
                 </div>
-                {selectedIssue?.subParameters && selectedIssue.subParameters.length > 0 ? (
+                {selectedIssue?.subParameters &&
+                selectedIssue.subParameters.length > 0 ? (
                   <div className="grid gap-2">
-                    {selectedIssue.subParameters.map((sub: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50 transition-colors">
-                        <span className="text-sm font-medium">{sub.name}</span>
-                        <Badge variant="secondary" className="ml-2">{sub.count}</Badge>
-                      </div>
-                    ))}
+                    {selectedIssue.subParameters.map(
+                      (sub: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50 transition-colors"
+                        >
+                          <span className="text-sm font-medium">
+                            {sub.name}
+                          </span>
+                          <Badge variant="secondary" className="ml-2">
+                            {sub.count}
+                          </Badge>
+                        </div>
+                      )
+                    )}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground italic text-sm p-2">No specific sub-parameter data available.</div>
+                  <div className="text-muted-foreground italic text-sm p-2">
+                    No specific sub-parameter data available.
+                  </div>
                 )}
               </div>
             </div>
@@ -2487,65 +2769,395 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!selectedIssue) return;
+                const headers = ["Parameter Group", "Sub-Parameter", "Failure Count"];
+                const rows = [headers.join(",")];
+                
+                if (selectedIssue.subParameters && selectedIssue.subParameters.length > 0) {
+                  selectedIssue.subParameters.forEach((sub: any) => {
+                    rows.push([
+                      `"${selectedIssue.reason}"`,
+                      `"${sub.name}"`,
+                      sub.count.toString()
+                    ].join(","));
+                  });
+                } else {
+                  rows.push([
+                    `"${selectedIssue.reason}"`,
+                    `"No sub-parameters"`,
+                    selectedIssue.count?.toString() || "0"
+                  ].join(","));
+                }
+                
+                const csv = rows.join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.setAttribute("download", `qa-issue-${selectedIssue.reason.replace(/[^a-zA-Z0-9]/g, "_")}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
             <Button onClick={() => setSelectedIssue(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isTrainingNeedsModalOpen} onOpenChange={setIsTrainingNeedsModalOpen}>
-        <DialogContent className="max-w-3xl">
+      <Dialog
+        open={isTrainingNeedsModalOpen}
+        onOpenChange={(open) => {
+          setIsTrainingNeedsModalOpen(open);
+          if (!open) setSelectedTrainingAgent(null);
+        }}
+      >
+        <DialogContent className={selectedTrainingAgent ? "max-w-6xl" : "max-w-3xl"}>
           <DialogHeader>
-            <DialogTitle>Training Needs Analysis</DialogTitle>
+            <DialogTitle>
+              {selectedTrainingAgent 
+                ? `Training Analysis: ${selectedTrainingAgent.agentName}` 
+                : "Training Needs Analysis"}
+            </DialogTitle>
             <DialogDescription>
-              Agents requiring immediate attention based on recent audit performance.
+              {selectedTrainingAgent
+                ? `Detailed failure analysis for ${selectedTrainingAgent.agentName} (${selectedTrainingAgent.agentId})`
+                : "Agents requiring immediate attention based on recent audit performance. Click on an agent to see their detailed analysis."}
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="py-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Agent Name</TableHead>
-                  <TableHead>Overall Score</TableHead>
-                  <TableHead>Critical Weakness</TableHead>
-                  <TableHead className="text-right">Param Score</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {trainingNeedsList.length > 0 ? (
-                  trainingNeedsList.map((agent) => (
-                    <TableRow key={agent.agentId}>
-                      <TableCell className="font-medium">
-                        <div>{agent.agentName}</div>
-                        <div className="text-xs text-muted-foreground">{agent.agentId}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={agent.score < 70 ? "destructive" : "secondary"}>
-                          {agent.score}%
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-destructive font-medium">
-                        {agent.lowestParam}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {agent.lowestParamScore}%
+
+          <div className="py-4 max-h-[70vh] overflow-y-auto">
+            {selectedTrainingAgent ? (
+              // Agent-specific charts view
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedTrainingAgent(null)}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to List
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={selectedTrainingAgent.score < 70 ? "destructive" : "secondary"}>
+                      Overall: {selectedTrainingAgent.score}%
+                    </Badge>
+                    <Badge variant="outline">
+                      Weakest: {selectedTrainingAgent.lowestParam} ({selectedTrainingAgent.lowestParamScore}%)
+                    </Badge>
+                  </div>
+                </div>
+
+                {agentSpecificChartData.topIssues.length > 0 || agentSpecificChartData.paretoData.length > 0 ? (
+                  <>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    {/* Agent's Top QA Issues */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Top QA Issues</CardTitle>
+                        <CardDescription className="text-xs">
+                          Parameters where this agent needs improvement
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {agentSpecificChartData.topIssues.length > 0 ? (
+                          <ChartContainer
+                            config={chartConfigTopIssues}
+                            className="h-[250px] w-full"
+                          >
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                layout="vertical"
+                                data={agentSpecificChartData.topIssues}
+                                margin={{ left: 10, top: 10, right: 30, bottom: 10 }}
+                              >
+                                <CartesianGrid horizontal={false} />
+                                <XAxis type="number" dataKey="count" tick={{ fontSize: 10 }} />
+                                <YAxis
+                                  dataKey="reason"
+                                  type="category"
+                                  tick={{ fontSize: 10 }}
+                                  width={100}
+                                  interval={0}
+                                />
+                                <Tooltip content={<ChartTooltipContent />} />
+                                <Bar
+                                  dataKey="count"
+                                  layout="vertical"
+                                  radius={4}
+                                  fill="hsl(249, 81%, 67%)"
+                                />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </ChartContainer>
+                        ) : (
+                          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                            No QA issues found for this agent
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Agent's Pareto Analysis */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Pareto Analysis</CardTitle>
+                        <CardDescription className="text-xs">
+                          Parameter-wise failure distribution (80/20 rule)
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {agentSpecificChartData.paretoData.length > 0 ? (
+                          <ChartContainer
+                            config={chartConfigPareto}
+                            className="h-[250px] w-full"
+                          >
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ComposedChart
+                                data={agentSpecificChartData.paretoData}
+                                margin={{ left: 10, top: 10, right: 30, bottom: 50 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis
+                                  dataKey="parameter"
+                                  tick={{ fontSize: 9 }}
+                                  angle={-45}
+                                  textAnchor="end"
+                                  height={60}
+                                  interval={0}
+                                />
+                                <YAxis
+                                  yAxisId="left"
+                                  orientation="left"
+                                  tick={{ fontSize: 10 }}
+                                  label={{ value: "Frequency %", angle: -90, position: "insideLeft", fontSize: 10 }}
+                                />
+                                <YAxis
+                                  yAxisId="right"
+                                  orientation="right"
+                                  domain={[0, 100]}
+                                  tick={{ fontSize: 10 }}
+                                  label={{ value: "Cumulative %", angle: 90, position: "insideRight", fontSize: 10 }}
+                                />
+                                <Tooltip content={<ChartTooltipContent />} />
+                                <ReferenceLine yAxisId="right" y={80} stroke="hsl(var(--chart-2))" strokeDasharray="5 5" label={{ value: "80% Cut-off", position: "top", fontSize: 9 }} />
+                                <Bar
+                                  yAxisId="left"
+                                  dataKey="frequencyPercentage"
+                                  fill="hsl(249, 81%, 67%)"
+                                  radius={[4, 4, 0, 0]}
+                                >
+                                  <LabelList dataKey="frequencyPercentage" position="top" fontSize={8} formatter={(v: number) => `${v.toFixed(1)}%`} />
+                                </Bar>
+                                <Line
+                                  yAxisId="right"
+                                  type="monotone"
+                                  dataKey="percentage"
+                                  stroke="#f59e0b"
+                                  strokeWidth={3}
+                                  dot={{ r: 4, fill: "#f59e0b" }}
+                                  activeDot={{ r: 6 }}
+                                />
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                          </ChartContainer>
+                        ) : (
+                          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                            No failure data for Pareto analysis
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* AI Improvement Suggestions */}
+                  <Card className="mt-6">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        AI Improvement Suggestions
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Personalized recommendations based on this agent&apos;s performance
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {agentSpecificChartData.topIssues.length > 0 ? (
+                          <>
+                            <div className="bg-muted/50 p-3 rounded-lg border">
+                              <p className="text-sm font-medium mb-2">Focus Areas:</p>
+                              <ul className="text-sm text-muted-foreground space-y-1">
+                                {agentSpecificChartData.topIssues.slice(0, 3).map((issue, idx) => (
+                                  <li key={idx} className="flex items-start gap-2">
+                                    <span className="text-primary">•</span>
+                                    <span>
+                                      <strong>{issue.reason}</strong>: {issue.count} failure{issue.count !== 1 ? 's' : ''} detected.
+                                      {issue.subParameters.length > 0 && (
+                                        <span className="text-xs ml-1">
+                                          (Focus on: {issue.subParameters.slice(0, 2).map(s => s.name).join(', ')})
+                                        </span>
+                                      )}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
+                              <p className="text-sm font-medium mb-2 text-primary">Recommended Actions:</p>
+                              <ul className="text-sm text-muted-foreground space-y-1">
+                                <li className="flex items-start gap-2">
+                                  <span className="text-primary">1.</span>
+                                  <span>Review relevant SOPs for <strong>{agentSpecificChartData.topIssues[0]?.reason}</strong> and conduct targeted coaching sessions.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <span className="text-primary">2.</span>
+                                  <span>Shadow high-performing agents to observe best practices in handling these parameters.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <span className="text-primary">3.</span>
+                                  <span>Schedule follow-up audits within 2 weeks to track improvement progress.</span>
+                                </li>
+                              </ul>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <p>No specific improvement areas identified.</p>
+                            <p className="text-xs mt-1">This agent may be performing well or have insufficient audit data.</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  </>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>No failure data available for this agent in the selected date range.</p>
+                    <p className="text-sm mt-2">This may indicate the agent has performed well or has no audits.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Agents list view
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Agent Name</TableHead>
+                    <TableHead>Overall Score</TableHead>
+                    <TableHead>Critical Weakness</TableHead>
+                    <TableHead className="text-right">Param Score</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {trainingNeedsList.length > 0 ? (
+                    trainingNeedsList.map((agent) => (
+                      <TableRow 
+                        key={agent.agentId}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => setSelectedTrainingAgent(agent)}
+                      >
+                        <TableCell className="font-medium">
+                          <div>{agent.agentName}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {agent.agentId}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              agent.score < 70 ? "destructive" : "secondary"
+                            }
+                          >
+                            {agent.score}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-destructive font-medium">
+                          {agent.lowestParam}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {agent.lowestParamScore}%
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="text-center text-muted-foreground h-24"
+                      >
+                        No agents currently flagged for critical training needs.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
-                      No agents currently flagged for critical training needs.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
 
-          <DialogFooter>
-            <Button onClick={() => setIsTrainingNeedsModalOpen(false)}>Close</Button>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const headers = selectedTrainingAgent
+                  ? ["Parameter Group", "Failure Count"]
+                  : ["Agent Name", "Agent ID", "Overall Score", "Critical Weakness", "Weakness Score"];
+                const rows = [headers.join(",")];
+                
+                if (selectedTrainingAgent) {
+                  // Export agent-specific issues
+                  agentSpecificChartData.topIssues.forEach((issue: any) => {
+                    rows.push([
+                      `"${issue.reason}"`,
+                      issue.count.toString()
+                    ].join(","));
+                  });
+                } else {
+                  // Export training needs list
+                  trainingNeedsList.forEach((agent) => {
+                    rows.push([
+                      `"${agent.agentName}"`,
+                      `"${agent.agentId}"`,
+                      `${agent.score}%`,
+                      `"${agent.lowestParam}"`,
+                      `${agent.lowestParamScore}%`
+                    ].join(","));
+                  });
+                }
+                
+                const csv = rows.join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                const filename = selectedTrainingAgent
+                  ? `agent-issues-${selectedTrainingAgent.agentName.replace(/[^a-zA-Z0-9]/g, "_")}.csv`
+                  : "training-needs-analysis.csv";
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button onClick={() => {
+              setIsTrainingNeedsModalOpen(false);
+              setSelectedTrainingAgent(null);
+            }}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

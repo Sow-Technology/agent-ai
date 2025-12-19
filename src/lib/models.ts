@@ -47,6 +47,7 @@ export interface AuditDocument {
     totalTokens?: number;
   };
   auditDurationMs?: number; // Duration of the audit in milliseconds
+  audioHash?: string; // Hash of the audio content for caching
   createdAt: Date;
   updatedAt: Date;
 }

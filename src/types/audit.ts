@@ -7,6 +7,7 @@ export interface QaAuditOutput {
 
 export interface SavedAuditItem {
   id: string;
+  callId?: string;
   auditDate: string; // ISO string date
   agentName: string;
   agentUserId: string;

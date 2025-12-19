@@ -25,6 +25,7 @@ function transformToAuditDocument(doc: any): AuditDocument {
     auditType: doc.auditType,
     tokenUsage: doc.tokenUsage,
     auditDurationMs: doc.auditDurationMs,
+    audioHash: doc.audioHash,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -57,6 +58,7 @@ export async function createAudit(auditData: {
     totalTokens?: number;
   };
   auditDurationMs?: number;
+  audioHash?: string;
 }): Promise<AuditDocument | null> {
   try {
     const newAudit = new CallAudit({
@@ -78,6 +80,7 @@ export async function createAudit(auditData: {
       auditType: auditData.auditType,
       tokenUsage: auditData.tokenUsage,
       auditDurationMs: auditData.auditDurationMs,
+      audioHash: auditData.audioHash,
     });
 
     const savedAudit = await newAudit.save();
@@ -107,6 +110,29 @@ export async function createAudit(auditData: {
     };
   } catch (error) {
     console.error("Error creating audit:", error);
+    return null;
+  }
+}
+
+// Get audit by audio hash for caching - returns the most recent audit for this audio+campaign
+export async function getAuditByAudioHash(
+  audioHash: string,
+  campaignName?: string
+): Promise<AuditDocument | null> {
+  try {
+    const query: any = { audioHash, auditType: "ai" };
+    if (campaignName) {
+      query.campaignName = campaignName;
+    }
+    const result = await CallAudit.findOne(query)
+      .sort({ createdAt: -1 })
+      .lean();
+    if (result) {
+      return transformToAuditDocument(result);
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting audit by audio hash:", error);
     return null;
   }
 }

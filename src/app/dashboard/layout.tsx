@@ -251,7 +251,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Sidebar>
         <SidebarHeader className="p-4 border-b">
           <Link href="/dashboard" className="text-primary">
-            <AssureQaiLogo className="h-8 w-auto" />
+            <AssureQaiLogo className="h-20 w-auto" />
           </Link>
         </SidebarHeader>
         <SidebarContent>
