@@ -644,7 +644,7 @@ function DashboardPageContent() {
       const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       setDateRange({ from: firstDayOfMonth, to: lastDayOfMonth });
     }
-  }, [isClient]);
+  }, [isClient, dateRange?.from]);
 
   // Load user data independently
   useEffect(() => {
@@ -3831,7 +3831,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                       An audit is marked as <strong>fatal</strong> when it contains at least one parameter with:
                     </p>
                     <ul className="text-sm text-muted-foreground mt-1 list-disc list-inside ml-2">
-                      <li>Parameter type = <code className="bg-muted px-1 rounded">"Fatal"</code></li>
+                      <li>Parameter type = <code className="bg-muted px-1 rounded">&quot;Fatal&quot;</code></li>
                       <li>Parameter score &lt; 80%</li>
                     </ul>
                   </div>
