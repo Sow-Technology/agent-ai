@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { AssureQaiLogo } from "@/components/common/SakshiQaiLogo";
+import { SakshiQaiLogo } from "@/components/common/SakshiQaiLogo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check, ArrowLeft, Building, Rocket, Users } from "lucide-react";
@@ -49,7 +49,7 @@ export default function AboutPage() {
       <header className="flex justify-between items-center px-4 sm:px-6 lg:px-8 py-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur-sm z-10">
         <div className="flex items-center gap-6">
           <Link href="/" passHref>
-            <AssureQaiLogo className="h-8 w-auto" />
+            <SakshiQaiLogo className="h-8 w-auto" />
           </Link>
         </div>
         <div className="flex items-center space-x-4">

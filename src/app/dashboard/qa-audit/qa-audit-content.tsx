@@ -200,7 +200,7 @@ function convertAuditDocumentToSavedAuditItem(
       identifiedAgentName: doc.agentName,
       transcriptionInOriginalLanguage: doc.transcript || "",
       englishTranslation: doc.englishTranslation || "",
-      callSummary: `Audit for ${doc.agentName}`,
+      callSummary: doc.callSummary || `Audit for ${doc.agentName}`,
       auditResults: doc.auditResults.map((result: AuditResultDocument) => ({
         parameter: result.parameterName,
         score: result.score,
@@ -257,6 +257,7 @@ function convertSavedAuditItemToCreateAuditFormat(
     qaParameterSetName: savedAudit.campaignName || "Unknown Parameter Set",
     callTranscript: transcript,
     englishTranslation: englishTranslation,
+    callSummary: savedAudit.auditData?.callSummary || `Audit for ${savedAudit.agentName}`,
     overallScore: savedAudit.overallScore,
     auditType: savedAudit.auditType,
     auditorId: auditedBy,

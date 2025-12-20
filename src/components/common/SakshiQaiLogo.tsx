@@ -1,22 +1,55 @@
-'use client';
-
 import Image from 'next/image';
+import { cn } from "@/lib/utils";
 
-interface AssureQaiLogoProps {
+interface SakshiQaiLogoProps {
   className?: string;
   width?: number;
   height?: number;
+  showIcon?: boolean;
+  showLogo?: boolean;
 }
 
-export function AssureQaiLogo({ className = '', width = 130, height = 40 }: AssureQaiLogoProps) {
+export function SakshiQaiLogo({ 
+  className = '', 
+  width = 130, 
+  height = 40,
+  showIcon = true,
+  showLogo = true
+}: SakshiQaiLogoProps) {
   return (
-    <Image
-      src="/logo.png"
-      alt="AssureQAI Logo"
-      width={width}
-      height={height}
-      className={`transition-opacity duration-200 w-[130px]  !h-auto group-data-[state=collapsed]/peer:opacity-0 dark:invert invert-0 ${className}`}
-      priority
-    />
+    <div className={cn("flex items-center gap-2", className)}>
+      {showIcon && (
+        <Image
+          src="/icon.png"
+          alt="SakshiQAI Icon"
+          width={40}
+          height={40}
+          className="h-8 w-8 object-contain shrink-0"
+          priority
+        />
+      )}
+      {showLogo && (
+        <div className="relative">
+          {/* Light Mode Logo */}
+          <Image
+            src="/logo.png"
+            alt="SakshiQAI Logo"
+            width={width}
+            height={height}
+            className="h-auto w-auto dark:hidden transition-opacity duration-200"
+            priority
+          />
+          {/* Dark Mode Logo */}
+          <Image
+            src="/logo-dark.png"
+            alt="SakshiQAI Logo"
+            width={width}
+            height={height}
+            className="h-auto w-auto hidden dark:block transition-opacity duration-200"
+            priority
+          />
+        </div>
+      )}
+    </div>
   );
 }

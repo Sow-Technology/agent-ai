@@ -125,14 +125,17 @@ const QaAuditOutputSchema = z.object({
     .string()
     .describe(
       "Accurate transcription of the call in its original language (as specified in callLanguage input). " +
-        'Formatted with speaker labels (e.g., "Agent (Male): [IdentifiedAgentName]", "Customer (Female):"). ' +
+        'Formatted with speaker labels: use "Agent: [IdentifiedAgentName]" for the agent, and "[CustomerName]:" if customer name is mentioned in the call, otherwise "Customer:". ' +
+        "Do NOT include gender in speaker labels. " +
+        "IMPORTANT: Mask ALL customer private details - replace phone numbers with [PHONE MASKED], addresses with [ADDRESS MASKED], account numbers with [ACCOUNT MASKED], email with [EMAIL MASKED], etc. " +
         "If transcription from audio URI is not possible, this should contain an assumed dialogue in the original language."
     ),
   englishTranslation: z
     .string()
     .describe(
       "The transcription translated into English, formatted with speaker labels. " +
-        'Speaker labels should be simple and concise (e.g., "Agent (Male): [IdentifiedAgentName]", "Customer (Female):"). ' +
+        'Use simple labels: "Agent: [IdentifiedAgentName]" and "[CustomerName]:" or "Customer:" (no gender). ' +
+        "Mask all private details the same way as in the original transcription. " +
         "This field is ALWAYS required - if the original call is already in English, this should be the same as transcriptionInOriginalLanguage. " +
         "If audio processing fails, this contains the translated assumed dialogue."
     ),
@@ -249,11 +252,20 @@ ${
 ${parametersDesc}
 
 **Audit Instructions:**
-1. **Transcription**: Provide accurate transcriptions in the original language AND ALWAYS in English. Use clear speaker labels like "Agent (Male): [AgentName]" and "Customer (Female):".
-2. **English Translation**: ALWAYS provide englishTranslation field - if the call is already in English, copy the original transcription. Never skip this field.
-3. **Audit Scoring**: Evaluate each parameter based on the call content. Be precise and fair in your scoring.
-4. **Root Cause Analysis**: If issues are found, provide thoughtful analysis of why they occurred.
-5. **Summary**: Give constructive feedback highlighting strengths and areas for improvement.
+1. **Transcription**: Provide accurate transcriptions in the original language AND ALWAYS in English. Use simple speaker labels WITHOUT gender:
+   - For agent: "Agent: [AgentName]" (e.g., "Agent: Rahul")  
+   - For customer: Use actual name if mentioned in call (e.g., "Priya:"), otherwise use "Customer:"
+   - NEVER include gender like "(Male)" or "(Female)" in labels
+2. **Privacy Protection**: MASK ALL customer private details in transcriptions:
+   - Phone numbers → [PHONE MASKED]
+   - Addresses → [ADDRESS MASKED]  
+   - Account/Card numbers → [ACCOUNT MASKED]
+   - Email addresses → [EMAIL MASKED]
+   - Aadhaar/PAN/ID numbers → [ID MASKED]
+3. **English Translation**: ALWAYS provide englishTranslation field - if the call is already in English, copy the original transcription. Never skip this field.
+4. **Audit Scoring**: Evaluate each parameter based on the call content. Be precise and fair in your scoring.
+5. **Root Cause Analysis**: If issues are found, provide thoughtful analysis of why they occurred.
+6. **Summary**: Give constructive feedback highlighting strengths and areas for improvement.
 
 **Output Requirements:**
 - Ensure all transcriptions are accurate and properly formatted

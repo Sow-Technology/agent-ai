@@ -37,6 +37,7 @@ export interface AuditDocument {
   maxPossibleScore: number;
   transcript?: string;
   englishTranslation?: string; // English translation of the transcript
+  callSummary?: string; // AI-generated call summary
   audioUrl?: string;
   auditedBy: string;
   auditType: "manual" | "ai";

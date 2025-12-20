@@ -76,6 +76,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { GlassCard } from "@/components/ui/glass-card";
+import { motion, useInView } from "framer-motion";
+import { staggerContainer, fadeInUp, fadeIn } from "@/lib/animations";
 
 import {
   CalendarDays,
@@ -103,6 +107,11 @@ import {
   ArrowRight,
   Sparkles,
   Search,
+  FileText,
+  FileStack,
+  PieChart,
+  BookOpen,
+  CheckCircle2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -121,6 +130,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+
+// Helper for View-Based Chart Animation
+const AnimatedChart = ({ children, className }: { children: ReactNode; className?: string }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.2 }); // Trigger when 20% visible
+
+  return (
+    <div ref={ref} className={className}>
+       {/* Recharts animates on mount. Changing key forces remount when in view. */}
+      {isInView ? (
+         <motion.div
+           initial={{ opacity: 0, scale: 0.98 }}
+           animate={{ opacity: 1, scale: 1 }}
+           transition={{ duration: 0.4, ease: "easeOut" }}
+           className="w-full h-full"
+         >
+           {children}
+         </motion.div>
+      ) : (
+         <div className="w-full h-full opacity-0" /> // Placeholder
+      )}
+    </div>
+  );
+};
 // Removed direct AI flow import - using API route instead
 import { useSearchParams, useRouter } from "next/navigation";
 import type {
@@ -144,6 +178,7 @@ import type { AuditResultDocument } from "@/lib/models";
 
 import { Suspense } from "react";
 import { getAuthHeaders } from "@/lib/authUtils";
+import { exportChartWithData, exportDashboardWithAllCharts } from "@/lib/exportUtils";
 
 // Helper function to convert AuditDocument to SavedAuditItem
 function convertQAParameterDocumentToQAParameter(
@@ -200,7 +235,7 @@ function convertAuditDocumentToSavedAuditItem(
       identifiedAgentName: doc.agentName,
       transcriptionInOriginalLanguage: doc.transcript || "",
       englishTranslation: doc.englishTranslation || "",
-      callSummary: `Audit for ${doc.agentName}`,
+      callSummary: doc.callSummary || `Audit for ${doc.agentName}`,
       auditResults: doc.auditResults.map((result: AuditResultDocument) => ({
         parameter: result.parameterName,
         score: result.score,
@@ -272,7 +307,7 @@ function generateCSV(audits: SavedAuditItem[], includeTokens: boolean = false) {
     // Determine fatal status and count
     const auditResults = audit.auditData?.auditResults || [];
     const fatalCount = auditResults.filter(
-      (result: any) => result?.type === "Fatal"
+      (result: any) => result?.type === "Fatal" && result?.score < 80
     ).length;
     let fatalStatus = "Non - Fatal";
     if (fatalCount > 0) {
@@ -588,109 +623,114 @@ function DashboardPageContent() {
   const [selectedCampaignIdForFilter, setSelectedCampaignIdForFilter] =
     useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"ALL" | "PASS" | "FAIL">("ALL");
+
+  // Independent loading states for component-wise rendering
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isLoadingQaParams, setIsLoadingQaParams] = useState(true);
+  const [isLoadingAudits, setIsLoadingAudits] = useState(true);
 
   // Effect for setting isClient
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Effect for loading data from database and setting defaults (runs once after client is set)
+  // Effect for setting default date range
   useEffect(() => {
     if (!isClient) return;
+    if (!dateRange?.from) {
+      const today = new Date();
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      setDateRange({ from: firstDayOfMonth, to: lastDayOfMonth });
+    }
+  }, [isClient]);
 
-    const loadData = async () => {
-      // Load all data in parallel for better performance
-      const [userPromise, qaPromise, sopPromise, auditsPromise] =
-        await Promise.allSettled([
-          // Load user details
-          fetch("/api/auth/user", { headers: getAuthHeaders() })
-            .then((res) => res.json())
-            .catch((e) => {
-              console.error("Failed to load user details", e);
-              return null;
-            }),
-
-          // Load QA Parameters from database
-          fetch("/api/qa-parameters", { headers: getAuthHeaders() })
-            .then((res) => res.json())
-            .catch((e) => {
-              console.error(
-                "Failed to load QA Parameter Sets from database",
-                e
-              );
-              return null;
-            }),
-
-          // Load SOPs from database
-          fetch("/api/sops", { headers: getAuthHeaders() })
-            .then((res) => res.json())
-            .catch((e) => {
-              console.error("Failed to load SOPs from database", e);
-              return null;
-            }),
-
-          // Load saved audits from API
-          fetch("/api/audits", { headers: getAuthHeaders() })
-            .then((res) => res.json())
-            .catch((e) => {
-              console.error("Failed to load saved audits from API", e);
-              return null;
-            }),
-        ]);
-
-      // Process user data
-      if (userPromise.status === "fulfilled" && userPromise.value?.success) {
-        setCurrentUser(userPromise.value.user);
-      }
-
-      // Set default date range if not set
-      if (!dateRange?.from) {
-        const today = new Date();
-        const firstDayOfMonth = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          1
-        );
-        const lastDayOfMonth = new Date(
-          today.getFullYear(),
-          today.getMonth() + 1,
-          0
-        );
-        setDateRange({ from: firstDayOfMonth, to: lastDayOfMonth });
-      }
-
-      // Process QA parameters
-      if (qaPromise.status === "fulfilled" && qaPromise.value?.success) {
-        const activeCampaigns = qaPromise.value.data.filter(
-          (p: QAParameterDocument) => p.isActive
-        );
-        setAvailableQaParameterSets(
-          activeCampaigns.map(convertQAParameterDocumentToQAParameter)
-        );
-        const campaignOptions = activeCampaigns.map(
-          (p: QAParameterDocument) => ({ id: p.id, name: p.name })
-        );
-        setAvailableCampaignsForFilter([
-          { id: "all", name: "All Campaigns" },
-          ...campaignOptions,
-        ]);
-      }
-
-      // Process audits
-      if (
-        auditsPromise.status === "fulfilled" &&
-        auditsPromise.value?.success &&
-        auditsPromise.value.data
-      ) {
-        const savedAuditsData: SavedAuditItem[] = auditsPromise.value.data.map(
-          convertAuditDocumentToSavedAuditItem
-        );
-        setSavedAudits(savedAuditsData);
+  // Load user data independently
+  useEffect(() => {
+    if (!isClient) return;
+    const loadUser = async () => {
+      try {
+        const res = await fetch("/api/auth/user", { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data?.success && data.user) {
+          setCurrentUser(data.user);
+        }
+      } catch (e) {
+        console.error("Failed to load user details", e);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
+    loadUser();
+  }, [isClient]);
 
-    loadData();
-  }, [isClient]); // Removed dateRange?.from dependency
+  // Load QA parameters independently
+  useEffect(() => {
+    if (!isClient) return;
+    const loadQaParams = async () => {
+      try {
+        const res = await fetch("/api/qa-parameters", { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data?.success && data.data) {
+          const activeCampaigns = data.data.filter((p: QAParameterDocument) => p.isActive);
+          setAvailableQaParameterSets(
+            activeCampaigns.map(convertQAParameterDocumentToQAParameter)
+          );
+          const campaignOptions = activeCampaigns.map((p: QAParameterDocument) => ({
+            id: p.id,
+            name: p.name,
+          }));
+          setAvailableCampaignsForFilter([
+            { id: "all", name: "All Campaigns" },
+            ...campaignOptions,
+          ]);
+        }
+      } catch (e) {
+        console.error("Failed to load QA Parameter Sets from database", e);
+      } finally {
+        setIsLoadingQaParams(false);
+      }
+    };
+    loadQaParams();
+  }, [isClient]);
+
+  // Load audits independently - re-fetch when dateRange changes
+  useEffect(() => {
+    if (!isClient) return;
+    // Don't fetch until dateRange is set
+    if (!dateRange?.from) return;
+    
+    const loadAudits = async () => {
+      setIsLoadingAudits(true);
+      try {
+        // Build URL with date range parameters and high limit for stats
+        const params = new URLSearchParams();
+        params.set("limit", "10000"); // High limit to get all audits for accurate stats
+        
+        if (dateRange.from) {
+          params.set("startDate", dateRange.from.toISOString());
+        }
+        if (dateRange.to) {
+          params.set("endDate", dateRange.to.toISOString());
+        }
+        
+        const res = await fetch(`/api/audits?${params.toString()}`, { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data?.success && data.data) {
+          const savedAuditsData: SavedAuditItem[] = data.data.map(
+            convertAuditDocumentToSavedAuditItem
+          );
+          setSavedAudits(savedAuditsData);
+        }
+      } catch (e) {
+        console.error("Failed to load saved audits from API", e);
+      } finally {
+        setIsLoadingAudits(false);
+      }
+    };
+    loadAudits();
+  }, [isClient, dateRange]);
 
   const handleDeleteAudit = async (audit: SavedAuditItem) => {
     setIsDeleting(true);
@@ -1020,6 +1060,9 @@ function DashboardPageContent() {
           setAuditToDelete={setAuditToDelete}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
+          isLoadingAudits={isLoadingAudits}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
         />
       ) : currentUser?.role === "Auditor" ? (
         <Tabs
@@ -1051,6 +1094,9 @@ function DashboardPageContent() {
               setAuditToDelete={setAuditToDelete}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
+              isLoadingAudits={isLoadingAudits}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
             />
           </TabsContent>
           <TabsContent value="manual-dashboard" className="space-y-4">
@@ -1066,6 +1112,9 @@ function DashboardPageContent() {
               setAuditToDelete={setAuditToDelete}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
+              isLoadingAudits={isLoadingAudits}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
             />
           </TabsContent>
         </Tabs>
@@ -1103,6 +1152,9 @@ function DashboardPageContent() {
               setAuditToDelete={setAuditToDelete}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
+              isLoadingAudits={isLoadingAudits}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
             />
           </TabsContent>
           <TabsContent value="qa-dashboard" className="space-y-4">
@@ -1118,6 +1170,9 @@ function DashboardPageContent() {
               setAuditToDelete={setAuditToDelete}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
+              isLoadingAudits={isLoadingAudits}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
             />
           </TabsContent>
           <TabsContent value="manual-dashboard" className="space-y-4">
@@ -1133,6 +1188,9 @@ function DashboardPageContent() {
               setAuditToDelete={setAuditToDelete}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
+              isLoadingAudits={isLoadingAudits}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
             />
           </TabsContent>
         </Tabs>
@@ -1205,6 +1263,9 @@ interface DashboardTabContentProps {
   setAuditToDelete: (audit: SavedAuditItem | null) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  isLoadingAudits: boolean;
+  filterStatus: "ALL" | "PASS" | "FAIL";
+  setFilterStatus: (status: "ALL" | "PASS" | "FAIL") => void;
 }
 
 const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
@@ -1218,6 +1279,9 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   setAuditToDelete,
   searchTerm,
   setSearchTerm,
+  isLoadingAudits,
+  filterStatus,
+  setFilterStatus,
 }) => {
   type AgentPerformanceData = {
     topAgents: {
@@ -1309,6 +1373,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     fatalRate: 0,
     fatalAuditsCount: 0,
   });
+  const [isFatalExplanationOpen, setIsFatalExplanationOpen] = useState(false);
 
   // Time series data for line charts
   const [dailyAuditsData, setDailyAuditsData] = useState<
@@ -1318,61 +1383,96 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     { date: string; fatalErrors: number }[]
   >([]);
 
+  // Refs for chart screenshots
+  const dailyAuditsChartRef = useRef<HTMLDivElement>(null);
+  const dailyFatalChartRef = useRef<HTMLDivElement>(null);
+  const topIssuesChartRef = useRef<HTMLDivElement>(null);
+  const paretoChartRef = useRef<HTMLDivElement>(null);
+  const campaignPerformanceRef = useRef<HTMLDivElement>(null);
+  const needsImprovementRef = useRef<HTMLDivElement>(null);
+  const bestPerformersRef = useRef<HTMLDivElement>(null);
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
+  // Filter Audits
   const filteredAudits = useMemo(() => {
     let filtered = savedAudits;
 
-    if (currentUser?.role === "Agent" || currentUser?.role === "Auditor") {
+    // Filter by Search Term
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (audit) => audit.auditedBy === currentUser.username
+        (audit) =>
+          audit.campaignName?.toLowerCase().includes(lowerTerm) ||
+          audit.agentName?.toLowerCase().includes(lowerTerm) ||
+          audit.auditType?.toLowerCase().includes(lowerTerm)
       );
     }
 
-    if (auditType !== "all") {
-      filtered = filtered.filter((audit) => audit.auditType === auditType);
+    // Filter by Role (Agent view vs Admin view)
+    if (currentUser?.role === "Agent") {
+      filtered = filtered.filter((a) => a.agentUserId === currentUser.id);
     }
+
+    // Filter by Date Range
     if (dateRange?.from) {
       filtered = filtered.filter((audit) => {
         const auditDate = new Date(audit.auditDate);
-        let inRange = auditDate >= dateRange.from!;
-        if (dateRange.to) {
-          inRange = inRange && auditDate <= dateRange.to!;
+        if (!dateRange.to) {
+          return (
+            auditDate >= dateRange.from! &&
+            auditDate.toDateString() === dateRange.from!.toDateString()
+          );
         }
-        return inRange;
+        return (
+          auditDate >= dateRange.from! &&
+          auditDate <= new Date(dateRange.to.getTime() + 86400000) // End of day
+        );
       });
     }
+
+    // Filter by Audit Type tab
+    if (auditType !== "all") {
+      filtered = filtered.filter((audit) => audit.auditType === auditType);
+    }
+
+    // Filter by Campaign
     if (selectedCampaignIdForFilter && selectedCampaignIdForFilter !== "all") {
-      const selectedCampaign = availableQaParameterSets.find(
-        (c) => c.id === selectedCampaignIdForFilter
-      );
-      if (selectedCampaign) {
-        filtered = filtered.filter(
-          (audit) => audit.campaignName === selectedCampaign.name
-        );
-      }
+       // Find campaign name from ID
+       const campaign = availableQaParameterSets.find(c => c.id === selectedCampaignIdForFilter);
+       if (campaign) {
+         filtered = filtered.filter((audit) => audit.campaignName === campaign.name);
+       }
     }
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (audit) =>
-          audit.agentName.toLowerCase().includes(term) ||
-          audit.id.toLowerCase().includes(term) ||
-          audit.agentUserId.toLowerCase().includes(term) ||
-          (audit.callId && audit.callId.toLowerCase().includes(term))
-      );
+    
+    // NEW: Filter by Status (Pass/Fail)
+    // Assuming filterStatus is a state variable like 'ALL', 'PASS', 'FAIL'
+    // if (filterStatus !== "ALL") {
+    //    filtered = filtered.filter(audit => {
+    //       const isPass = audit.overallScore >= 80; // Assuming 80 is pass score
+    //       return filterStatus === "PASS" ? isPass : !isPass;
+    //    });
+    // }
+    // NEW: Filter by Status (Pass/Fail)
+    if (filterStatus !== "ALL") {
+       filtered = filtered.filter(audit => {
+          const isPass = audit.overallScore >= 80;
+          return filterStatus === "PASS" ? isPass : !isPass;
+       });
     }
+
     return filtered;
   }, [
     savedAudits,
-    auditType,
-    dateRange,
-    selectedCampaignIdForFilter,
-    availableQaParameterSets,
-    currentUser,
     searchTerm,
+    currentUser,
+    dateRange,
+    auditType,
+    selectedCampaignIdForFilter,
+    filterStatus,
+    availableQaParameterSets
   ]);
 
   useEffect(() => {
@@ -1495,7 +1595,10 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               );
               if (campaignParams) {
                 // Iterate over groups and sub-params to find a match
-                for (const group of campaignParams.parameters) {
+                const sortedGroups = [...campaignParams.parameters].sort(
+                  (a, b) => b.name.length - a.name.length
+                ); // Sort groups by length descending to match longest first
+                for (const group of sortedGroups) {
                   // Sort sub-parameters by length descending to match longest first
                   const sortedSubParams = [...group.subParameters].sort(
                     (a, b) => b.name.length - a.name.length
@@ -1814,13 +1917,13 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       let totalFatalErrors = 0;
       filteredAudits.forEach((audit) => {
         const fatalCount = audit.auditData.auditResults.filter(
-          (r: any) => r.type === "Fatal"
+          (r: any) => r.type === "Fatal" && r.score < 80
         ).length;
         totalFatalErrors += fatalCount;
       });
 
       const auditsWithFatalErrors = filteredAudits.filter((audit) =>
-        audit.auditData.auditResults.some((r: any) => r.type === "Fatal")
+        audit.auditData.auditResults.some((r: any) => r.type === "Fatal" && r.score < 80)
       ).length;
 
       setFatalErrorsData({
@@ -1848,7 +1951,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
         // Count fatal errors per day
         const fatalCount = audit.auditData.auditResults.filter(
-          (r: any) => r.type === "Fatal"
+          (r: any) => r.type === "Fatal" && r.score < 80
         ).length;
         dailyFatalErrorsMap.set(
           date,
@@ -1856,20 +1959,53 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         );
       });
 
-      // Convert maps to sorted arrays
-      const sortedDailyAudits = Array.from(dailyAuditsMap.entries())
-        .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-        .map(([date, audits]) => ({
+      // Generate all dates in the selected date range
+      const allDatesInRange: string[] = [];
+      if (dateRange?.from && dateRange?.to) {
+        const startDate = new Date(dateRange.from);
+        const endDate = new Date(dateRange.to);
+        const currentDate = new Date(startDate);
+        
+        while (currentDate <= endDate) {
+          allDatesInRange.push(format(currentDate, "yyyy-MM-dd"));
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      } else if (dateRange?.from) {
+        // Single date selected
+        allDatesInRange.push(format(dateRange.from, "yyyy-MM-dd"));
+      }
+
+      // If we have a date range, fill in all dates; otherwise use only dates with data
+      let sortedDailyAudits: { date: string; audits: number }[];
+      let sortedDailyFatalErrors: { date: string; fatalErrors: number }[];
+
+      if (allDatesInRange.length > 0) {
+        // Fill all dates in range with 0 for missing days
+        sortedDailyAudits = allDatesInRange.map((date) => ({
           date: format(new Date(date), "MMM dd"),
-          audits,
+          audits: dailyAuditsMap.get(date) || 0,
         }));
 
-      const sortedDailyFatalErrors = Array.from(dailyFatalErrorsMap.entries())
-        .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-        .map(([date, fatalErrors]) => ({
+        sortedDailyFatalErrors = allDatesInRange.map((date) => ({
           date: format(new Date(date), "MMM dd"),
-          fatalErrors,
+          fatalErrors: dailyFatalErrorsMap.get(date) || 0,
         }));
+      } else {
+        // Fallback: Convert maps to sorted arrays (only dates with data)
+        sortedDailyAudits = Array.from(dailyAuditsMap.entries())
+          .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+          .map(([date, audits]) => ({
+            date: format(new Date(date), "MMM dd"),
+            audits,
+          }));
+
+        sortedDailyFatalErrors = Array.from(dailyFatalErrorsMap.entries())
+          .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+          .map(([date, fatalErrors]) => ({
+            date: format(new Date(date), "MMM dd"),
+            fatalErrors,
+          }));
+      }
 
       setDailyAuditsData(sortedDailyAudits);
       setDailyFatalErrorsData(sortedDailyFatalErrors);
@@ -1900,7 +2036,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         fatalAuditsCount: 0,
       });
     }
-  }, [filteredAudits, availableQaParameterSets]);
+  }, [filteredAudits, availableQaParameterSets, dateRange]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -2071,81 +2207,113 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
   const isAgentView = currentUser?.role === "Agent";
 
+  // Skeleton loader for overview cards
+  const OverviewCardSkeleton = () => (
+    <OverviewCard title="" icon={Target}>
+      <Skeleton className="h-8 w-20 mb-2" />
+      <Skeleton className="h-3 w-32" />
+    </OverviewCard>
+  );
+
   return (
-    <div className="space-y-4">
+    <>
+    <motion.div 
+      className="space-y-6"
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* 1. Overview Section */}
       {!isAgentView && (
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
-          <OverviewCard title="Overall QA Score" icon={Target}>
-            <div className="text-2xl font-bold">{overallQAScore}%</div>
-            <p className="text-xs text-muted-foreground">
-              {Math.abs(overallQAScore - 85) < 2
-                ? "On par with target"
-                : overallQAScore > 85
-                ? `+${(overallQAScore - 85).toFixed(1)}% vs target`
-                : `${(overallQAScore - 85).toFixed(1)}% vs target`}
-            </p>
-          </OverviewCard>
-          <OverviewCard title="Total Audits" icon={ClipboardList}>
-            <div className="text-2xl font-bold">{filteredAudits.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Across{" "}
-              {
-                Object.keys(
-                  filteredAudits.reduce(
-                    (acc, curr) => ({ ...acc, [curr.agentUserId]: true }),
-                    {}
-                  )
-                ).length
-              }{" "}
-              agents
-            </p>
-          </OverviewCard>
-          <OverviewCard title="No. of Fatal Audits" icon={ShieldCheck}>
-            <div className="text-2xl font-bold">
-              {fatalErrorsData.fatalAuditsCount}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Audits with at least one fatal parameter
-            </p>
-          </OverviewCard>
-          <OverviewCard title="Fatal Rate" icon={Activity}>
-            <div className="text-2xl font-bold">
-              {fatalErrorsData.fatalRate}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Percentage of audits with fatal errors
-            </p>
-          </OverviewCard>
-          <OverviewCard
-            title="Training Needs"
-            icon={UserCheck}
-            className="cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => setIsTrainingNeedsModalOpen(true)}
-          >
-            <div className="text-xl font-bold truncate">
-              {trainingNeedsData?.agentName || "N/A"}
-            </div>
-            <p className="text-xs text-muted-foreground truncate">
-              Focus Area: {trainingNeedsData?.lowestParam || "None Identified"}
-            </p>
-          </OverviewCard>
-        </div>
+        <motion.div variants={fadeInUp} className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+           {isLoadingAudits ? (
+            <>
+              <OverviewCardSkeleton />
+              <OverviewCardSkeleton />
+              <OverviewCardSkeleton />
+              <OverviewCardSkeleton />
+            </>
+          ) : (
+            <>
+              <GlassCard title="Overall QA Score" icon={Target} className="border-t-4 border-t-primary">
+                <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400 mt-2 font-display">{overallQAScore}%</div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  {Math.abs(overallQAScore - 85) < 2
+                    ? "On par with target"
+                    : overallQAScore > 85
+                    ? `+${(overallQAScore - 85).toFixed(1)}% vs target`
+                    : `${(overallQAScore - 85).toFixed(1)}% vs target`}
+                </p>
+              </GlassCard>
+              
+              <GlassCard 
+                title="Total Audits" 
+                icon={ClipboardList} 
+                className="border-t-4 border-t-chart-1 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => document.getElementById('my-audits-section')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <div className="text-3xl font-bold mt-2 font-display">{filteredAudits.length}</div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  Across{" "}
+                  {
+                    Object.keys(
+                      filteredAudits.reduce(
+                        (acc, curr) => ({ ...acc, [curr.agentUserId]: true }),
+                        {}
+                      )
+                    ).length
+                  }{" "}
+                  agents
+                </p>
+              </GlassCard>
+
+              <GlassCard 
+                title="Fatal Rate" 
+                icon={Activity} 
+                className="border-t-4 border-t-orange-500 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setIsFatalExplanationOpen(true)}
+              >
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-3xl font-bold font-display">{fatalErrorsData.fatalRate}%</span>
+                  <span className="text-lg font-semibold text-muted-foreground">({fatalErrorsData.fatalAuditsCount})</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                  {fatalErrorsData.fatalAuditsCount} audits with fatal errors
+                </p>
+              </GlassCard>
+
+              <GlassCard 
+                title="Training Needs" 
+                icon={UserCheck} 
+                className="border-t-4 border-t-blue-500 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setIsTrainingNeedsModalOpen(true)}
+              >
+                <div className="text-xl font-bold truncate mt-2 font-display">
+                  {trainingNeedsData?.agentName || "N/A"}
+                </div>
+                <p className="text-xs text-muted-foreground truncate mt-1 font-medium">
+                  Focus: {trainingNeedsData?.lowestParam || "None Identified"}
+                </p>
+              </GlassCard>
+            </>
+          )}
+        </motion.div>
       )}
 
       {isAgentView && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <motion.div variants={fadeInUp} className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <OverviewCard title="My QA Score" icon={Target}>
-            <div className="text-2xl font-bold">{overallQAScore}%</div>
+            <div className="text-2xl font-bold font-display">{overallQAScore}%</div>
             <p className="text-xs text-muted-foreground">Your average score</p>
           </OverviewCard>
           <OverviewCard title="My Audits" icon={ClipboardList}>
-            <div className="text-2xl font-bold">{filteredAudits.length}</div>
+            <div className="text-2xl font-bold font-display">{filteredAudits.length}</div>
             <p className="text-xs text-muted-foreground">
               Total audits completed for you
             </p>
           </OverviewCard>
           <OverviewCard title="My Compliance" icon={ShieldCheck}>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold font-display">
               {complianceData.complianceRate}%
             </div>
             <p className="text-xs text-muted-foreground">
@@ -2153,560 +2321,814 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             </p>
           </OverviewCard>
           <OverviewCard title="My Pass/Fail" icon={Activity}>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold font-display">
               {agentPerformanceData.topAgents[0]?.pass || 0} /{" "}
               {agentPerformanceData.topAgents[0]?.fail || 0}
             </div>
             <p className="text-xs text-muted-foreground">Pass vs Fail count</p>
           </OverviewCard>
-        </div>
+        </motion.div>
       )}
 
       {!isAgentView && (
         <>
-          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-            <Card className="col-span-full  lg:col-span-1 shadow-lg">
-              <CardHeader>
-                <CardTitle>Top QA Issues</CardTitle>
+          {/* 2. Trends Section */}
+          <motion.div variants={fadeInUp} className="grid gap-4 md:grid-cols-2">
+            <Card ref={dailyAuditsChartRef} className="shadow-md border-primary/10 hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <span className="p-2 bg-primary/10 text-primary rounded-lg">
+                      <Activity className="h-4 w-4" />
+                    </span>
+                    Daily Audits Trend
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => exportChartWithData(
+                      dailyAuditsChartRef.current,
+                      dailyAuditsData,
+                      "daily_audits_trend"
+                    )}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                </div>
+                <CardDescription>
+                  Volume over time
+                </CardDescription>
+              </CardHeader>
+                <CardContent className="pl-0 pt-4">
+                 <AnimatedChart className="h-[250px] w-full">
+                  <ChartContainer
+                    config={chartConfigDailyAudits}
+                    className="h-full w-full"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={dailyAuditsData}
+                        margin={{ left: 12, top: 10, right: 20, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} 
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "4 4" }}
+                          content={<ChartTooltipContent className="bg-background/95 backdrop-blur-sm border-primary/20 shadow-xl" />}
+                        />
+                        <Line
+                          type="linear"
+                          dataKey="audits"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={3}
+                          dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 0 }}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: "hsl(var(--primary))" }}
+                          isAnimationActive={true}
+                          animationDuration={1500}
+                          animationBegin={300}
+                          animationEasing="ease-out"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                 </AnimatedChart>
+                </CardContent>
+            </Card>
+
+            <Card ref={dailyFatalChartRef} className="shadow-md border-primary/10 hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                     <span className="p-2 bg-destructive/10 text-destructive rounded-lg">
+                      <ShieldCheck className="h-4 w-4" />
+                    </span>
+                    Daily Fatal Errors
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => exportChartWithData(
+                      dailyFatalChartRef.current,
+                      dailyFatalErrorsData,
+                      "daily_fatal_errors"
+                    )}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                </div>
+                <CardDescription>
+                  Critical issues over time
+                </CardDescription>
+              </CardHeader>
+                <CardContent className="pl-0 pt-4">
+                 <AnimatedChart className="h-[250px] w-full">
+                  <ChartContainer
+                    config={chartConfigDailyFatalErrors}
+                    className="h-full w-full"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={dailyFatalErrorsData}
+                        margin={{ left: 12, top: 10, right: 20, bottom: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} 
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          cursor={{ stroke: "hsl(var(--destructive))", strokeWidth: 1, strokeDasharray: "4 4" }}
+                          content={<ChartTooltipContent className="bg-background/95 backdrop-blur-sm border-destructive/20 shadow-xl" />}
+                        />
+                        <Line
+                          type="linear"
+                          dataKey="fatalErrors"
+                          stroke="hsl(var(--destructive))"
+                          strokeWidth={3}
+                          dot={{ r: 4, fill: "hsl(var(--destructive))", strokeWidth: 0 }}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: "hsl(var(--destructive))" }}
+                          isAnimationActive={true}
+                          animationDuration={1500}
+                          animationBegin={300}
+                          animationEasing="ease-out"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                 </AnimatedChart>
+                </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* 3. Insights Grid */}
+          <motion.div variants={fadeInUp} className="grid gap-4 md:grid-cols-2">
+             {/* Row 1: Top Issues & Pareto */}
+            <Card ref={topIssuesChartRef} className="shadow-lg border-primary/10 hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <span className="p-2 bg-primary/10 text-primary rounded-lg">
+                      <BarChart2 className="h-4 w-4" />
+                    </span>
+                    Top QA Issues
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => exportChartWithData(
+                      topIssuesChartRef.current,
+                      topIssuesData.map(i => ({ reason: i.reason, count: i.count, critical: i.critical })),
+                      "top_qa_issues"
+                    )}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                </div>
                 <CardDescription>
                   Common parameters where agents need improvement.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
-                <ChartContainer
-                  config={chartConfigTopIssues}
-                  className="h-[350px] w-full"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      layout="vertical"
-                      data={topIssuesData}
-                      margin={{ left: 20, top: 20, right: 40, bottom: 40 }}
-                    >
-                      <CartesianGrid horizontal={false} />
-                      <XAxis
-                        type="number"
-                        dataKey="count"
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value: number) =>
-                          Number.isInteger(value) ? value.toString() : value.toFixed(1)
-                        }
-                      />
-                      <YAxis
-                        dataKey="reason"
-                        type="category"
-                        tick={{ fontSize: 12 }}
-                        width={140}
-                        interval={0}
-                      />
-                      <Tooltip
-                        cursor={{ fill: "hsl(var(--muted))" }}
-                        content={<ChartTooltipContent />}
-                      />
-                      <Bar
-                        dataKey="count"
+              <CardContent className="pl-0">
+                 <AnimatedChart className="h-[300px] w-full">
+                  <ChartContainer
+                    config={chartConfigTopIssues}
+                    className="h-full w-full"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
                         layout="vertical"
-                        radius={4}
-                        fill="hsl(249, 81%, 67%)"
-                        onClick={(data) => setSelectedIssue(data)}
-                        className="cursor-pointer hover:opacity-80"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                        data={topIssuesData}
+                        margin={{ left: 20, top: 20, right: 40, bottom: 40 }}
+                      >
+                        <CartesianGrid horizontal={false} stroke="hsl(var(--muted))" strokeDasharray="4 4" />
+                        <XAxis
+                          type="number"
+                          dataKey="count"
+                          tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                          tickFormatter={(value: number) =>
+                            Number.isInteger(value) ? value.toString() : value.toFixed(1)
+                          }
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          dataKey="reason"
+                          type="category"
+                          tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                          width={140}
+                          interval={0}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          cursor={{ fill: "hsl(var(--muted)/0.3)" }}
+                          content={<ChartTooltipContent className="bg-background/95 backdrop-blur-sm border-primary/20 shadow-xl" />}
+                        />
+                        <Bar
+                          dataKey="count"
+                          layout="vertical"
+                          radius={[0, 4, 4, 0]}
+                          fill="hsl(var(--primary))"
+                          onClick={(data) => setSelectedIssue(data)}
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                          barSize={24}
+                          isAnimationActive={true}
+                          animationDuration={1200}
+                          animationBegin={200}
+                          animationEasing="ease-out"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                 </AnimatedChart>
               </CardContent>
             </Card>
-            <Card className="col-span-full lg:col-span-1 shadow-lg">
-              <CardHeader>
-                <CardTitle>Pareto Analysis</CardTitle>
+
+            <Card ref={paretoChartRef} className="shadow-md border-primary/10 hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <span className="p-2 bg-chart-2/10 text-chart-2 rounded-lg"><BarChart2 className="h-4 w-4" /></span>
+                    Pareto Analysis
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => exportChartWithData(
+                      paretoChartRef.current,
+                      paretoData.map(p => ({ parameter: p.parameter, count: p.count, percentage: p.percentage.toFixed(1) })),
+                      "pareto_analysis"
+                    )}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                </div>
                 <CardDescription>
                   Parameter-wise failure distribution (80/20 rule).
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
-                <ChartContainer
-                  config={chartConfigPareto}
-                  className="h-[350px] w-full"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart
-                      data={paretoData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="parameter"
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        fontSize={12}
-                      />
-                      <YAxis
-                        yAxisId="left"
-                        label={{
-                          value: "Frequency %",
-                          angle: -90,
-                          position: "insideLeft",
-                        }}
-                      />
-                      <YAxis
-                        yAxisId="right"
-                        orientation="right"
-                        label={{
-                          value: "Cumulative %",
-                          angle: 90,
-                          position: "insideRight",
-                        }}
-                      />
-                      <Tooltip
-                        content={<ChartTooltipContent />}
-                        formatter={(value, name) => [
-                          name === "frequencyPercentage"
-                            ? `${Number(value).toFixed(1)}%`
-                            : `${Number(value).toFixed(1)}%`,
-                          name === "frequencyPercentage"
-                            ? "Frequency"
-                            : "Cumulative %",
-                        ]}
-                      />
-                      <Bar
-                        yAxisId="left"
-                        dataKey="frequencyPercentage"
-                        fill="hsl(249, 81%, 67%)"
-                        radius={2}
+              <CardContent className="pl-0 pt-4">
+                 <AnimatedChart className="h-[300px] w-full">
+                  <ChartContainer
+                    config={chartConfigPareto}
+                    className="h-full w-full"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart
+                        data={paretoData}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                       >
-                        <LabelList
-                          dataKey="frequencyPercentage"
-                          position="top"
-                          formatter={(value: number) => `${value.toFixed(1)}%`}
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+                        <XAxis
+                          dataKey="parameter"
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          fontSize={11}
+                          fill="hsl(var(--muted-foreground))"
+                          tickLine={false}
+                          axisLine={false}
                         />
-                      </Bar>
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="percentage"
-                        stroke="hsl(47.9, 95.8%, 53.1%)"
-                        strokeWidth={3}
-                        dot={{
-                          fill: "hsl(47.9, 95.8%, 53.1%)",
-                          strokeWidth: 2,
-                          r: 4,
-                        }}
-                      />
-                      <ReferenceLine
-                        yAxisId="right"
-                        y={80}
-                        label="80% Cut off"
-                        stroke="hsl(var(--chart-1))"
-                        strokeDasharray="3 3"
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                        <YAxis
+                          yAxisId="left"
+                          label={{
+                            value: "Frequency %",
+                            angle: -90,
+                            position: "insideLeft",
+                            fill: "hsl(var(--muted-foreground))",
+                            fontSize: 12
+                          }}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          label={{
+                            value: "Cumulative %",
+                            angle: 90,
+                            position: "insideRight",
+                            fill: "hsl(var(--muted-foreground))",
+                            fontSize: 12
+                          }}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                        />
+                        <Tooltip
+                          content={<ChartTooltipContent className="bg-background/95 backdrop-blur-sm border-primary/20 shadow-xl" />}
+                        />
+                        <Bar
+                          yAxisId="left"
+                          dataKey="frequencyPercentage"
+                          fill="hsl(var(--primary))"
+                          radius={[4, 4, 0, 0]}
+                          opacity={0.8}
+                          isAnimationActive={true}
+                          animationDuration={1200}
+                          animationBegin={200}
+                          animationEasing="ease-out"
+                        />
+                        <Line
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="percentage"
+                          stroke="#f59e0b"
+                          strokeWidth={3}
+                          dot={{ r: 5, fill: "#f59e0b", strokeWidth: 2, stroke: "#fff" }}
+                          activeDot={{ r: 7, strokeWidth: 2, stroke: "#fff", fill: "#f59e0b" }}
+                          isAnimationActive={true}
+                          animationDuration={1500}
+                          animationBegin={800}
+                          animationEasing="ease-out"
+                        />
+                         <ReferenceLine
+                          yAxisId="right"
+                          y={80}
+                          label={{ value: "80% Cutoff", fill: "hsl(var(--chart-1))", fontSize: 10 }}
+                          stroke="hsl(var(--chart-1))"
+                          strokeDasharray="3 3"
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                 </AnimatedChart>
               </CardContent>
             </Card>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="text-green-600 dark:text-green-400 h-5 w-5" />
-                  Top Performers
-                </CardTitle>
+
+             {/* Row 2: Best Performers & Needs Improvement */}
+            <Card ref={bestPerformersRef} className="shadow-md border-primary/10 hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <span className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-lg">
+                      <TrendingUp className="h-4 w-4" />
+                    </span>
+                    Best Performers
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => exportChartWithData(
+                      bestPerformersRef.current,
+                      agentPerformanceData.topAgents.map(a => ({ agent: a.name, score: a.score, audits: a.audits, pass: a.pass, fail: a.fail })),
+                      "best_performers"
+                    )}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                </div>
                 <CardDescription>
-                  Agents with the highest average QA scores.
+                  Top performing agents by QA score.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Agent</TableHead>
-                      <TableHead className="text-right">Avg. Score</TableHead>
-                      <TableHead className="text-right">Audits</TableHead>
-                      <TableHead className="text-right">Pass/Fail</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {agentPerformanceData.topAgents.map((agent) => (
-                      <TableRow 
-                        key={agent.id}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => {
-                          setSelectedTrainingAgent({
-                            agentName: agent.name,
-                            agentId: agent.id,
-                            score: agent.score,
-                            lowestParam: "N/A",
-                            lowestParamScore: 0,
-                          });
-                          setIsTrainingNeedsModalOpen(true);
-                        }}
-                      >
-                        <TableCell>{agent.name}</TableCell>
-                        <TableCell className="text-right font-bold text-green-700 dark:text-green-400">
-                          {agent.score}%
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {agent.audits}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {agent.pass}/{agent.fail}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {agentPerformanceData.topAgents.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-center text-muted-foreground"
-                        >
-                          No top performers found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+              <CardContent className="h-[300px] w-full p-0">
+                <ScrollArea className="h-full">
+                  <div className="min-h-[300px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50 border-none sticky top-0 backdrop-blur-sm bg-background/80 z-10">
+                          <TableHead className="pl-6 font-semibold">Agent</TableHead>
+                          <TableHead className="text-right font-semibold">Score</TableHead>
+                          <TableHead className="text-right pr-6 font-semibold">Pass/Fail</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {agentPerformanceData.topAgents.map((agent) => (
+                          <TableRow 
+                            key={agent.id}
+                            className="hover:bg-green-500/5 transition-colors border-b border-border/50"
+                          >
+                            <TableCell className="pl-6 font-medium">{agent.name}</TableCell>
+                            <TableCell className="text-right font-bold text-green-600">
+                              {agent.score}%
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="text-green-600 font-medium">{agent.pass}</span>
+                                <span className="text-muted-foreground">/</span>
+                                <span className="text-destructive font-medium">{agent.fail}</span>
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {agentPerformanceData.topAgents.length === 0 && (
+                          <TableRow>
+                            <TableCell
+                              colSpan={3}
+                              className="text-center text-muted-foreground py-8 h-32"
+                            >
+                              No top performers data available.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingDown className="h-5 w-5 text-destructive" />
-                  Needs Improvement
-                </CardTitle>
+
+            <Card ref={needsImprovementRef} className="shadow-md border-primary/10 hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <span className="p-2 bg-red-100 dark:bg-red-900/30 text-destructive rounded-lg">
+                      <TrendingDown className="h-4 w-4" />
+                    </span>
+                    Needs Improvement
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => exportChartWithData(
+                      needsImprovementRef.current,
+                      agentPerformanceData.underperformingAgents.map(a => ({ agent: a.name, score: a.score, pass: a.pass, fail: a.fail })),
+                      "needs_improvement"
+                    )}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                </div>
                 <CardDescription>
                   Agents with opportunities for growth.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Agent</TableHead>
-                      <TableHead className="text-right">Avg. Score</TableHead>
-                      <TableHead className="text-right">Audits</TableHead>
-                      <TableHead className="text-right">Pass/Fail</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {agentPerformanceData.underperformingAgents.map((agent) => (
-                      <TableRow 
-                        key={agent.id}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => {
-                          setSelectedTrainingAgent({
-                            agentName: agent.name,
-                            agentId: agent.id,
-                            score: agent.score,
-                            lowestParam: "N/A",
-                            lowestParamScore: 0,
-                          });
-                          setIsTrainingNeedsModalOpen(true);
-                        }}
-                      >
-                        <TableCell>{agent.name}</TableCell>
-                        <TableCell className="text-right font-bold text-red-700 dark:text-red-400">
-                          {agent.score}%
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {agent.audits}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {agent.pass}/{agent.fail}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {agentPerformanceData.underperformingAgents.length ===
-                      0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-center text-muted-foreground"
-                        >
-                          No agents currently need improvement.
-                        </TableCell>
-                      </TableRow>
+              <CardContent className="h-[300px] w-full p-0">
+                 <ScrollArea className="h-full">
+                  <div className="min-h-[300px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50 border-none sticky top-0 backdrop-blur-sm bg-background/80 z-10">
+                          <TableHead className="pl-6 font-semibold">Agent</TableHead>
+                          <TableHead className="text-right font-semibold">Score</TableHead>
+                          <TableHead className="text-right pr-6 font-semibold">Pass/Fail</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {agentPerformanceData.underperformingAgents.map((agent) => (
+                          <TableRow 
+                            key={agent.id}
+                            className="cursor-pointer hover:bg-destructive/5 transition-colors border-b border-border/50"
+                            onClick={() => {
+                              setSelectedTrainingAgent({
+                                agentName: agent.name,
+                                agentId: agent.id,
+                                score: agent.score,
+                                lowestParam: "N/A",
+                                lowestParamScore: 0,
+                              });
+                              setIsTrainingNeedsModalOpen(true);
+                            }}
+                          >
+                            <TableCell className="pl-6 font-medium">{agent.name}</TableCell>
+                            <TableCell className="text-right font-bold text-destructive">
+                              {agent.score}%
+                            </TableCell>
+                            <TableCell className="text-right pr-6">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="text-green-600 font-medium">{agent.pass}</span>
+                                <span className="text-muted-foreground">/</span>
+                                <span className="text-destructive font-medium">{agent.fail}</span>
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                         {agentPerformanceData.underperformingAgents.length === 0 && (
+                          <TableRow>
+                            <TableCell
+                              colSpan={3}
+                              className="text-center text-muted-foreground py-8 h-32"
+                            >
+                              No agents currently need improvement.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Row 3: Campaign Performance (Full Width) */}
+          <motion.div variants={fadeInUp}>
+            <Card ref={campaignPerformanceRef} className="shadow-md border-primary/10 hover:shadow-lg transition-shadow duration-300">
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <span className="p-2 bg-chart-4/10 text-chart-4 rounded-lg">
+                      <PieChart className="h-4 w-4" />
+                    </span>
+                    Campaign Performance
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => exportChartWithData(
+                      campaignPerformanceRef.current,
+                      campaignPerformanceData.map(c => ({ campaign: c.name, qaScore: c.score, compliance: c.compliance })),
+                      "campaign_performance"
                     )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="text-primary h-5 w-5" />
-                  Daily Audits Trend
-                </CardTitle>
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="text-xs">Export</span>
+                  </Button>
+                </div>
                 <CardDescription>
-                  Number of audits completed each day.
+                  Performance & compliance scores by campaign.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
-                <ChartContainer
-                  config={chartConfigDailyAudits}
-                  className="h-[300px] w-full"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={dailyAuditsData}
-                      margin={{ left: 12, top: 20, right: 20, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 12 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={60}
-                      />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip
-                        cursor={{ stroke: "hsl(var(--muted))" }}
-                        content={<ChartTooltipContent />}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="audits"
-                        stroke="var(--color-audits)"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <ShieldCheck className="h-5 w-5" />
-                  Daily Fatal Errors
-                </CardTitle>
-                <CardDescription>
-                  Fatal errors detected each day across all audits.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <ChartContainer
-                  config={chartConfigDailyFatalErrors}
-                  className="h-[300px] w-full"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={dailyFatalErrorsData}
-                      margin={{ left: 12, top: 20, right: 20, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 12 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={60}
-                      />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip
-                        cursor={{ stroke: "hsl(var(--muted))" }}
-                        content={<ChartTooltipContent />}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="fatalErrors"
-                        stroke="var(--color-fatalErrors)"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Campaign Performance</CardTitle>
-              <CardDescription>
-                Performance & compliance scores by campaign.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="h-[350px] w-full">
-              <ScrollArea className="h-full">
-                <div className="min-h-[350px]">
+              <CardContent className="p-0">
+                <ScrollArea className="h-[200px]">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Campaign</TableHead>
-                        <TableHead className="text-right">QA Score</TableHead>
-                        <TableHead className="text-right">Compliance</TableHead>
+                      <TableRow className="bg-muted/50 hover:bg-muted/50 border-none sticky top-0 backdrop-blur-sm bg-background/80 z-10">
+                        <TableHead className="pl-6 font-semibold">Campaign</TableHead>
+                        <TableHead className="text-right font-semibold">QA Score</TableHead>
+                        <TableHead className="text-right pr-6 font-semibold">Compliance</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {campaignPerformanceData.map((c) => (
-                        <TableRow key={c.name}>
-                          <TableCell className="font-medium">
+                        <TableRow key={c.name} className="hover:bg-primary/5 transition-colors border-b border-border/50">
+                          <TableCell className="pl-6 font-medium">
                             {c.name}
                           </TableCell>
                           <TableCell className="text-right">
-                            {c.score}%
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${
+                              c.score >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                              c.score >= 70 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                              'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            }`}>
+                              {c.score}%
+                            </span>
                           </TableCell>
-                          <TableCell className="text-right">
-                            {c.compliance}%
+                          <TableCell className="text-right pr-6">
+                            <span className="font-medium">{c.compliance}%</span>
                           </TableCell>
                         </TableRow>
                       ))}
-                      {campaignPerformanceData.length === 0 && (
-                        <TableRow>
-                          <TableCell
-                            colSpan={3}
-                            className="text-center text-muted-foreground"
-                          >
-                            No campaign data available.
-                          </TableCell>
-                        </TableRow>
-                      )}
                     </TableBody>
                   </Table>
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </motion.div>
         </>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>My Audits</CardTitle>
-          <CardDescription>
-            A list of all audits performed. Click a row to see details.
-          </CardDescription>
-          <div className="flex items-center space-x-2">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by agent name, agent ID, audit ID, or call ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
+      {/* 4. Detailed "My Audits" Table */}
+      <motion.div id="my-audits-section" variants={fadeInUp}>
+        <Card className="shadow-lg border-primary/10 hover:shadow-xl transition-shadow duration-300">
+        <CardHeader className="bg-muted/30 pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+             <div>
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                  <span className="p-2 bg-primary/10 text-primary rounded-lg">
+                     <FileText className="h-5 w-5" />
+                  </span>
+                  My Audits
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  A detailed list of all your recent audit activities.
+                </CardDescription>
+             </div>
+             
+             <div className="flex items-center gap-2 w-full md:w-auto">
+                {/* Search */}
+                <div className="relative flex-1 md:w-64">
+                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                   <Input
+                     placeholder="Search agent, campaign..."
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                     className="pl-9 h-9 bg-background/50 focus:bg-background transition-colors"
+                    />
+                </div>
+                
+                {/* Status Filter */}
+                <Select value={filterStatus} onValueChange={(val: any) => setFilterStatus(val)}>
+                  <SelectTrigger className="w-[110px] h-9">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Status</SelectItem>
+                    <SelectItem value="PASS">Pass</SelectItem>
+                    <SelectItem value="FAIL">Fail</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {/* Export Dashboard Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-1.5"
+                  onClick={async () => {
+                    const chartRefs = [
+                      { name: "Daily Audits Trend", element: dailyAuditsChartRef.current, data: dailyAuditsData.map((d: any) => ({ date: d.date, audits: d.audits })) },
+                      { name: "Daily Fatal Errors", element: dailyFatalChartRef.current, data: dailyFatalErrorsData.map((d: any) => ({ date: d.date, fatalErrors: d.fatalErrors })) },
+                      { name: "Top QA Issues", element: topIssuesChartRef.current, data: agentSpecificChartData.topIssues.map((i: any) => ({ parameter: i.parameter, count: i.count })) },
+                      { name: "Pareto Analysis", element: paretoChartRef.current, data: agentSpecificChartData.paretoData.map((p: any) => ({ parameter: p.parameter, count: p.count, cumulative: p.percentage?.toFixed(1) + "%" })) },
+                      { name: "Best Performers", element: bestPerformersRef.current, data: agentPerformanceData.topAgents.map(a => ({ agent: a.name, score: a.score, pass: a.pass, fail: a.fail })) },
+                      { name: "Needs Improvement", element: needsImprovementRef.current, data: agentPerformanceData.underperformingAgents.map(a => ({ agent: a.name, score: a.score, pass: a.pass, fail: a.fail })) },
+                      { name: "Campaign Performance", element: campaignPerformanceRef.current, data: campaignPerformanceData.map(c => ({ campaign: c.name, qaScore: c.score, compliance: c.compliance })) },
+                    ];
+                    const summaryData = [
+                      { label: "Overall QA Score", value: `${overallQAScore}%` },
+                      { label: "Total Audits", value: filteredAudits.length },
+                      { label: "Compliance Rate", value: `${complianceData.complianceRate}%` },
+                      { label: "Fatal Rate", value: `${fatalErrorsData.fatalRate}%` },
+                      { label: "Fatal Audits Count", value: fatalErrorsData.fatalAuditsCount },
+                      { label: "Date Range", value: dateRange?.from && dateRange?.to ? `${format(dateRange.from, "PP")} - ${format(dateRange.to, "PP")}` : "All Time" },
+                    ];
+                    await exportDashboardWithAllCharts(chartRefs, summaryData, "qa_dashboard");
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  Export All
+                </Button>
+             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Campaign</TableHead>
-                {!isAgentView && <TableHead>Agent</TableHead>}
-                <TableHead>Score</TableHead>
-                <TableHead>Audit Type</TableHead>
-                {currentUser?.role === "Administrator" && (
-                  <>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Tokens (In/Out)</TableHead>
-                  </>
-                )}
-                <TableHead className="w-[80px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedAudits.map((audit) => (
-                <TableRow
-                  key={audit.id}
-                  onClick={() => openAuditDetailsModal(audit)}
-                  className="cursor-pointer"
-                >
-                  <TableCell>
-                    {format(new Date(audit.auditDate), "PP")}
-                  </TableCell>
-                  <TableCell>{audit.campaignName}</TableCell>
-                  {!isAgentView && <TableCell>{audit.agentName}</TableCell>}
-                  <TableCell className="font-bold">
-                    {audit.overallScore.toFixed(2)}%
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        audit.auditType === "ai" ? "default" : "secondary"
-                      }
-                    >
-                      {audit.auditType.toUpperCase()}
-                    </Badge>
-                  </TableCell>
+        <CardContent className="p-0">
+          <div className="rounded-md border-t border-border/50">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50 border-none">
+                  <TableHead className="pl-6 font-semibold">Date</TableHead>
+                  <TableHead className="font-semibold">Campaign</TableHead>
+                  {!isAgentView && <TableHead className="font-semibold">Agent</TableHead>}
+                  <TableHead className="font-semibold">Score</TableHead>
+                  <TableHead className="font-semibold">Audit Type</TableHead>
                   {currentUser?.role === "Administrator" && (
                     <>
-                      <TableCell>
-                        {audit.auditData?.auditDurationMs
-                          ? `${(audit.auditData.auditDurationMs / 1000).toFixed(
-                              1
-                            )}s`
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {audit.auditData?.tokenUsage
-                          ? `${audit.auditData.tokenUsage.inputTokens || 0} / ${
-                              audit.auditData.tokenUsage.outputTokens || 0
-                            }`
-                          : "-"}
-                      </TableCell>
+                      <TableHead className="font-semibold text-xs">Duration</TableHead>
+                      <TableHead className="font-semibold text-xs">Tokens (In/Out)</TableHead>
                     </>
                   )}
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setAuditToDelete(audit);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                  <TableHead className="w-[80px] text-right pr-6 font-semibold">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedAudits.map((audit, index) => (
+                  <motion.tr
+                    key={audit.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                    onClick={() => openAuditDetailsModal(audit)}
+                    className="cursor-pointer hover:bg-muted/40 transition-colors border-b border-border/50 group"
+                  >
+                    <TableCell className="pl-6 font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                      {format(new Date(audit.auditDate), "PP")}
+                    </TableCell>
+                    <TableCell className="font-medium">{audit.campaignName}</TableCell>
+                    {!isAgentView && <TableCell>{audit.agentName}</TableCell>}
+                    <TableCell>
+                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          audit.overallScore > 90 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                          audit.overallScore >= 85 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                          'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                          {audit.overallScore.toFixed(2)}%
+                        </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          audit.auditType === "ai" ? "default" : "secondary"
+                        }
+                        className="font-normal"
+                      >
+                        {audit.auditType.toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    {currentUser?.role === "Administrator" && (
+                      <>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {audit.auditData?.auditDurationMs
+                            ? `${(audit.auditData.auditDurationMs / 1000).toFixed(
+                                1
+                              )}s`
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {audit.auditData?.tokenUsage
+                            ? `${audit.auditData.tokenUsage.inputTokens || 0} / ${
+                                audit.auditData.tokenUsage.outputTokens || 0
+                              }`
+                            : "-"}
+                        </TableCell>
+                      </>
+                    )}
+                    <TableCell className="text-right pr-6">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAuditToDelete(audit);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+                {paginatedAudits.length === 0 && (
+                   <TableRow>
+                    <TableCell
+                      colSpan={isAgentView ? (currentUser?.role === "Administrator" ? 7 : 5) : (currentUser?.role === "Administrator" ? 8 : 6)}
+                      className="text-center text-muted-foreground py-12 h-48"
+                    >
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <FileStack className="h-8 w-8 text-muted-foreground/50" />
+                        <p>No audits found matching your criteria.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
           {/* Pagination Controls */}
           {filteredAudits.length > ITEMS_PER_PAGE && (
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <div className="text-sm text-muted-foreground mr-4">
-                Page {currentPage} of {totalPages}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-muted/20">
+              <div className="text-sm text-muted-foreground">
+                Showing <span className="font-medium">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, filteredAudits.length)}</span> of <span className="font-medium">{filteredAudits.length}</span> results
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" /> Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Next <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 px-3"
+                >
+                  <ArrowLeft className="h-3 w-3 mr-1" /> Previous
+                </Button>
+                <div className="text-sm font-medium px-2">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="h-8 px-3"
+                >
+                  Next <ArrowRight className="h-3 w-3 ml-1" />
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
-
-      <Dialog
+      </motion.div>
+    </motion.div>    <Dialog
         open={!!selectedIssue}
         onOpenChange={(open) => !open && setSelectedIssue(null)}
       >
@@ -2857,6 +3279,60 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                   </div>
                 </div>
 
+                {/* Agent-Specific KPIs */}
+                {(() => {
+                  const agentAudits = filteredAudits.filter(a => a.agentUserId === selectedTrainingAgent.agentId);
+                  const agentQAScore = agentAudits.length > 0 
+                    ? (agentAudits.reduce((sum, a) => sum + (a.overallScore || 0), 0) / agentAudits.length)
+                    : 0;
+                  const agentFatalAudits = agentAudits.filter(a => 
+                    a.auditData?.auditResults?.some((r: any) => r.type === "Fatal" && r.score < 80)
+                  );
+                  const agentFatalRate = agentAudits.length > 0 
+                    ? ((agentFatalAudits.length / agentAudits.length) * 100)
+                    : 0;
+                  const targetScore = 85; // Target QA score
+                  const scoreDiff = agentQAScore - targetScore;
+                  
+                  return (
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="p-4 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Target className="h-4 w-4 text-primary" />
+                          <span className="text-xs text-muted-foreground font-medium">QA Score</span>
+                        </div>
+                        <div className="text-2xl font-bold">{agentQAScore.toFixed(1)}%</div>
+                        <div className={`text-xs ${scoreDiff >= 0 ? "text-green-500" : "text-destructive"}`}>
+                          {scoreDiff >= 0 ? "+" : ""}{scoreDiff.toFixed(1)}% vs {targetScore}% target
+                        </div>
+                      </div>
+                      <div className="p-4 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center gap-2 mb-1">
+                          <ClipboardList className="h-4 w-4 text-blue-500" />
+                          <span className="text-xs text-muted-foreground font-medium">Total Audits</span>
+                        </div>
+                        <div className="text-2xl font-bold">{agentAudits.length}</div>
+                        <div className="text-xs text-muted-foreground">
+                          In selected date range
+                        </div>
+                      </div>
+                      <div className="p-4 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center gap-2 mb-1">
+                          <ShieldCheck className="h-4 w-4 text-orange-500" />
+                          <span className="text-xs text-muted-foreground font-medium">Fatal Rate</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-bold text-orange-500">{agentFatalRate.toFixed(1)}%</span>
+                          <span className="text-sm text-muted-foreground">({agentFatalAudits.length})</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {agentFatalAudits.length} audits with fatal errors
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {agentSpecificChartData.topIssues.length > 0 || agentSpecificChartData.paretoData.length > 0 ? (
                   <>
                   <div className="grid gap-6 lg:grid-cols-2">
@@ -2991,43 +3467,113 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {agentSpecificChartData.topIssues.length > 0 ? (
                           <>
+                            {/* Severity Assessment */}
+                            <div className="p-3 rounded-lg border bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/20">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Activity className="h-4 w-4 text-orange-500" />
+                                <span className="text-sm font-semibold text-orange-600">Performance Assessment</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {selectedTrainingAgent.score < 60 
+                                  ? `⚠️ Critical: This agent is significantly below target with ${agentSpecificChartData.topIssues.length} recurring issue areas. Immediate intervention required.`
+                                  : selectedTrainingAgent.score < 75
+                                  ? `⚡ Needs Improvement: Performance is below expectations. Focused coaching can help address the ${agentSpecificChartData.topIssues.length} identified weak areas.`
+                                  : `📊 Minor Adjustments: Close to target but ${agentSpecificChartData.topIssues.length} area(s) need attention for consistent excellence.`
+                                }
+                              </p>
+                            </div>
+
+                            {/* Focus Areas with Priority */}
                             <div className="bg-muted/50 p-3 rounded-lg border">
-                              <p className="text-sm font-medium mb-2">Focus Areas:</p>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                {agentSpecificChartData.topIssues.slice(0, 3).map((issue, idx) => (
-                                  <li key={idx} className="flex items-start gap-2">
-                                    <span className="text-primary">•</span>
-                                    <span>
-                                      <strong>{issue.reason}</strong>: {issue.count} failure{issue.count !== 1 ? 's' : ''} detected.
+                              <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                                <Target className="h-4 w-4 text-primary" />
+                                Priority Focus Areas
+                              </p>
+                              <div className="space-y-2">
+                                {agentSpecificChartData.topIssues.slice(0, 4).map((issue, idx) => (
+                                  <div key={idx} className="p-2 bg-background rounded border">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-medium text-sm">{issue.reason}</span>
+                                      <Badge variant={idx === 0 ? "destructive" : "secondary"} className="text-xs">
+                                        {idx === 0 ? "Highest Priority" : `Priority ${idx + 1}`}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      {issue.count} failure{issue.count !== 1 ? 's' : ''} detected
                                       {issue.subParameters.length > 0 && (
-                                        <span className="text-xs ml-1">
-                                          (Focus on: {issue.subParameters.slice(0, 2).map(s => s.name).join(', ')})
+                                        <span className="ml-1">
+                                          • Key sub-areas: {issue.subParameters.slice(0, 3).map(s => s.name).join(', ')}
                                         </span>
                                       )}
-                                    </span>
-                                  </li>
+                                    </p>
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
+
+                            {/* Recommended Training Modules */}
+                            <div className="bg-blue-500/5 p-3 rounded-lg border border-blue-500/20">
+                              <p className="text-sm font-medium mb-2 text-blue-600 flex items-center gap-2">
+                                <BookOpen className="h-4 w-4" />
+                                Recommended Training Modules
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {agentSpecificChartData.topIssues.slice(0, 2).map((issue, idx) => (
+                                  <div key={idx} className="p-2 bg-background rounded text-xs">
+                                    <span className="font-medium">{issue.reason} Mastery</span>
+                                    <p className="text-muted-foreground mt-1">SOP review + role-play exercises</p>
+                                  </div>
+                                ))}
+                                <div className="p-2 bg-background rounded text-xs">
+                                  <span className="font-medium">Quality Mindset</span>
+                                  <p className="text-muted-foreground mt-1">Understanding audit parameters</p>
+                                </div>
+                                <div className="p-2 bg-background rounded text-xs">
+                                  <span className="font-medium">Best Practices</span>
+                                  <p className="text-muted-foreground mt-1">Learn from top performers</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Plan */}
                             <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
-                              <p className="text-sm font-medium mb-2 text-primary">Recommended Actions:</p>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                <li className="flex items-start gap-2">
-                                  <span className="text-primary">1.</span>
-                                  <span>Review relevant SOPs for <strong>{agentSpecificChartData.topIssues[0]?.reason}</strong> and conduct targeted coaching sessions.</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                  <span className="text-primary">2.</span>
-                                  <span>Shadow high-performing agents to observe best practices in handling these parameters.</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                  <span className="text-primary">3.</span>
-                                  <span>Schedule follow-up audits within 2 weeks to track improvement progress.</span>
-                                </li>
-                              </ul>
+                              <p className="text-sm font-medium mb-2 text-primary flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Recommended Action Plan
+                              </p>
+                              <div className="space-y-2">
+                                <div className="flex items-start gap-3 p-2 bg-background rounded">
+                                  <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shrink-0">1</span>
+                                  <div>
+                                    <span className="text-sm font-medium">Immediate: One-on-One Coaching</span>
+                                    <p className="text-xs text-muted-foreground">Schedule a 30-min session focusing on <strong>{agentSpecificChartData.topIssues[0]?.reason}</strong>. Review specific call recordings where this parameter failed.</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-3 p-2 bg-background rounded">
+                                  <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shrink-0">2</span>
+                                  <div>
+                                    <span className="text-sm font-medium">Week 1: Shadowing & Practice</span>
+                                    <p className="text-xs text-muted-foreground">Pair with a high-performing agent for 2-3 live call observations. Practice role-play scenarios targeting weak parameters.</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-3 p-2 bg-background rounded">
+                                  <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shrink-0">3</span>
+                                  <div>
+                                    <span className="text-sm font-medium">Week 2: Progress Audit</span>
+                                    <p className="text-xs text-muted-foreground">Conduct 3-5 follow-up audits to measure improvement. Target: Reduce failures in {agentSpecificChartData.topIssues[0]?.reason} by 50%.</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-3 p-2 bg-background rounded">
+                                  <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shrink-0">4</span>
+                                  <div>
+                                    <span className="text-sm font-medium">Week 4: Performance Review</span>
+                                    <p className="text-xs text-muted-foreground">Re-evaluate overall score. If improvement &lt;10%, escalate to advanced training program.</p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </>
                         ) : (
@@ -3107,50 +3653,125 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           <DialogFooter className="gap-2">
             <Button
               variant="outline"
-              onClick={() => {
-                const headers = selectedTrainingAgent
-                  ? ["Parameter Group", "Failure Count"]
-                  : ["Agent Name", "Agent ID", "Overall Score", "Critical Weakness", "Weakness Score"];
-                const rows = [headers.join(",")];
-                
+              onClick={async () => {
+                const ExcelJS = await import("exceljs");
+                const workbook = new ExcelJS.Workbook();
+                workbook.creator = "Dashboard Export";
+                workbook.created = new Date();
+                const timestamp = new Date().toISOString().split("T")[0];
+
                 if (selectedTrainingAgent) {
-                  // Export agent-specific issues
-                  agentSpecificChartData.topIssues.forEach((issue: any) => {
-                    rows.push([
-                      `"${issue.reason}"`,
-                      issue.count.toString()
-                    ].join(","));
+                  // Calculate agent KPIs
+                  const agentAudits = filteredAudits.filter(a => a.agentUserId === selectedTrainingAgent.agentId);
+                  const agentQAScore = agentAudits.length > 0 
+                    ? (agentAudits.reduce((sum, a) => sum + (a.overallScore || 0), 0) / agentAudits.length)
+                    : 0;
+                  const agentFatalAudits = agentAudits.filter(a => 
+                    a.auditData?.auditResults?.some((r: any) => r.type === "Fatal" && r.score < 80)
+                  );
+                  const agentFatalRate = agentAudits.length > 0 
+                    ? ((agentFatalAudits.length / agentAudits.length) * 100)
+                    : 0;
+
+                  // Sheet 1: Summary with KPIs
+                  const summarySheet = workbook.addWorksheet("Summary");
+                  summarySheet.columns = [{ width: 25 }, { width: 40 }];
+                  summarySheet.addRow(["Agent Training Analysis Report"]).font = { bold: true, size: 16 };
+                  summarySheet.addRow([]);
+                  summarySheet.addRow(["Agent Name", selectedTrainingAgent.agentName]);
+                  summarySheet.addRow(["Agent ID", selectedTrainingAgent.agentId]);
+                  summarySheet.addRow(["Export Date", new Date().toLocaleString()]);
+                  summarySheet.addRow([]);
+                  summarySheet.addRow(["Key Performance Indicators"]).font = { bold: true };
+                  summarySheet.addRow(["QA Score", `${agentQAScore.toFixed(1)}%`]);
+                  summarySheet.addRow(["Total Audits", agentAudits.length]);
+                  summarySheet.addRow(["Fatal Rate", `${agentFatalRate.toFixed(1)}%`]);
+                  summarySheet.addRow(["Fatal Audits", agentFatalAudits.length]);
+                  summarySheet.addRow(["Overall Assessment", selectedTrainingAgent.score]);
+                  summarySheet.addRow(["Weakest Parameter", selectedTrainingAgent.lowestParam]);
+                  summarySheet.addRow(["Weakest Param Score", `${selectedTrainingAgent.lowestParamScore}%`]);
+
+                  // Sheet 2: Top Issues with sub-parameters
+                  const issuesSheet = workbook.addWorksheet("Top Issues");
+                  const issueHeaders = issuesSheet.addRow(["Priority", "Parameter Group", "Failure Count", "Sub-Parameters"]);
+                  issueHeaders.font = { bold: true };
+                  issueHeaders.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4F46E5" } }; c.font = { bold: true, color: { argb: "FFFFFFFF" } }; });
+                  
+                  agentSpecificChartData.topIssues.forEach((issue: any, idx: number) => {
+                    issuesSheet.addRow([
+                      idx === 0 ? "Highest" : `Priority ${idx + 1}`,
+                      issue.reason,
+                      issue.count,
+                      issue.subParameters?.map((s: any) => s.name).join(", ") || "N/A"
+                    ]);
                   });
+                  issuesSheet.columns.forEach(col => { col.width = 25; });
+
+                  // Sheet 3: Pareto Analysis
+                  if (agentSpecificChartData.paretoData.length > 0) {
+                    const paretoSheet = workbook.addWorksheet("Pareto Analysis");
+                    const paretoHeaders = paretoSheet.addRow(["Parameter", "Failure Count", "Frequency %", "Cumulative %"]);
+                    paretoHeaders.font = { bold: true };
+                    paretoHeaders.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF59E0B" } }; c.font = { bold: true }; });
+                    
+                    agentSpecificChartData.paretoData.forEach((p: any) => {
+                      paretoSheet.addRow([p.parameter, p.count, `${p.frequencyPercentage?.toFixed(1) || 0}%`, `${p.percentage?.toFixed(1) || 0}%`]);
+                    });
+                    paretoSheet.columns.forEach(col => { col.width = 20; });
+                  }
+
+                  // Sheet 4: Action Plan
+                  const actionSheet = workbook.addWorksheet("Action Plan");
+                  actionSheet.columns = [{ width: 15 }, { width: 30 }, { width: 60 }];
+                  actionSheet.addRow(["Recommended Action Plan for " + selectedTrainingAgent.agentName]).font = { bold: true, size: 14 };
+                  actionSheet.addRow([]);
+                  const actionHeaders = actionSheet.addRow(["Timeline", "Action", "Details"]);
+                  actionHeaders.font = { bold: true };
+                  actionHeaders.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF22C55E" } }; c.font = { bold: true }; });
+                  
+                  const topIssue = agentSpecificChartData.topIssues[0]?.reason || "identified weak areas";
+                  actionSheet.addRow(["Immediate", "One-on-One Coaching", `Schedule a 30-min session focusing on ${topIssue}. Review specific call recordings.`]);
+                  actionSheet.addRow(["Week 1", "Shadowing & Practice", "Pair with a high-performing agent for 2-3 live call observations."]);
+                  actionSheet.addRow(["Week 2", "Progress Audit", `Conduct 3-5 follow-up audits. Target: Reduce failures in ${topIssue} by 50%.`]);
+                  actionSheet.addRow(["Week 4", "Performance Review", "Re-evaluate overall score. Escalate if improvement <10%."]);
+                  
+                  const buffer = await workbook.xlsx.writeBuffer();
+                  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.setAttribute("download", `agent-training-${selectedTrainingAgent.agentName.replace(/[^a-zA-Z0-9]/g, "_")}_${timestamp}.xlsx`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
                 } else {
                   // Export training needs list
+                  const listSheet = workbook.addWorksheet("Training Needs");
+                  const headers = listSheet.addRow(["Agent Name", "Agent ID", "Overall Score", "Critical Weakness", "Weakness Score"]);
+                  headers.font = { bold: true };
+                  headers.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4F46E5" } }; c.font = { bold: true, color: { argb: "FFFFFFFF" } }; });
+                  
                   trainingNeedsList.forEach((agent) => {
-                    rows.push([
-                      `"${agent.agentName}"`,
-                      `"${agent.agentId}"`,
-                      `${agent.score}%`,
-                      `"${agent.lowestParam}"`,
-                      `${agent.lowestParamScore}%`
-                    ].join(","));
+                    listSheet.addRow([agent.agentName, agent.agentId, `${agent.score}%`, agent.lowestParam, `${agent.lowestParamScore}%`]);
                   });
+                  listSheet.columns.forEach(col => { col.width = 20; });
+                  
+                  const buffer = await workbook.xlsx.writeBuffer();
+                  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.setAttribute("download", `training-needs-analysis_${timestamp}.xlsx`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
                 }
-                
-                const csv = rows.join("\n");
-                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                const filename = selectedTrainingAgent
-                  ? `agent-issues-${selectedTrainingAgent.agentName.replace(/[^a-zA-Z0-9]/g, "_")}.csv`
-                  : "training-needs-analysis.csv";
-                link.setAttribute("download", filename);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
               }}
             >
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              Export XLSX
             </Button>
             <Button onClick={() => {
               setIsTrainingNeedsModalOpen(false);
@@ -3161,6 +3782,243 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Fatal Explanation Dialog */}
+      <Dialog open={isFatalExplanationOpen} onOpenChange={setIsFatalExplanationOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Activity className="h-5 w-5 text-orange-500" />
+              Understanding Fatal Audits
+            </DialogTitle>
+            <DialogDescription>
+              Learn how audits are classified as fatal and what it means for quality assurance.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[65vh] pr-4">
+          <div className="space-y-6 py-4">
+            {/* Stats Summary */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold text-orange-500">{fatalErrorsData.fatalRate}%</div>
+                <div className="text-xs text-muted-foreground">Fatal Rate</div>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold">{fatalErrorsData.fatalAuditsCount}</div>
+                <div className="text-xs text-muted-foreground">Fatal Audits</div>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold">{fatalErrorsData.totalFatalErrors}</div>
+                <div className="text-xs text-muted-foreground">Total Fatal Errors</div>
+              </div>
+            </div>
+
+            <Separator />
+            
+            {/* How an Audit is Considered Fatal */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-lg">How is an Audit Considered Fatal?</h4>
+              
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <div className="mt-0.5 p-1 bg-destructive/20 rounded">
+                    <span className="text-destructive font-bold text-sm">1</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-destructive">Fatal Parameter Failure</p>
+                    <p className="text-sm text-muted-foreground">
+                      An audit is marked as <strong>fatal</strong> when it contains at least one parameter with:
+                    </p>
+                    <ul className="text-sm text-muted-foreground mt-1 list-disc list-inside ml-2">
+                      <li>Parameter type = <code className="bg-muted px-1 rounded">"Fatal"</code></li>
+                      <li>Parameter score &lt; 80%</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <div className="mt-0.5 p-1 bg-orange-500/20 rounded">
+                    <span className="text-orange-500 font-bold text-sm">2</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-orange-600">Fatal Rate Calculation</p>
+                    <p className="text-sm text-muted-foreground">
+                      <code className="bg-muted px-1 rounded">Fatal Rate = (Audits with Fatal Errors / Total Audits) × 100</code>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Currently: ({fatalErrorsData.fatalAuditsCount} / {filteredAudits.length}) × 100 = {fatalErrorsData.fatalRate}%
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="mt-0.5 p-1 bg-blue-500/20 rounded">
+                    <span className="text-blue-500 font-bold text-sm">3</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-600">Examples of Fatal Parameters</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside">
+                      <li>Compliance Violations</li>
+                      <li>Security/Privacy Breaches</li>
+                      <li>Regulatory Non-compliance</li>
+                      <li>Critical Process Deviations</li>
+                      <li>Customer Data Mishandling</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Fatal Calls Details */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-lg">Fatal Calls Details</h4>
+                <Badge variant="destructive">{(() => {
+                  const fatalCount = filteredAudits.filter(audit => 
+                    audit.auditData.auditResults.some((r: any) => r.type === "Fatal" && r.score < 80)
+                  ).length;
+                  return `${fatalCount} fatal calls`;
+                })()}</Badge>
+              </div>
+              
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by agent name or ID..."
+                  className="pl-9"
+                  id="fatalSearchInput"
+                  onChange={(e) => {
+                    const searchContainer = document.getElementById("fatalCallsList");
+                    const items = searchContainer?.querySelectorAll("[data-fatal-item]");
+                    const term = e.target.value.toLowerCase();
+                    items?.forEach((item) => {
+                      const agentName = item.getAttribute("data-agent-name")?.toLowerCase() || "";
+                      const agentId = item.getAttribute("data-agent-id")?.toLowerCase() || "";
+                      if (agentName.includes(term) || agentId.includes(term)) {
+                        (item as HTMLElement).style.display = "block";
+                      } else {
+                        (item as HTMLElement).style.display = "none";
+                      }
+                    });
+                  }}
+                />
+              </div>
+              
+              {/* Fatal Calls List */}
+              <div id="fatalCallsList" className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {(() => {
+                  const fatalAudits = filteredAudits.filter(audit => 
+                    audit.auditData.auditResults.some((r: any) => r.type === "Fatal" && r.score < 80)
+                  );
+                  
+                  if (fatalAudits.length === 0) {
+                    return (
+                      <div className="p-6 bg-muted/50 border rounded-lg text-center">
+                        <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                        <p className="text-sm text-muted-foreground">No fatal calls found in current selection</p>
+                        <p className="text-xs text-muted-foreground mt-1">Great job! All audits passed fatal parameters.</p>
+                      </div>
+                    );
+                  }
+                  
+                  return fatalAudits.map((audit, auditIdx) => {
+                    const fatalParams = audit.auditData.auditResults.filter((r: any) => r.type === "Fatal" && r.score < 80);
+                    return (
+                      <div 
+                        key={audit.id || auditIdx} 
+                        data-fatal-item
+                        data-agent-name={audit.agentName}
+                        data-agent-id={audit.agentUserId}
+                        className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg hover:bg-destructive/15 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-medium text-sm">{audit.agentName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              ID: {audit.agentUserId} • {audit.campaignName} • {format(new Date(audit.auditDate), "PP")}
+                            </p>
+                          </div>
+                          <Badge variant="destructive">{audit.overallScore.toFixed(1)}%</Badge>
+                        </div>
+                        
+                        {/* Failed Fatal Parameters */}
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-destructive mb-2">
+                            ⚠️ {fatalParams.length} fatal parameter{fatalParams.length > 1 ? "s" : ""} failed:
+                          </p>
+                          <div className="grid grid-cols-1 gap-1">
+                            {fatalParams.map((param: any, idx: number) => (
+                              <div 
+                                key={idx} 
+                                className="flex justify-between items-center text-xs py-1.5 px-2 bg-destructive/20 border border-destructive/30 rounded"
+                              >
+                                <span className="truncate flex-1 mr-2 font-medium">{param.parameter}</span>
+                                <span className="font-bold text-destructive">{param.score}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* All Other Parameters (collapsed) */}
+                        <details className="mt-2">
+                          <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                            View all {audit.auditData.auditResults.length} parameters
+                          </summary>
+                          <div className="grid grid-cols-1 gap-1 mt-2">
+                            {audit.auditData.auditResults.map((param: any, idx: number) => {
+                              const isFatalFailed = param.type === "Fatal" && param.score < 80;
+                              if (isFatalFailed) return null; // Already shown above
+                              return (
+                                <div 
+                                  key={idx} 
+                                  className="flex justify-between items-center text-xs py-1 px-2 bg-background/50 rounded"
+                                >
+                                  <span className="truncate flex-1 mr-2">{param.parameter}</span>
+                                  <span className={`font-semibold ${param.score >= 80 ? "text-green-600" : "text-orange-500"}`}>
+                                    {param.score}%
+                                    {param.type === "Fatal" && <span className="ml-1 text-[10px] opacity-70">(Fatal)</span>}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </details>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Impact Section */}
+            <div className="space-y-2">
+              <h4 className="font-semibold">Impact of Fatal Audits</h4>
+              <p className="text-sm text-muted-foreground">
+                Fatal errors are critical quality failures that may result in:
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc list-inside ml-2">
+                <li>Immediate escalation to supervisors</li>
+                <li>Mandatory retraining for the agent</li>
+                <li>Potential disciplinary action</li>
+                <li>Impact on overall team metrics</li>
+              </ul>
+            </div>
+          </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button onClick={() => setIsFatalExplanationOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

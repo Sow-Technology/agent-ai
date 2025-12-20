@@ -22,6 +22,7 @@ export interface ICallAudit extends Document {
   maxPossibleScore: number;
   transcript?: string;
   englishTranslation?: string; // English translation of the transcript
+  callSummary?: string; // AI-generated call summary
   audioUrl?: string;
   auditedBy: string;
   auditType: "manual" | "ai";
@@ -114,6 +115,9 @@ const CallAuditSchema = new Schema<ICallAudit>(
     transcript: {
       type: String,
     },
+    callSummary: {
+      type: String,
+    },
     audioUrl: {
       type: String,
     },
@@ -152,8 +156,13 @@ CallAuditSchema.index({ agentName: 1, createdAt: -1 });
 CallAuditSchema.index({ campaignId: 1, createdAt: -1 });
 CallAuditSchema.index({ auditType: 1, createdAt: -1 });
 CallAuditSchema.index({ projectId: 1, createdAt: -1 });
+CallAuditSchema.index({ auditedBy: 1, createdAt: -1 }); // For role-based filtering
 CallAuditSchema.index({ callDate: 1 });
+CallAuditSchema.index({ createdAt: -1 }); // For default sorting
 CallAuditSchema.index({ audioHash: 1, campaignName: 1 }); // For cache lookups
+// Compound index for common dashboard queries
+CallAuditSchema.index({ auditedBy: 1, auditType: 1, createdAt: -1 });
+CallAuditSchema.index({ projectId: 1, auditType: 1, createdAt: -1 });
 
 // Delete cached model in development to pick up schema changes
 if (process.env.NODE_ENV !== "production") {

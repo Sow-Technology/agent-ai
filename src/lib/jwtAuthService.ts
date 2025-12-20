@@ -71,6 +71,7 @@ export async function authenticateUser(
       id: user._id.toString(),
       username: user.username,
       email: user.email,
+      fullName: user.fullName,
       role: user.role,
       projectId: user.projectId,
     };
@@ -110,6 +111,7 @@ export async function validateJWTToken(token: string) {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
+        fullName: user.fullName,
         role: user.role,
         projectId: user.projectId,
       },

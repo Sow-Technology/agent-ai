@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const tokenResult = await validateJWTToken(token);
 
     if (tokenResult.valid && tokenResult.user) {
-      return NextResponse.json({ user: tokenResult.user });
+      return NextResponse.json({ success: true, user: tokenResult.user });
     } else {
       return NextResponse.json(
         { error: 'User not found or not authenticated' },

@@ -162,6 +162,109 @@ export async function getAllAudits(): Promise<AuditDocument[]> {
   }
 }
 
+// New optimized function with server-side pagination and filtering
+export interface AuditFilters {
+  auditType?: "manual" | "ai";
+  agentName?: string;
+  campaignName?: string;
+  qaParameterSetId?: string;
+  projectId?: string;
+  auditedBy?: string | string[]; // Can be single value or array for OR matching
+  startDate?: Date;
+  endDate?: Date;
+}
+
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+export interface PaginatedAuditsResult {
+  data: AuditDocument[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export async function getAuditsWithFilters(
+  filters: AuditFilters = {},
+  pagination: PaginationOptions = {}
+): Promise<PaginatedAuditsResult> {
+  try {
+    const query: any = {};
+
+    // Apply filters at database level
+    if (filters.auditType) {
+      query.auditType = filters.auditType;
+    }
+    if (filters.agentName) {
+      query.agentName = { $regex: filters.agentName, $options: "i" };
+    }
+    if (filters.campaignName) {
+      query.campaignName = filters.campaignName;
+    }
+    if (filters.qaParameterSetId) {
+      query.campaignId = filters.qaParameterSetId;
+    }
+    if (filters.projectId) {
+      query.projectId = filters.projectId;
+    }
+    if (filters.auditedBy) {
+      if (Array.isArray(filters.auditedBy)) {
+        query.auditedBy = { $in: filters.auditedBy };
+      } else {
+        query.auditedBy = filters.auditedBy;
+      }
+    }
+    if (filters.startDate || filters.endDate) {
+      query.createdAt = {};
+      if (filters.startDate) {
+        query.createdAt.$gte = filters.startDate;
+      }
+      if (filters.endDate) {
+        query.createdAt.$lte = filters.endDate;
+      }
+    }
+
+    // Pagination defaults
+    const page = pagination.page || 1;
+    const limit = pagination.limit || 100; // Default to 100 items
+    const skip = (page - 1) * limit;
+    const sortBy = pagination.sortBy || "createdAt";
+    const sortOrder = pagination.sortOrder === "asc" ? 1 : -1;
+
+    // Execute query with pagination
+    const [results, total] = await Promise.all([
+      CallAudit.find(query)
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      CallAudit.countDocuments(query),
+    ]);
+
+    return {
+      data: results.map(transformToAuditDocument),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  } catch (error) {
+    console.error("Error getting audits with filters:", error);
+    return {
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 100,
+      totalPages: 0,
+    };
+  }
+}
+
 export async function getAuditsByAgent(
   agentName: string
 ): Promise<AuditDocument[]> {

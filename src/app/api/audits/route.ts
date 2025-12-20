@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   createAudit,
-  getAllAudits,
   updateAudit,
   deleteAudit,
   getAuditById,
@@ -131,6 +130,7 @@ const updateAuditSchema = z.object({
     .string()
     .min(10, "Call transcript must be at least 10 characters")
     .optional(),
+  callSummary: z.string().optional(),
   parameters: z
     .array(parameterResultSchema)
     .min(1, "At least one parameter result is required")
@@ -145,18 +145,18 @@ const updateAuditSchema = z.object({
   auditorName: z.string().optional(),
 });
 
-// GET /api/audits - Get all audits
+// GET /api/audits - Get all audits with pagination and filtering
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const auditType = searchParams.get("type");
+    const auditType = searchParams.get("type") as "manual" | "ai" | null;
     const agentName = searchParams.get("agent");
+    const campaignName = searchParams.get("campaignName");
     const qaParameterSetId = searchParams.get("qaParameterSetId");
-    const sopId = searchParams.get("sopId");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
-    const limit = searchParams.get("limit");
-    const offset = searchParams.get("offset");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "100");
 
     // Get current user from JWT token
     const authHeader = request.headers.get("Authorization");
@@ -176,68 +176,40 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Build filter object
+    // Import the new optimized function
+    const { getAuditsWithFilters } = await import("@/lib/auditService");
+
+    // Build filters based on user role
     const filters: any = {};
+    
     if (auditType) filters.auditType = auditType;
-    if (agentName) filters.agentName = { $regex: agentName, $options: "i" };
+    if (agentName) filters.agentName = agentName;
+    if (campaignName) filters.campaignName = campaignName;
     if (qaParameterSetId) filters.qaParameterSetId = qaParameterSetId;
-    if (sopId) filters.sopId = sopId;
+    if (startDate) filters.startDate = new Date(startDate);
+    if (endDate) filters.endDate = new Date(endDate);
 
-    // Date range filter
-    if (startDate || endDate) {
-      filters.auditDate = {};
-      if (startDate) filters.auditDate.$gte = new Date(startDate);
-      if (endDate) filters.auditDate.$lte = new Date(endDate);
-    }
-
-    // Pagination options
-    const options: any = {};
-    if (limit) options.limit = parseInt(limit);
-    if (offset) options.skip = parseInt(offset);
-
-    const audits = await getAllAudits();
-
-    // Debug logging
-    console.log("Current user role:", currentUserRole);
-    console.log("Current username:", currentUsername);
-    console.log("Current user ID:", currentUserId);
-    console.log("Total audits before filter:", audits.length);
-    if (audits.length > 0) {
-      console.log(
-        "Sample audit auditedBy values:",
-        audits.slice(0, 5).map((a: any) => a.auditedBy)
-      );
-    }
-
-    // Apply role-based filtering to the results
-    let filteredAudits = audits;
+    // Apply role-based filtering at database level
     if (currentUserRole === "Agent" || currentUserRole === "Auditor") {
-      // Match by username OR user ID (to support old audits with IDs and new audits with usernames)
-      filteredAudits = filteredAudits.filter(
-        (audit: any) =>
-          audit.auditedBy === currentUsername ||
-          audit.auditedBy === currentUserId
-      );
-      console.log(
-        "Filtered audits count for Auditor/Agent:",
-        filteredAudits.length
-      );
+      // Match by username OR user ID
+      filters.auditedBy = [currentUsername, currentUserId].filter(Boolean);
     } else if (currentUserRole === "Project Admin") {
-      console.log("Project Admin projectId:", currentUser?.projectId);
-      console.log(
-        "Sample audit projectIds:",
-        audits.slice(0, 5).map((a: any) => a.projectId)
-      );
-      filteredAudits = filteredAudits.filter(
-        (audit: any) => audit.projectId === currentUser?.projectId
-      );
-      console.log(
-        "Filtered audits count for Project Admin:",
-        filteredAudits.length
-      );
+      filters.projectId = currentUser?.projectId;
     }
+    // Administrator sees all audits - no additional filter
 
-    return NextResponse.json({ success: true, data: filteredAudits });
+    const result = await getAuditsWithFilters(filters, { page, limit });
+
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
+    });
   } catch (error) {
     console.error("Error fetching audits:", error);
     return NextResponse.json(
@@ -343,6 +315,7 @@ export async function POST(request: NextRequest) {
       maxPossibleScore: 100, // Assuming max score is 100
       transcript: validatedData.callTranscript || "No transcript provided",
       englishTranslation: validatedData.englishTranslation,
+      callSummary: (validatedData as any).callSummary || "Audit summary not available",
       auditedBy: currentUsername,
       auditType: validatedData.auditType || "manual",
       tokenUsage: validatedData.tokenUsage,

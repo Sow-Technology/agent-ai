@@ -54,7 +54,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { AssureQaiLogo } from "@/components/common/SakshiQaiLogo";
+import { SakshiQaiLogo } from "@/components/common/SakshiQaiLogo";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, type MouseEvent } from "react";
 
@@ -823,28 +823,9 @@ export function HomePageContent() {
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
           <div className="xl:grid xl:grid-cols-3 xl:gap-8">
             <div className="space-y-8 xl:col-span-1">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 128 40"
-                aria-label="Joaji Logo"
-                className="h-10 text-primary"
-              >
-                <g className="logo-text-group transition-opacity duration-200 group-data-[state=collapsed]/peer:opacity-0">
-                  <text
-                    x="0"
-                    y="20"
-                    fontFamily="Calibri, sans-serif"
-                    fontSize="22"
-                    fontWeight="600"
-                    fill="currentColor"
-                    dominantBaseline="middle"
-                  >
-                    Joaji
-                  </text>
-                </g>
-              </svg>
+              <SakshiQaiLogo className="h-10" />
               <p className="text-gray-700 dark:text-gray-400/80 text-base">
-                Product by Joaji Innovation
+                Product by SakshiQAI
               </p>
               <div className="flex space-x-6">
                 <a
@@ -995,7 +976,7 @@ export function HomePageContent() {
           </div>
           <div className="mt-12 border-t border-white/10 pt-8">
             <p className="text-base text-gray-400/80 text-center">
-              &copy; 2025 Joaji Innovation. All rights reserved.
+              &copy; 2025 SakshiQAI. All rights reserved.
             </p>
           </div>
         </div>

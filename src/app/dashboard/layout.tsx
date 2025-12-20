@@ -8,7 +8,7 @@ import { getAuthToken, clientLogout } from "../../lib/clientAuthService";
 import { getAuthHeaders } from "@/lib/authUtils";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { AssureQaiLogo } from "@/components/common/SakshiQaiLogo";
+import { SakshiQaiLogo } from "@/components/common/SakshiQaiLogo";
 import {
   SidebarProvider,
   Sidebar,
@@ -26,6 +26,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { motion } from "framer-motion";
 import {
   BarChart2,
   ClipboardList,
@@ -40,6 +41,7 @@ import {
   UsersRound,
   Coins,
   UploadCloud,
+  FileText,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeSwitcher } from "@/components/common/ThemeSwitcher";
@@ -162,6 +164,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       type: "link",
       roles: ["Administrator"],
     },
+    {
+      href: "/dashboard/audit-details",
+      label: "Audit Details",
+      tabName: "audit-details",
+      icon: FileText,
+      type: "link",
+      roles: ["Administrator"],
+    },
   ];
 
   const navItems = currentUser
@@ -248,13 +258,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader className="p-4 border-b">
-          <Link href="/dashboard" className="text-primary">
-            <AssureQaiLogo className="h-20 w-auto" />
+      <Sidebar collapsible="icon" className="border-r border-sidebar-border/50 bg-sidebar/80 backdrop-blur-xl supports-[backdrop-filter]:bg-sidebar/50 shadow-2xl">
+        <SidebarHeader className="h-[72px] flex items-center justify-center border-b border-sidebar-border/30 bg-sidebar/20">
+          <Link href="/dashboard" className="flex items-center justify-center w-full h-full p-2 group-data-[collapsible=icon]:p-0 transition-all duration-300">
+             <SakshiQaiLogo className="h-10 w-auto transition-all group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6 group-data-[collapsible=icon]:opacity-0" />
+             {/* Fallback icon for collapsed state if logo fades out */}
+             <div className="hidden group-data-[collapsible=icon]:flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <BarChart2 className="h-5 w-5" />
+             </div>
           </Link>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="px-2 py-4 gap-1">
           <SidebarMenu>
             {navItems.map((item) => {
               if (!item) return null;
@@ -271,11 +285,28 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       asChild
                       isActive={isLinkActive}
                       tooltip={isMobile ? undefined : item.label}
+                      className={`
+                        group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 
+                        ${isLinkActive 
+                          ? 'bg-gradient-to-r from-primary/10 to-transparent text-primary font-semibold' 
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:pl-4'}
+                      `}
                     >
                       {item.href !== undefined && (
-                        <Link href={item.href}>
-                          <item.icon />
-                          <span>{item.label}</span>
+                        <Link href={item.href} className="w-full h-full flex items-center gap-3 relative">
+                          {/* Active Indicator Line */}
+                          {isLinkActive && (
+                            <motion.div
+                              layoutId="active-nav-border"
+                              className="absolute -left-3 top-1/2 -translate-y-1/2 h-8 w-1 bg-primary rounded-r-full"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 24 }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                            />
+                          )}
+                          <item.icon className={`h-5 w-5 transition-colors duration-200 ${isLinkActive ? 'text-primary fill-primary/20' : 'text-sidebar-foreground/70 group-hover:text-primary'}`} />
+                          <span className="text-sm tracking-tight">{item.label}</span>
                         </Link>
                       )}
                     </SidebarMenuButton>
@@ -288,51 +319,75 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     key={item.label}
                     open={isAuditsOpen}
                     onOpenChange={setIsAuditsOpen}
-                    className="w-full"
+                    className="group/collapsible w-full space-y-1"
                   >
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton
-                          className="w-full"
+                           className={`
+                             w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200
+                             ${isAuditGroupActive 
+                               ? 'bg-gradient-to-r from-primary/10 to-transparent text-primary font-semibold' 
+                               : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:pl-4'}
+                           `}
                           isActive={isAuditGroupActive}
                           tooltip={isMobile ? undefined : item.label}
                         >
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-2">
-                              <item.icon />
-                              <span>{item.label}</span>
-                            </div>
-                            <ChevronDown
-                              className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${
-                                isAuditsOpen ? "rotate-180" : ""
-                              }`}
-                            />
+                          {isAuditGroupActive && (
+                             <motion.div
+                               layoutId="active-nav-border-collapsible"
+                               className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-primary rounded-r-full"
+                             />
+                          )}
+                          <div className="flex items-center gap-3">
+                            <item.icon className={`h-5 w-5 transition-colors duration-200 ${isAuditGroupActive ? 'text-primary fill-primary/20' : 'text-sidebar-foreground/70 group-hover:text-primary'}`} />
+                            <span className="text-sm tracking-tight">{item.label}</span>
                           </div>
+                          <ChevronDown
+                            className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-300 ${
+                              isAuditsOpen ? "rotate-180 text-primary" : "text-sidebar-foreground/50"
+                            }`}
+                          />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                     </SidebarMenuItem>
                     <CollapsibleContent>
-                      <div className="pl-6 py-1">
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="pl-3 pr-1 py-1 space-y-0.5 ml-3 border-l border-sidebar-border/50"
+                      >
                         {item.subItems !== undefined && (
                           <SidebarMenu>
-                            {item.subItems.map((subItem) => (
-                              <SidebarMenuItem key={subItem.label}>
-                                <SidebarMenuButton
-                                  asChild
-                                  isActive={pathname.startsWith(subItem.href)}
-                                  tooltip={isMobile ? undefined : subItem.label}
-                                  size="sm"
-                                >
-                                  <Link href={subItem.href}>
-                                    <subItem.icon />
-                                    <span>{subItem.label}</span>
-                                  </Link>
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            ))}
+                            {item.subItems.map((subItem) => {
+                              const isSubActive = pathname.startsWith(subItem.href);
+                              return (
+                                <SidebarMenuItem key={subItem.label}>
+                                  <SidebarMenuButton
+                                    asChild
+                                    isActive={isSubActive}
+                                    tooltip={isMobile ? undefined : subItem.label}
+                                    size="sm"
+                                    className={`
+                                      h-9 px-3 rounded-lg transition-all duration-200 text-sm
+                                      ${isSubActive 
+                                        ? 'text-primary font-medium bg-primary/10' 
+                                        : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'}
+                                    `}
+                                  >
+                                    <Link href={subItem.href} className="flex items-center gap-2.5">
+                                      <subItem.icon className="h-4 w-4 opacity-80" />
+                                      <span>{subItem.label}</span>
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              );
+                            })}
                           </SidebarMenu>
                         )}
-                      </div>
+                      </motion.div>
                     </CollapsibleContent>
                   </Collapsible>
                 );
@@ -341,32 +396,68 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             })}
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter className="p-2 border-t">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleLogout}
-              tooltip={isMobile ? undefined : "Log out"}
-            >
-              <LogOut />
-              <span>Log out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+        <SidebarFooter className="p-4 border-t border-sidebar-border/30 bg-sidebar/10">
+           {/* Premium User Profile in Footer */}
+           {currentUser && (
+            <div className={`flex items-center gap-3 p-2 rounded-xl transition-all duration-300 group-data-[collapsible=icon]:justify-center hover:bg-sidebar-accent/50 cursor-pointer overflow-hidden`}>
+              <div className="relative shrink-0">
+                 <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary/80 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm">
+                    {currentUser.fullName ? currentUser.fullName.substring(0, 2).toUpperCase() : 'AQ'}
+                 </div>
+                 <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-sidebar-background"></div>
+              </div>
+              
+              <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden animate-in fade-in slide-in-from-left-2 duration-300">
+                  <span className="text-sm font-semibold truncate text-sidebar-foreground">
+                    {currentUser.fullName || 'User'}
+                  </span>
+                  <span className="text-xs text-sidebar-foreground/60 truncate">
+                    {currentUser.email || currentUser.username}
+                  </span>
+              </div>
+              
+              <div className="ml-auto group-data-[collapsible=icon]:hidden">
+                 <ThemeSwitcher />
+              </div>
+            </div>
+           )}
+           
+           {/* Logout Button */}
+           <div className="mt-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={handleLogout}
+                tooltip={isMobile ? undefined : "Log out"}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors justify-start px-3 py-2.5 rounded-xl font-medium w-full group-data-[collapsible=icon]:justify-center"
+              >
+                <LogOut className="h-5 w-5 mr-3 group-data-[collapsible=icon]:mr-0" />
+                <span className="group-data-[collapsible=icon]:hidden">Log out</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+           </div>
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 sm:px-6">
+      <SidebarInset className="bg-background">
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-md px-6 transition-all duration-300">
           <div className="flex items-center gap-4">
-            <SidebarTrigger />
-            <h1 className="text-xl font-semibold">{currentPageLabel}</h1>
+            <SidebarTrigger className="-ml-2 h-9 w-9 text-muted-foreground hover:text-foreground" />
+             <div className="flex flex-col">
+              <h1 className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 leading-tight">{currentPageLabel}</h1>
+              <span className="text-xs text-muted-foreground font-medium">Overview & Analytics</span>
+             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <ThemeSwitcher />
-            <UserNav handleLogout={handleLogout} />
+          <div className="flex items-center gap-3">
+             {/* No redundant ThemeSwitcher or UserNav here since it's in sidebar now */}
+             <div className="text-sm text-muted-foreground hidden sm:block">
+                Last updated: <span className="font-mono text-foreground/80">{new Date().toLocaleDateString()}</span>
+             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto bg-secondary p-6">
-          {children}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-muted/30 via-background to-background">
+          <div className="mx-auto max-w-7xl animate-in fade-in-50 duration-500 slide-in-from-bottom-4">
+             {children}
+          </div>
         </main>
       </SidebarInset>
     </SidebarProvider>
