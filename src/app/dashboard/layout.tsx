@@ -8,7 +8,7 @@ import { getAuthToken, clientLogout } from "../../lib/clientAuthService";
 import { getAuthHeaders } from "@/lib/authUtils";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { SakshiQaiLogo } from "@/components/common/SakshiQaiLogo";
+import { AssureQaiLogo } from "@/components/common/AssureQaiLogo";
 import {
   SidebarProvider,
   Sidebar,
@@ -261,7 +261,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Sidebar collapsible="icon" className="border-r border-sidebar-border/50 bg-sidebar/80 backdrop-blur-xl supports-[backdrop-filter]:bg-sidebar/50 shadow-2xl">
         <SidebarHeader className="h-[72px] flex items-center justify-center border-b border-sidebar-border/30 bg-sidebar/20">
           <Link href="/dashboard" className="flex items-center justify-center w-full h-full p-2 group-data-[collapsible=icon]:p-0 transition-all duration-300">
-             <SakshiQaiLogo className="h-10 w-auto transition-all group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6 group-data-[collapsible=icon]:opacity-0" />
+             <AssureQaiLogo className="h-10 w-auto transition-all group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6 group-data-[collapsible=icon]:opacity-0" />
              {/* Fallback icon for collapsed state if logo fades out */}
              <div className="hidden group-data-[collapsible=icon]:flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <BarChart2 className="h-5 w-5" />

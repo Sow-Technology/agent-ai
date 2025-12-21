@@ -54,7 +54,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { SakshiQaiLogo } from "@/components/common/SakshiQaiLogo";
+import { AssureQaiLogo } from "@/components/common/AssureQaiLogo";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, type MouseEvent } from "react";
 
@@ -295,7 +295,7 @@ export function HomePageContent() {
             </h1>
             <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300/80 max-w-2xl">
               Save up to 92% vs manual auditing. Fast, consistent, and scalable
-              call audits powered by AssureQAI.
+              call audits.
             </p>
             <div className="mt-8 flex items-center flex-wrap gap-4">
               <Link href="/login" passHref>
@@ -823,9 +823,9 @@ export function HomePageContent() {
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
           <div className="xl:grid xl:grid-cols-3 xl:gap-8">
             <div className="space-y-8 xl:col-span-1">
-              <SakshiQaiLogo className="h-10" />
+              <AssureQaiLogo className="h-10" />
               <p className="text-gray-700 dark:text-gray-400/80 text-base">
-                Product by SakshiQAI
+                Product by AssureQai
               </p>
               <div className="flex space-x-6">
                 <a
@@ -976,7 +976,7 @@ export function HomePageContent() {
           </div>
           <div className="mt-12 border-t border-white/10 pt-8">
             <p className="text-base text-gray-400/80 text-center">
-              &copy; 2025 SakshiQAI. All rights reserved.
+              &copy; 2025 AssureQai. All rights reserved.
             </p>
           </div>
         </div>

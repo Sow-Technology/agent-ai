@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
 
-interface SakshiQaiLogoProps {
+interface AssureQaiLogoProps {
   className?: string;
   width?: number;
   height?: number;
@@ -9,19 +9,19 @@ interface SakshiQaiLogoProps {
   showLogo?: boolean;
 }
 
-export function SakshiQaiLogo({ 
+export function AssureQaiLogo({ 
   className = '', 
   width = 130, 
   height = 40,
   showIcon = true,
   showLogo = true
-}: SakshiQaiLogoProps) {
+}: AssureQaiLogoProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       {showIcon && (
         <Image
           src="/icon.png"
-          alt="SakshiQAI Icon"
+          alt="AssureQai Icon"
           width={40}
           height={40}
           className="h-8 w-8 object-contain shrink-0"
@@ -33,7 +33,7 @@ export function SakshiQaiLogo({
           {/* Light Mode Logo */}
           <Image
             src="/logo.png"
-            alt="SakshiQAI Logo"
+            alt="AssureQai Logo"
             width={width}
             height={height}
             className="h-auto w-auto dark:hidden transition-opacity duration-200"
@@ -42,7 +42,7 @@ export function SakshiQaiLogo({
           {/* Dark Mode Logo */}
           <Image
             src="/logo-dark.png"
-            alt="SakshiQAI Logo"
+            alt="AssureQai Logo"
             width={width}
             height={height}
             className="h-auto w-auto hidden dark:block transition-opacity duration-200"

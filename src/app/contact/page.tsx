@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { SakshiQaiLogo } from "@/components/common/SakshiQaiLogo";
+import { AssureQaiLogo } from '@/components/common/AssureQaiLogo';
 import Image from "next/image";
 
 export default function ContactPage() {
@@ -65,7 +65,7 @@ export default function ContactPage() {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" passHref>
-            <SakshiQaiLogo className="h-8 w-auto" />
+            <AssureQaiLogo className="h-8 w-auto" />
           </Link>
           <Link href="/" passHref>
             <Button

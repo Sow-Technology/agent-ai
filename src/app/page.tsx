@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SakshiQaiLogo } from "@/components/common/SakshiQaiLogo";
+import { AssureQaiLogo } from "@/components/common/AssureQaiLogo";
 import { HomePageContent } from "@/components/auth/HomePageContent";
 
 export default function HomePage() {
@@ -25,7 +25,7 @@ export default function HomePage() {
 
           <div className="absolute left-1/2 -translate-x-1/2">
             <Link href="/" passHref>
-              <SakshiQaiLogo className="h-8 w-auto" />
+              <AssureQaiLogo className="h-8 w-auto" />
             </Link>
           </div>
 

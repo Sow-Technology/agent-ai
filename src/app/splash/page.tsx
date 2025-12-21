@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SakshiQaiLogo } from '@/components/common/SakshiQaiLogo';
+import { AssureQaiLogo } from '@/components/common/AssureQaiLogo';
 
 export default function SplashScreenPage() {
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function SplashScreenPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className={`splash-logo-wrapper animate-state-${animationState}`}>
-        <SakshiQaiLogo className="h-28 w-auto sm:h-32 md:h-36" />
+        <AssureQaiLogo className="h-28 w-auto sm:h-32 md:h-36" />
       </div>
     </main>
   );
