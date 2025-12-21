@@ -22,9 +22,9 @@ export function AssureQaiLogo({
         <Image
           src="/icon.png"
           alt="AssureQai Icon"
-          width={40}
-          height={40}
-          className="h-8 w-8 object-contain shrink-0"
+          width={48}
+          height={48}
+          className="h-10 w-10 object-contain shrink-0"
           priority
         />
       )}
