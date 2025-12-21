@@ -11,8 +11,8 @@ interface AssureQaiLogoProps {
 
 export function AssureQaiLogo({ 
   className = '', 
-  width = 130, 
-  height = 40,
+  width = 110, 
+  height = 32,
   showIcon = true,
   showLogo = true
 }: AssureQaiLogoProps) {
