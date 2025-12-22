@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
 
     // Build filters based on user role
     const filters: any = {};
-    
+
     if (auditType) filters.auditType = auditType;
     if (agentName) filters.agentName = agentName;
     if (campaignName) filters.campaignName = campaignName;
@@ -317,7 +317,8 @@ export async function POST(request: NextRequest) {
       maxPossibleScore: 100, // Assuming max score is 100
       transcript: validatedData.callTranscript || "No transcript provided",
       englishTranslation: validatedData.englishTranslation,
-      callSummary: (validatedData as any).callSummary || "Audit summary not available",
+      callSummary:
+        (validatedData as any).callSummary || "Audit summary not available",
       auditedBy: currentUsername,
       auditType: validatedData.auditType || "manual",
       tokenUsage: validatedData.tokenUsage,
