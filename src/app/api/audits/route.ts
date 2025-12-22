@@ -71,6 +71,7 @@ const createAuditSchema = z
       .optional(),
     callTranscript: z.string().min(1, "Call transcript is required").optional(),
     englishTranslation: z.string().optional(),
+    callSummary: z.string().optional(),
     parameters: z.array(parameterResultSchema).optional(),
     overallScore: z
       .number()
@@ -99,7 +100,8 @@ const createAuditSchema = z
         data.agentName ||
         data.customerName ||
         data.interactionId ||
-        data.callTranscript
+        data.callTranscript ||
+        data.callSummary
       );
     },
     { message: "At least one audit field is required" }
