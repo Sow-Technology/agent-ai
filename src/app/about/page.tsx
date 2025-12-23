@@ -132,25 +132,28 @@ export default function AboutPage() {
 
 const TEAM = [
     {
-        name: "Name",
+        name: "Ajith T.",
         role: "Founder & CEO",
-        bio: "Previously scaled support at Stripe. Obsessed with zero-latency feedback loops.",
-        image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&q=80",
-        skills: ["Strategy", "Scale", "Systems"]
+        bio: "",
+        image: "/team/1.jpeg",
+        skills: ["Strategy", "Scale", "Systems"],
+        id: "Qai0001"
     },
     {
-        name: "Name",
+        name: "Joel J.",
         role: "Head of Operations",
-        bio: "Designing interfaces for the next generation of human-AI collaboration.",
-        image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&q=80",
-        skills: ["Ops", "Human-AI", "Process"]
+        bio: "",
+        image: "/team/2.jpeg",
+        skills: ["Ops", "Human-AI", "Process"],
+        id: "Qai0002"
     },
     {
-        name: "Name",
+        name: "Kanish K.",
         role: "CTO",
-        bio: "Ex-Google Brain. Building LLMs that understand context, not just keywords.",
-        image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&q=80",
-        skills: ["LLMs", "Architecture", "RAG"]
+        bio: "",
+        image: "/team/3.jpeg",
+        skills: ["LLMs", "Architecture", "RAG"],
+        id: "Qai0003"
     }
 ];
 
@@ -220,7 +223,7 @@ const TeamCard = ({ member, index }: { member: typeof TEAM[0], index: number }) 
                 {/* ID Badge Overlay */}
                 <div className="absolute top-4 left-4 z-20 flex gap-2" style={{ transform: "translateZ(30px)" }}>
                     <div className="px-2 py-1 rounded bg-black/50 backdrop-blur-md border border-white/10 text-[9px] font-mono text-white/70">
-                        ID: TR-{8492 + index}
+                        ID: {member.id}
                     </div>
                 </div>
 

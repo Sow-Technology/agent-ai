@@ -15,18 +15,20 @@ const PRICING_SLABS = [
   { limit: 10000, price: 10, label: "Starter", color: "text-blue-400" },
   { limit: 25000, price: 8, label: "Growth", color: "text-indigo-400" },
   { limit: 50000, price: 6, label: "Scale", color: "text-purple-400" },
+  { limit: 75000, price: 4, label: "Pro", color: "text-violet-400" },
   { limit: 100000, price: 3, label: "Enterprise", color: "text-rose-400" },
-  { limit: 200000, price: 2, label: "Custom", color: "text-emerald-400" },
+  { limit: Infinity, price: 2, label: "Custom", color: "text-emerald-400" },
 ];
 
 const PLANS = [
   {
     name: "Starter",
-    price: "Free",
-    desc: "For pilots and small teams.",
+    price: "₹10",
+    unit: "/call",
+    desc: "For pilots and small teams (up to 10K calls).",
     color: "blue",
     features: [
-      { name: "Up to 1,000 mins/mo", included: true },
+      { name: "Up to 10,000 calls/mo", included: true },
       { name: "Standard Checklists", included: true },
       { name: "Basic Transcription", included: true },
       { name: "Email Support", included: true },
@@ -36,13 +38,13 @@ const PLANS = [
     popular: false
   },
   {
-    name: "Growth",
-    price: "₹8",
+    name: "Scale",
+    price: "₹6",
     unit: "/call",
-    desc: "Full automated coverage.",
+    desc: "Full coverage for growing teams (25K-50K calls).",
     color: "indigo",
     features: [
-      { name: "Up to 50,000 mins/mo", included: true },
+      { name: "25,000 - 50,000 calls/mo", included: true },
       { name: "Advanced Sentiment", included: true },
       { name: "Unlimited Checklists", included: true },
       { name: "Priority Support", included: true },
@@ -52,16 +54,17 @@ const PLANS = [
     popular: true
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    desc: "Maximum security & scale.",
-    color: "rose",
+    name: "Volume",
+    price: "₹2",
+    unit: "/call",
+    desc: "Maximum efficiency for large scale (100k+ calls).",
+    color: "emerald",
     features: [
-      { name: "Unlimited Volume", included: true },
-      { name: "Custom LLM Fine-tuning", included: true },
-      { name: "On-premise / VPC", included: true },
-      { name: "Dedicated CSM", included: true },
-      { name: "SLA Guarantees", included: true },
+      { name: "100,000+ calls/mo", included: true },
+      { name: "Dedicated Infrastructure", included: true },
+      { name: "Custom SLA Guarantees", included: true },
+      { name: "24/7 Priority Support", included: true },
+      { name: "API Access", included: true },
     ],
     cta: "Contact Sales",
     popular: false
@@ -70,7 +73,7 @@ const PLANS = [
 
 export default function PricingPage() {
   const [volume, setVolume] = useState([15000]);
-  const maxVolume = 100000;
+  const maxVolume = 500000;
 
   // Logic from PricingSection
   let activeSlab = PRICING_SLABS[0];
@@ -83,7 +86,7 @@ export default function PricingPage() {
     }
   
   const monthlyCost = volume[0] * activeSlab.price;
-  const manualCost = volume[0] * 60; // Assuming ₹60 per manual audit
+  const manualCost = volume[0] * 25; // Assuming ₹25 per manual audit
   const savings = manualCost - monthlyCost;
 
   return (
@@ -152,7 +155,7 @@ export default function PricingPage() {
                              
                              <div className="flex justify-between text-xs text-muted-foreground/60 mt-4 font-mono">
                                  <span>1K</span>
-                                 <span>100K+</span>
+                                 <span>500K+</span>
                              </div>
                          </div>
                      </div>
@@ -205,7 +208,7 @@ export default function PricingPage() {
                                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
                                      <div className="bg-emerald-500 h-full w-full animate-pulse" style={{ width: '100%' }} />
                                  </div>
-                                 <p className="text-[10px] text-muted-foreground mt-2 text-right">vs. Manual QA (₹60/call)</p>
+                                 <p className="text-[10px] text-muted-foreground mt-2 text-right">vs. Manual QA (₹25/call)</p>
                              </div>
                          </div>
                      </div>
@@ -296,6 +299,42 @@ export default function PricingPage() {
                         )}
                     </motion.div>
                 ))}
+            </div>
+        </section>
+
+        <section className="container px-4 mb-24 mt-8">
+            <div className="max-w-7xl mx-auto relative rounded-3xl border border-white/10 overflow-hidden bg-gradient-to-r from-neutral-900 to-black p-8 md:p-16 text-center md:text-left flex flex-col md:flex-row items-center gap-12">
+                
+                {/* Background Glow */}
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-rose-500/5 blur-3xl pointer-events-none" />
+
+                <div className="flex-1 relative z-10">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                        Need an <span className="text-rose-400">Enterprise</span> Solution?
+                    </h2>
+                    <p className="text-lg text-muted-foreground mb-8 text-neutral-400">
+                        For banks, large BPOs, and regulated industries requiring on-premise deployment, custom LLM fine-tuning, and dedicated security compliance.
+                    </p>
+                    <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                         <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                            <ShieldCheck className="w-4 h-4 text-rose-400" /> On-Premise / VPC
+                         </div>
+                         <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                            <Zap className="w-4 h-4 text-rose-400" /> Custom Models
+                         </div>
+                         <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                            <Check className="w-4 h-4 text-rose-400" /> Dedicated CSM
+                         </div>
+                    </div>
+                </div>
+
+                <div className="relative z-10">
+                    <Button 
+                        className="h-14 px-8 text-lg rounded-xl bg-white text-black hover:bg-neutral-200 transition-all font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                    >
+                        Talk to Enterprise Sales
+                    </Button>
+                </div>
             </div>
         </section>
 

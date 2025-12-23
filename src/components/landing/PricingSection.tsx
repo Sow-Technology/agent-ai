@@ -11,13 +11,14 @@ const PRICING_SLABS = [
   { limit: 10000, price: 10, label: "Starter", color: "text-blue-400" },
   { limit: 25000, price: 8, label: "Growth", color: "text-indigo-400" },
   { limit: 50000, price: 6, label: "Scale", color: "text-purple-400" },
+  { limit: 75000, price: 4, label: "Pro", color: "text-violet-400" },
   { limit: 100000, price: 3, label: "Enterprise", color: "text-rose-400" },
-  { limit: 200000, price: 2, label: "Custom", color: "text-emerald-400" },
+  { limit: Infinity, price: 2, label: "Custom", color: "text-emerald-400" },
 ];
 
 export const PricingSection = () => {
     const [volume, setVolume] = useState([15000]);
-    const maxVolume = 100000;
+    const maxVolume = 500000;
   
     // Find active slab
     let activeSlab = PRICING_SLABS[0];
@@ -30,7 +31,7 @@ export const PricingSection = () => {
     }
   
     const monthlyCost = volume[0] * activeSlab.price;
-    const manualCost = volume[0] * 60; // Assuming ₹60 per manual audit
+    const manualCost = volume[0] * 25; // Assuming ₹25 per manual audit
     const savings = manualCost - monthlyCost;
 
     return (
@@ -89,10 +90,9 @@ export const PricingSection = () => {
                              
                              <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-3 font-mono">
                                  <span>0</span>
-                                 <span>25K</span>
-                                 <span>50K</span>
-                                 <span>75K</span>
-                                 <span>100K+</span>
+                                 <span>100K</span>
+                                 <span>250K</span>
+                                 <span>500K</span>
                              </div>
                          </div>
                      </div>

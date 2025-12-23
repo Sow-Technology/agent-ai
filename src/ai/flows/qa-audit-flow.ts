@@ -214,12 +214,15 @@ export async function qaAuditCall(input: QaAuditInput): Promise<QaAuditOutput> {
     effectiveInput.audioDataUri &&
     effectiveInput.audioDataUri.startsWith("data:")
   ) {
-    const matches = effectiveInput.audioDataUri.match(
-      /^data:([^;]+);base64,(.+)$/
-    );
-    if (matches) {
-      mimeType = matches[1];
-      audioBase64 = matches[2];
+    // Safe parsing without Regex for large files to avoid Maximum call stack size exceeded
+    const commaIdx = effectiveInput.audioDataUri.indexOf(",");
+    const semicolonIdx = effectiveInput.audioDataUri.indexOf(";");
+    
+    if (commaIdx > -1 && semicolonIdx > -1 && semicolonIdx < commaIdx) {
+      mimeType = effectiveInput.audioDataUri.substring(5, semicolonIdx);
+      // We don't substring the base64 yet if we don't have to, to save memory? 
+      // Actually we need it for size check.
+      audioBase64 = effectiveInput.audioDataUri.substring(commaIdx + 1);
     }
   }
 
@@ -233,15 +236,26 @@ export async function qaAuditCall(input: QaAuditInput): Promise<QaAuditOutput> {
     })
     .join("\n");
 
+  // Check if this is a large audio file (>15MB base64 = ~11MB actual)
+  const isLargeAudio = audioBase64.length > 15 * 1024 * 1024;
+  
+  // Build transcription instructions based on audio size
+  const transcriptionInstructions = isLargeAudio
+    ? `1. **Transcription**: For this LONG call, DO NOT provide full transcription. Instead:
+   - Set transcriptionInOriginalLanguage to "Long call - full transcription not available"
+   - Set englishTranslation to "Long call - full transcription not available"
+   - Focus on providing COMPLETE and DETAILED audit results for ALL parameters`
+    : `1. **Transcription**: Provide accurate transcriptions in the original language AND ALWAYS in English. Use simple speaker labels WITHOUT gender:
+   - For agent: "Agent: [AgentName]" (e.g., "Agent: Rahul")  
+   - For customer: Use actual name if mentioned in call (e.g., "Priya:"), otherwise use "Customer:"
+   - NEVER include gender like "(Male)" or "(Female)" in labels`;
+
   const textPrompt = `You are an expert QA auditor for call centers. You are tasked with auditing the attached audio call recording.
 
-**Your Goal: Maximum Accuracy**
-Your primary goal is to provide the most accurate and detailed audit possible. Engage your full analytical capabilities. Your output must be valid JSON matching the specified schema.
-
-**Audit Context:**
+**Context:**
 - Agent User ID: ${effectiveInput.agentUserId}
-- Campaign Name: ${effectiveInput.campaignName || "N/A"}
-- Original Call Language: ${effectiveInput.callLanguage}
+- Campaign: ${effectiveInput.campaignName || "N/A"}
+- Expected Call Language: ${effectiveInput.callLanguage}
 ${
   effectiveInput.transcriptionLanguage
     ? `- Requested Transcription Language: ${effectiveInput.transcriptionLanguage}`
@@ -252,56 +266,54 @@ ${
 ${parametersDesc}
 
 **Audit Instructions:**
-1. **Transcription**: Provide accurate transcriptions in the original language AND ALWAYS in English. Use simple speaker labels WITHOUT gender:
-   - For agent: "Agent: [AgentName]" (e.g., "Agent: Rahul")  
-   - For customer: Use actual name if mentioned in call (e.g., "Priya:"), otherwise use "Customer:"
-   - NEVER include gender like "(Male)" or "(Female)" in labels
-2. **Privacy Protection**: MASK ALL customer private details in transcriptions:
+${transcriptionInstructions}
+2. **Privacy Protection**: MASK ALL customer private details in any text:
    - Phone numbers → [PHONE MASKED]
    - Addresses → [ADDRESS MASKED]  
    - Account/Card numbers → [ACCOUNT MASKED]
    - Email addresses → [EMAIL MASKED]
    - Aadhaar/PAN/ID numbers → [ID MASKED]
-3. **English Translation**: ALWAYS provide englishTranslation field - if the call is already in English, copy the original transcription. Never skip this field.
-4. **Audit Scoring**: Evaluate each parameter based on the call content. Be precise and fair in your scoring.
-5. **Root Cause Analysis**: If issues are found, provide thoughtful analysis of why they occurred.
-6. **Summary**: Give constructive feedback highlighting strengths and areas for improvement.
+3. **Audit Scoring**: Evaluate EACH parameter based on the call content. Be precise and fair in your scoring. THIS IS THE MOST IMPORTANT PART.
+4. **Root Cause Analysis**: If issues are found, provide thoughtful analysis of why they occurred.
+5. **Summary**: Give constructive feedback highlighting strengths and areas for improvement.
+6. **CRITICAL - COMPLETE ALL AUDIT RESULTS**: You MUST provide a score and comments for EVERY sub-parameter listed above. Do not truncate or skip any parameters.
 
 **Output Requirements:**
-- Ensure all transcriptions are accurate and properly formatted
-- ALWAYS include englishTranslation (required field)
 - Calculate weighted scores correctly (score × weight ÷ 100)
 - Overall score should be the sum of all weighted scores
 - Provide detailed, actionable feedback
 - Use the identified agent name in the summary
+- PRIORITIZE completing all auditResults over transcription length
+
 
 **IMPORTANT**: Respond ONLY with valid JSON matching this exact structure:
 {
   "agentUserId": "string (optional)",
   "campaignName": "string (optional)",
   "identifiedAgentName": "string (optional, e.g., 'John Doe' or 'Unknown Agent')",
-  "transcriptionInOriginalLanguage": "string (required, formatted with speaker labels)",
-  "englishTranslation": "string (REQUIRED - always provide English translation, even if original is English)",
+  "transcriptionInOriginalLanguage": "string (${isLargeAudio ? 'use placeholder for long calls' : 'formatted with speaker labels'})",
+  "englishTranslation": "string (REQUIRED - ${isLargeAudio ? 'use placeholder for long calls' : 'always provide English translation'})",
   "transcriptionInRequestedLanguage": "string (optional, if transcriptionLanguage was specified)",
-  "callSummary": "string (required, concise summary of the call)",
+  "callSummary": "string (required, concise summary of the call - max 500 characters)",
   "rootCauseAnalysis": "string (optional, analysis of any significant issues)",
   "auditResults": [
     {
       "parameter": "string (MUST be in format: 'GroupName - SubParameterName', using the EXACT group name and sub-parameter name from the Audit Parameters provided above. For example, if the group is 'Greeting and Professionalism' and sub-parameter is 'Agent used standard greeting', then parameter should be 'Greeting and Professionalism - Agent used standard greeting'. NEVER use 'Unknown' or generic names.)",
       "score": number (0-100),
       "weightedScore": number (score * weight / 100),
-      "comments": "string",
+      "comments": "string (brief, max 100 characters)",
       "type": "Fatal" | "Non-Fatal" | "ZTP" (optional)
     }
   ],
   "overallScore": number (0-100, sum of weightedScore values),
-  "summary": "string (required, brief summary highlighting strengths and areas for improvement)",
+  "summary": "string (required, brief summary - max 300 characters)",
   "callLanguage": "string (optional)"
 }
 
 **CRITICAL**: 
 1. For each parameter in auditResults, you MUST use the EXACT group name and sub-parameter name from the Audit Parameters list above. The format is "GroupName - SubParameterName". Do NOT use "Unknown" or any made-up names.
-2. ALWAYS provide englishTranslation - this field is REQUIRED.`;
+2. You MUST provide auditResults for ALL ${effectiveInput.auditParameters.reduce((sum, g) => sum + g.subParameters.length, 0)} sub-parameters listed above.
+3. Keep comments brief to fit within output limits.`;
 
   // Prepare the content parts with audio
   const parts: any[] = [
@@ -310,57 +322,155 @@ ${parametersDesc}
     },
   ];
 
-  // Add audio if it's not the mock placeholder
-  if (audioBase64 && effectiveInput.audioDataUri !== MOCK_AUDIO_DATA_URI) {
-    parts.push({
-      inlineData: {
-        mimeType: mimeType,
-        data: audioBase64,
-      },
-    });
-  } else {
-    // If using mock audio, add a note that this is a simulated audit
-    parts[0].text +=
-      "\n\n**NOTE**: No real audio provided. Please generate a realistic sample audit based on the parameters provided.";
-  }
-
   // Apply rate limiting before calling Gemini API if enabled
   if (effectiveInput.applyRateLimit !== false) {
     await geminiRateLimiter.waitForSlot();
   }
 
-  const result = await retryGeminiCall(async () => {
-    return await model.generateContent({
-      contents: [{ role: "user", parts }],
-    });
-  });
-  const response = result.response;
-  const text = response.text();
+  // --- HANDLE AUDIO: INLINE OR FILE UPLOAD ---
+  // Gemini inline data limit is ~20MB. 30 min audio > 20MB.
+  // We check size or just prefer File API for robustness.
+  
+  let fileUriForGemini: string | null = null;
+  let tempFilePath: string | null = null;
 
-  // Extract token usage from the response
-  const usageMetadata = response.usageMetadata;
-  const tokenUsage = {
-    inputTokens: usageMetadata?.promptTokenCount || 0,
-    outputTokens: usageMetadata?.candidatesTokenCount || 0,
-    totalTokens: usageMetadata?.totalTokenCount || 0,
-  };
+  try {
+      if (audioBase64 && effectiveInput.audioDataUri !== MOCK_AUDIO_DATA_URI) {
+        
+        // Calculate size roughly (base64 length * 0.75)
+        const sizeInBytes = audioBase64.length * 0.75;
+        const SIZE_LIMIT_BYTES = 10 * 1024 * 1024; // 10MB threshold to be safe
 
-  // Extract JSON from the response (handle cases where model adds markdown formatting)
-  let jsonText = text.trim();
-  if (jsonText.startsWith("```json")) {
-    jsonText = jsonText.replace(/^```json\s*/, "").replace(/\s*```$/, "");
-  } else if (jsonText.startsWith("```")) {
-    jsonText = jsonText.replace(/^```\s*/, "").replace(/\s*```$/, "");
-  }
+        if (sizeInBytes > SIZE_LIMIT_BYTES) {
+           // USE FILE API
+           const { GoogleAIFileManager } = await import("@google/generative-ai/server");
+           const fs = await import("fs");
+           const os = await import("os");
+           const path = await import("path");
+
+           const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+           if (!apiKey) throw new Error("API Key missing");
+           
+           const fileManager = new GoogleAIFileManager(apiKey);
+           
+           // Write to temp file
+           const ext = mimeType.split("/")[1] || "wav";
+           tempFilePath = path.join(os.tmpdir(), `audit-${Date.now()}.${ext}`);
+           await fs.promises.writeFile(tempFilePath, Buffer.from(audioBase64, "base64"));
+           
+           // Upload
+           const uploadResult = await fileManager.uploadFile(tempFilePath, {
+               mimeType,
+               displayName: `Audit Call ${effectiveInput.agentUserId}`,
+           });
+           
+           fileUriForGemini = uploadResult.file.uri;
+
+           // Wait for processing to be ACTIVE? (Usually rapid for audio, but good practice)
+           // For simple audio, active is usually immediate.
+           
+           parts.push({
+               fileData: {
+                   mimeType: uploadResult.file.mimeType,
+                   fileUri: fileUriForGemini,
+               }
+           });
+
+        } else {
+           // USE INLINE (Small file)
+           parts.push({
+            inlineData: {
+              mimeType: mimeType,
+              data: audioBase64,
+            },
+           });
+        }
+      } else {
+         parts[0].text += "\n\n**NOTE**: No real audio provided. Please generate a realistic sample audit based on the parameters provided.";
+      }
+
+      const result = await retryGeminiCall(async () => {
+        return await model.generateContent({
+          contents: [{ role: "user", parts }],
+          generationConfig: {
+            maxOutputTokens: 64000, // Gemini 2.0 Flash actual limit
+            temperature: 0.2,
+            responseMimeType: "application/json", // Force valid JSON output
+          },
+        });
+      });
+      const response = result.response;
+      let text = response.text();
+
+      // Sanitize control characters that break JSON parsing
+      text = text.replace(/[\x00-\x1F\x7F]/g, (char) => {
+        if (char === '\n' || char === '\r' || char === '\t') return char;
+        return ' '; // Replace other control chars with space
+      });
+
+      // Extract token usage from the response
+      const usageMetadata = response.usageMetadata;
+      const tokenUsage = {
+        inputTokens: usageMetadata?.promptTokenCount || 0,
+        outputTokens: usageMetadata?.candidatesTokenCount || 0,
+        totalTokens: usageMetadata?.totalTokenCount || 0,
+      };
+
+      // Extract JSON from the response (handle cases where model adds markdown formatting)
+      let jsonText = text.trim();
+      if (jsonText.startsWith("```json")) {
+        jsonText = jsonText.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+      } else if (jsonText.startsWith("```")) {
+        jsonText = jsonText.replace(/^```\s*/, "").replace(/\s*```$/, "");
+      }
+      
+      // Handle truncated JSON by attempting to close it
+      if (!jsonText.endsWith("}")) {
+        console.warn("Detected truncated JSON output, attempting recovery...");
+        // Find last complete field
+        const lastCompleteComma = jsonText.lastIndexOf('",');
+        if (lastCompleteComma > -1) {
+          jsonText = jsonText.substring(0, lastCompleteComma + 1);
+          // Close any unclosed arrays and object
+          const openBrackets = (jsonText.match(/\[/g) || []).length - (jsonText.match(/\]/g) || []).length;
+          const openBraces = (jsonText.match(/\{/g) || []).length - (jsonText.match(/\}/g) || []).length;
+          jsonText += ']'.repeat(Math.max(0, openBrackets)) + '}'.repeat(Math.max(0, openBraces));
+        }
+      }
 
   const output = JSON.parse(jsonText) as QaAuditOutput;
 
-  // Validate and set defaults
+  // Validate and set defaults for all critical fields
   if (!output.identifiedAgentName) {
     output.identifiedAgentName = "Unknown Agent";
   }
   if (!output.callLanguage) {
     output.callLanguage = effectiveInput.callLanguage;
+  }
+  
+  // Ensure overallScore is always a number
+  if (output.overallScore === undefined || output.overallScore === null || isNaN(output.overallScore)) {
+    // Calculate from auditResults if available
+    if (output.auditResults && Array.isArray(output.auditResults) && output.auditResults.length > 0) {
+      output.overallScore = output.auditResults.reduce((sum, r) => sum + (r.weightedScore || 0), 0);
+    } else {
+      output.overallScore = 0;
+    }
+  }
+  
+  // Ensure auditResults is always an array
+  if (!output.auditResults || !Array.isArray(output.auditResults)) {
+    output.auditResults = [];
+  }
+  
+  // Ensure summary is always present
+  if (!output.summary) {
+    output.summary = "Audit completed. Some data may be incomplete due to processing constraints.";
+  }
+  
+  // Ensure callSummary is always present
+  if (!output.callSummary) {
+    output.callSummary = "Call summary not available.";
   }
 
   // Ensure englishTranslation is always present
@@ -369,6 +479,7 @@ ${parametersDesc}
     output.englishTranslation =
       output.transcriptionInOriginalLanguage || "Translation not available";
   }
+
 
   // Fix any "Unknown" parameter names by mapping them to the correct input parameter names
   // Build a mapping of expected parameter names from input
@@ -427,4 +538,16 @@ ${parametersDesc}
   output.auditDurationMs = auditDurationMs;
 
   return output;
+
+  } finally {
+      // CLEANUP: Delete temp file if created
+      if (tempFilePath) {
+          try {
+             const fs = await import("fs");
+             await fs.promises.unlink(tempFilePath);
+          } catch (e) {
+              console.error("Failed to delete temp file:", e);
+          }
+      }
+  }
 }

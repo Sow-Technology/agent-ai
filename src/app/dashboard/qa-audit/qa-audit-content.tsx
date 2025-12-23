@@ -1048,7 +1048,7 @@ export default function QaAuditContent() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold">
-                    {auditResult.overallScore.toFixed(2)}%
+                    {(auditResult.overallScore ?? 0).toFixed(2)}%
                   </p>
                 </CardContent>
               </Card>

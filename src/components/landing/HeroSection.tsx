@@ -92,7 +92,7 @@ export const HeroSection = () => {
       {/* --- Holographic Deconstruction (Crystal Monolith) --- */}
       <motion.div
         style={{ opacity, rotateX, scale }}
-        className="relative mx-auto w-full max-w-[1200px] aspect-[16/9] perspective-2000 z-20 group"
+        className="relative mx-auto w-full max-w-[1200px] aspect-[16/9] perspective-2000 z-20 group px-4 md:px-0"
       >
         <div className="relative w-full h-full transform-style-3d">
             
@@ -102,9 +102,18 @@ export const HeroSection = () => {
             {/* LAYER 1: Base Glass Panel (Obsidian Glass) */}
             <motion.div 
                 style={{ y: yBase }}
-                className="absolute inset-0 rounded-2xl shadow-2xl overflow-hidden"
+                className="absolute inset-0 rounded-2xl shadow-2xl overflow-hidden bg-[#0A0A0A]"
             >
-                 <DashboardMockup />
+                 {/* Desktop View (Standard) */}
+                 <div className="hidden md:block w-full h-full">
+                    <DashboardMockup />
+                 </div>
+
+                 {/* Mobile View (Scaled Down Desktop Mockup) 
+                     Renders at 250% size to force desktop layout, then scales down 0.4x to fit */}
+                 <div className="md:hidden w-[250%] h-[250%] origin-top-left transform scale-[0.4]">
+                    <DashboardMockup />
+                 </div>
             </motion.div>
 
             {/* LAYER 2: Floating Data Cards (Crystal Pills) */}

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 
 const LOGOS = [
-  "Acme Corp", "Quantum Sy", "Echo Valley", "Nebula Inc", "Vertex Edge", "Horizon AI", "Pinnacle"
+  "Logo", "Logo", "Logo", "Logo", "Logo", "Logo", "Logo"
 ];
 
 export const LogoTicker = () => {

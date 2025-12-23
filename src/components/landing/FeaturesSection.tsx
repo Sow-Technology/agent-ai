@@ -77,7 +77,7 @@ const TerminalVisual = () => {
     }, []);
 
     return (
-        <div className="absolute top-0 right-0 bottom-0 w-full md:w-3/5 p-6 font-mono text-xs text-muted-foreground/60 flex flex-col justify-center overflow-hidden pointer-events-none mask-linear-fade-left">
+        <div className="absolute top-0 right-0 bottom-0 w-full md:w-3/5 p-6 font-mono text-xs text-muted-foreground/60 flex flex-col justify-center overflow-hidden pointer-events-none mask-linear-fade-left opacity-25 md:opacity-100 transition-opacity">
             {logs.map((log, i) => (
                 <motion.div 
                     key={i} 

@@ -14,12 +14,26 @@ const RETRY_DELAY_MS = 1000;
 
 // Create a hash of the audio content for caching
 function createAudioHash(audioDataUri: string): string {
-  // Extract the base64 portion from the data URI
-  const base64Match = audioDataUri.match(/^data:[^;]+;base64,(.+)$/);
-  const audioData = base64Match ? base64Match[1] : audioDataUri;
+  // Extract the base64 portion from the data URI using safe string operations
+  // Avoid Regex on huge strings to prevent "Maximum call stack size exceeded"
+  let audioData = audioDataUri;
+  
+  const commaIdx = audioDataUri.indexOf(",");
+  if (audioDataUri.startsWith("data:") && commaIdx > -1) {
+    audioData = audioDataUri.substring(commaIdx + 1);
+  }
   
   // Create a SHA-256 hash of the audio content
-  return crypto.createHash("sha256").update(audioData).digest("hex");
+  // For very large strings, we hash in chunks to avoid memory issues
+  const hash = crypto.createHash("sha256");
+  
+  // Process in 1MB chunks to avoid memory pressure
+  const CHUNK_SIZE = 1024 * 1024;
+  for (let i = 0; i < audioData.length; i += CHUNK_SIZE) {
+    hash.update(audioData.substring(i, Math.min(i + CHUNK_SIZE, audioData.length)));
+  }
+  
+  return hash.digest("hex");
 }
 
 async function delay(ms: number) {
