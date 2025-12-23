@@ -1,51 +1,33 @@
-"use client";
-
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { AssureQaiLogo } from "@/components/common/AssureQaiLogo";
-import { HomePageContent } from "@/components/auth/HomePageContent";
+import "@/app/landing.css";
+import { Navbar } from "@/components/landing/Navbar";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
+import { IndustriesSection } from "@/components/landing/IndustriesSection";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import { PricingSection } from "@/components/landing/PricingSection";
+import { FAQSection } from "@/components/landing/FAQSection";
+import { LogoTicker } from "@/components/landing/LogoTicker";
+import { CTASection } from "@/components/landing/CTASection";
+import { Spotlight } from "@/components/landing/Spotlight";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
-      {/* Top Header */}
-      <header className="z-10 bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="hidden md:flex items-center gap-6">
-            <Link href="/about" passHref>
-              <Button variant="ghost">About</Button>
-            </Link>
-            <Link href="/pricing" passHref>
-              <Button variant="ghost">Pricing</Button>
-            </Link>
-            <Link href="/contact" passHref>
-              <Button variant="ghost">Contact</Button>
-            </Link>
-          </div>
-
-          <div className="absolute left-1/2 -translate-x-1/2">
-            <Link href="/" passHref>
-              <AssureQaiLogo className="h-8 w-auto" />
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link href="/login" passHref>
-              <Button variant="ghost" className="hidden sm:inline-block">
-                Log in
-              </Button>
-            </Link>
-            <Link href="/login" passHref className="hidden sm:inline-block">
-              <Button>Try for free</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1">
-        <HomePageContent />
-      </main>
+    <div className="landing-page-theme min-h-screen bg-black font-sans selection:bg-primary/30">
+        <Spotlight>
+          <Navbar />
+          <main className="flex-1 flex flex-col">
+            <HeroSection />
+            <LogoTicker />
+            <FeaturesSection />
+            <HowItWorksSection />
+            <IndustriesSection />
+            <TestimonialsSection />
+            <PricingSection />
+            <FAQSection />
+            <CTASection />
+          </main>
+        </Spotlight>
     </div>
   );
 }
