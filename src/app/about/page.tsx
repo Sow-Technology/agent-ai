@@ -6,6 +6,7 @@ import { Spotlight } from "@/components/landing/Spotlight";
 import { CTASection } from "@/components/landing/CTASection";
 import { cn } from "@/lib/utils";
 import { BrainCircuit, ShieldCheck, Zap } from "lucide-react";
+import Image from "next/image";
 
 const VALUES = [
   {
@@ -56,7 +57,7 @@ export default function AboutPage() {
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                     We built AssureQAi because we believe random sampling is a relic of the past. 
-                    In a world of infinite data, "good enough" coverage is no longer acceptable.
+                    In a world of infinite data, &ldquo;good enough&rdquo; coverage is no longer acceptable.
                 </p>
             </motion.div>
         </section>
@@ -208,10 +209,11 @@ const TeamCard = ({ member, index }: { member: typeof TEAM[0], index: number }) 
             {/* Image Container */}
             <div className="relative aspect-[4/5] overflow-hidden">
                 <div className="absolute inset-0 bg-indigo-500/10 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-                <img 
+                <Image 
                     src={member.image} 
                     alt={member.name}
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
+                    fill
+                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
                 />
                 
                 {/* Tech Corners */}

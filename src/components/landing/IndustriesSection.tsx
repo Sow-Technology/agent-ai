@@ -69,7 +69,7 @@ export const IndustriesSection = () => {
                      Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">High Compliance.</span>
                  </h2>
                  <p className="text-muted-foreground text-lg">
-                     Don't settle for generic QA. Toggle to see how we handle your specific regulated workflows.
+                     Don&apos;t settle for generic QA. Toggle to see how we handle your specific regulated workflows.
                  </p>
             </div>
 
@@ -151,7 +151,7 @@ export const IndustriesSection = () => {
                                      </div>
                                      <div className="flex gap-1">
                                          {[...Array(3)].map((_, i) => (
-                                             <div key={i} className={cn("w-1.5 h-1.5 rounded-full animate-pulse", activeIndustry.bg?.replace('/10', '/50') || "bg-white/20")} style={{ animationDelay: `${i * 200}ms` }} />
+                                             <div key={i} className={cn("w-1.5 h-1.5 rounded-full animate-pulse", activeIndustry.color.replace('text-', 'bg-').replace('-400', '-500/50'))} style={{ animationDelay: `${i * 200}ms` }} />
                                          ))}
                                      </div>
                                  </div>
@@ -161,7 +161,7 @@ export const IndustriesSection = () => {
                              {/* Checklist Visualization */}
                              <div className="flex-1 space-y-4 relative z-10">
                                  <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-6 border-b border-white/10 pb-2 inline-block">
-                                     // Mandatory Audit Parameters
+                                     {/* Mandatory Audit Parameters */}
                                  </p>
                                  
                                  <div className="grid grid-cols-1 gap-4">

@@ -79,7 +79,7 @@ const TestimonialCard = ({ item, index }: { item: typeof TESTIMONIALS[0], index:
             <div className="relative z-10">
                 <Quote className="w-8 h-8 text-white/[0.1] mb-4" />
                 <p className="text-lg text-white/90 leading-relaxed font-light mb-6">
-                    "{item.quote}"
+                    &ldquo;{item.quote}&rdquo;
                 </p>
                 
                 <div className="flex items-center gap-4 pt-6 border-t border-white/[0.05]">
