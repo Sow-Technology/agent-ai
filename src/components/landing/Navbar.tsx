@@ -9,10 +9,10 @@ import { Menu, X } from "lucide-react";
 import { AssureQaiLogo } from "@/components/common/AssureQaiLogo";
 
 const NAV_LINKS = [
-    { name: "Features", href: "#features" },
-    { name: "Pricing", href: "#pricing" },
+    { name: "Features", href: "/#features" },
+    { name: "Pricing", href: "/pricing" },
     { name: "About", href: "/about" },
-    { name: "Blog", href: "/blog" },
+    { name: "Contact", href: "/contact" },
 ];
 
 export const Navbar = () => {
@@ -85,9 +85,11 @@ export const Navbar = () => {
                         <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">
                             Log in
                         </Link>
-                        <Button size="sm" className="rounded-full bg-white text-black hover:bg-gray-200 font-semibold px-6 shadow-[0_0_15px_-3px_rgba(255,255,255,0.3)] hover:shadow-[0_0_20px_-3px_rgba(255,255,255,0.5)] transition-shadow">
-                            Book Demo
-                        </Button>
+                        <Link href="/book-demo">
+                            <Button size="sm" className="rounded-full bg-white text-black hover:bg-gray-200 font-semibold px-6 shadow-[0_0_15px_-3px_rgba(255,255,255,0.3)] hover:shadow-[0_0_20px_-3px_rgba(255,255,255,0.5)] transition-shadow">
+                                Book Demo
+                            </Button>
+                        </Link>
                     </div>
 
                     {/* Mobile Toggle */}
@@ -122,7 +124,9 @@ export const Navbar = () => {
                         ))}
                         <div className="flex flex-col gap-4 mt-4">
                             <Link href="/login" className="text-center py-3 text-white/80 font-medium">Log in</Link>
-                            <Button className="w-full h-12 rounded-xl bg-white text-black font-bold text-lg">Book Demo</Button>
+                            <Link href="/book-demo">
+                                <Button className="w-full h-12 rounded-xl bg-white text-black font-bold text-lg">Book Demo</Button>
+                            </Link>
                         </div>
                     </motion.div>
                 )}

@@ -1,242 +1,145 @@
 "use client";
 
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { Navbar } from "@/components/landing/Navbar";
+import { Spotlight } from "@/components/landing/Spotlight";
+import { WorldMap } from "@/components/landing/WorldMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { AssureQaiLogo } from '@/components/common/AssureQaiLogo';
-import Image from "next/image";
+import { Mail, MapPin, MessagesSquare, Radio, ShieldCheck } from "lucide-react";
 
 export default function ContactPage() {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const formData = new FormData(event.currentTarget);
-      const data = {
-        name: formData.get("name"),
-        email: formData.get("email"),
-        company: formData.get("company"),
-        message: formData.get("message"),
-      };
-
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-
-      setIsLoading(false);
-      toast({
-        title: "Message Sent!",
-        description:
-          "Thank you for reaching out. We'll get back to you shortly.",
-      });
-      // Reset the form
-      const form = event.target as HTMLFormElement;
-      form.reset();
-    } catch (error) {
-      setIsLoading(false);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
-      console.error("Error:", error);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans flex flex-col aurora-background">
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" passHref>
-            <AssureQaiLogo className="h-8 w-auto" />
-          </Link>
-          <Link href="/" passHref>
-            <Button
-              variant="outline"
-              className="bg-white/5 hover:bg-white/10 text-foreground border-white/20"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Button>
-          </Link>
+    <Spotlight className="min-h-screen bg-black selection:bg-primary/20 overflow-hidden">
+      <Navbar />
+      
+      {/* Background Layer */}
+      <WorldMap />
+      
+      <main className="pt-32 pb-16 min-h-screen flex flex-col items-center justify-center relative z-10 px-4">
+        
+        {/* Header */}
+        <div className="text-center mb-12">
+             <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 mb-6"
+             >
+                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                 <span className="text-xs font-mono text-emerald-400 tracking-widest uppercase">Systems Operational</span>
+             </motion.div>
+             
+             <motion.h1 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-4"
+             >
+                Open Frequency.
+             </motion.h1>
+             <p className="text-lg text-muted-foreground max-w-lg mx-auto">
+                 Initiate a secure channel with our engineering or sales team. We respond within 24ms (mostly).
+             </p>
         </div>
-      </header>
 
-      <main className="flex-1 animate-fade-in">
-        {/* Hero Section */}
-        <section className="relative py-20 md:py-32 px-4 text-center text-foreground">
-          <div className="relative z-10 max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-400">
-              Get in Touch
-            </h1>
-            <p className="mt-4 text-lg md:text-xl text-primary-foreground/80">
-              We’re here to help and answer any question you might have. We look
-              forward to hearing from you.
-            </p>
-          </div>
-        </section>
-
-        {/* Contact Form & Info Section */}
-        <section className="py-16 md:py-24 px-4 z-10 relative">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12">
-            {/* Contact Info */}
-            <div
-              className="space-y-8 animate-fade-in-up"
-              style={{ animationDelay: "0.4s" }}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full max-w-6xl items-start">
+            
+            {/* Left: Communication Array (Status Cards) */}
+            <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="lg:col-span-4 space-y-4"
             >
-              <div>
-                <h2 className="text-3xl font-bold text-foreground mb-4">
-                  Contact Information
-                </h2>
-                <p className="text-muted-foreground">
-                  Fill up the form and our team will get back to you within 24
-                  hours.
-                </p>
-              </div>
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <Phone className="h-6 w-6 text-primary" />
-                  </div>
-                  <a
-                    href="tel:+916363644521"
-                    className="text-lg text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    +91 6363644521
-                  </a>
+                <div className="group p-6 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors cursor-default">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-3 bg-indigo-500/10 rounded-lg text-indigo-400">
+                            <MessagesSquare className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-current" /> ONLINE
+                        </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-1">Sales & Pilots</h3>
+                    <p className="text-sm text-muted-foreground mb-4">For enterprise licensing and custom deployments.</p>
+                    <div className="text-white font-mono text-sm">sales@assureqai.com</div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <Mail className="h-6 w-6 text-primary" />
-                  </div>
-                  <a
-                    href="mailto:support@assureqai.com"
-                    className="text-lg text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    support@assureqai.com
-                  </a>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <MapPin className="h-6 w-6 text-primary" />
-                  </div>
-                  <p className="text-lg text-muted-foreground">
-                    #198, Balaji Street
-                    <br />
-                    Ramamurthy Nagar, Bangalore
-                    <br />
-                    Karnataka 560016
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* Contact Form */}
-            <div
-              className="animate-fade-in-up"
-              style={{ animationDelay: "0.6s" }}
+                <div className="group p-6 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors cursor-default">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400">
+                            <ShieldCheck className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-current" /> ONLINE
+                        </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-1">Technical Support</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Direct line to our integration engineers.</p>
+                    <div className="text-white font-mono text-sm">support@assureqai.com</div>
+                </div>
+
+                <div className="group p-6 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors cursor-default">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="p-3 bg-rose-500/10 rounded-lg text-rose-400">
+                            <MapPin className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-mono text-white/50">
+                            UTC+5:30
+                        </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-1">Global HQ</h3>
+                    <p className="text-sm text-muted-foreground">Bengaluru, India</p>
+                </div>
+            </motion.div>
+
+            {/* Right: The Glass Monolith (Form) */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="lg:col-span-8"
             >
-              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg p-8">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-muted-foreground">
-                        Full Name
-                      </Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        type="text"
-                        placeholder="John Doe"
-                        required
-                        className="bg-white/5 border-white/20 text-foreground placeholder:text-gray-500"
-                      />
+                <form className="relative p-8 md:p-12 rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-2xl overflow-hidden">
+                    {/* Decorative Top Bar */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 opacity-50" />
+                    
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div className="space-y-3">
+                            <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // First Name</label>
+                            <Input className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" placeholder="Jane" />
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Last Name</label>
+                            <Input className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" placeholder="Doe" />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-muted-foreground">
-                        Email Address
-                      </Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="you@company.com"
-                        required
-                        className="bg-white/5 border-white/20 text-foreground placeholder:text-gray-500"
-                      />
+
+                    <div className="space-y-3 mb-8">
+                        <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Work Email</label>
+                        <Input className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" placeholder="jane@company.com" />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="company" className="text-muted-foreground">
-                      Company Name (Optional)
-                    </Label>
-                    <Input
-                      id="company"
-                      name="company"
-                      type="text"
-                      placeholder="Your Company"
-                      className="bg-white/5 border-white/20 text-foreground placeholder:text-gray-500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="message" className="text-muted-foreground">
-                      Message
-                    </Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="How can we help?"
-                      required
-                      rows={5}
-                      className="bg-white/5 border-white/20 text-foreground placeholder:text-gray-500"
-                    />
-                  </div>
-                  <div>
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className="w-full bg-primary/80 hover:bg-primary text-primary-foreground"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      ) : (
-                        <Send className="mr-2 h-5 w-5" />
-                      )}
-                      {isLoading ? "Sending..." : "Send Message"}
-                    </Button>
-                  </div>
+
+                    <div className="space-y-3 mb-10">
+                         <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Directive</label>
+                         <Textarea className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 min-h-[100px] focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20 resize-none" placeholder="We need to audit 50k calls/month..." />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
+                            <span>Encrypted Transmission</span>
+                        </div>
+                        <Button className="h-14 px-8 bg-white text-black hover:bg-white/90 rounded-full font-bold text-lg tracking-tight group">
+                            Transmit Request
+                        </Button>
+                    </div>
                 </form>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
+            </motion.div>
 
-      <footer className="z-10 relative mt-12">
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 border-t border-white/10">
-          <p className="text-base text-muted-foreground text-center">
-            &copy; 2025 Joaji Innovation. All rights reserved.
-          </p>
         </div>
-      </footer>
-    </div>
+
+      </main>
+    </Spotlight>
   );
 }

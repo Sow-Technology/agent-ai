@@ -3,7 +3,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useSpring } from "framer-motion";
 
-export const Spotlight = ({ children }: { children: React.ReactNode }) => {
+import { cn } from "@/lib/utils";
+
+export const Spotlight = ({ children, className }: { children: React.ReactNode; className?: string }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [opacity, setOpacity] = useState(0);
@@ -24,7 +26,7 @@ export const Spotlight = ({ children }: { children: React.ReactNode }) => {
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="relative w-full overflow-hidden bg-black"
+      className={cn("relative w-full overflow-hidden bg-black", className)}
     >
       {/* 
         The Spotlight Effect:
