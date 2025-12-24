@@ -34,16 +34,16 @@ export default function DPA() {
             <section className="mb-12">
                 <h2>1. Preamble</h2>
                 <p>
-                    This Data Processing Agreement ("DPA") forms part of the Terms of Service between Joaji Inc. ("Processor") and the Customer ("Controller") 
-                    to reflect the parties' agreement with regard to the processing of personal data.
+                    This Data Processing Agreement (&quot;DPA&quot;) forms part of the Terms of Service between Joaji Inc. (&quot;Processor&quot;) and the Customer (&quot;Controller&quot;) 
+                    to reflect the parties&apos; agreement with regard to the processing of personal data.
                 </p>
             </section>
 
             <section className="mb-12">
                 <h2>2. Definitions</h2>
                 <p>
-                    "GDPR" means Regulation (EU) 2016/679 of the European Parliament and of the Council. 
-                    The terms "Controller", "Processor", "Data Subject", "Personal Data", "Processing", and "Personal Data Breach" shall have the meanings given to them in the GDPR.
+                    &quot;GDPR&quot; means Regulation (EU) 2016/679 of the European Parliament and of the Council. 
+                    The terms &quot;Controller&quot;, &quot;Processor&quot;, &quot;Data Subject&quot;, &quot;Personal Data&quot;, &quot;Processing&quot;, and &quot;Personal Data Breach&quot; shall have the meanings given to them in the GDPR.
                 </p>
             </section>
 
@@ -77,14 +77,14 @@ export default function DPA() {
                 <h2>7. Data Subject Rights</h2>
                 <p>
                     The Processor shall, to the extent legally permitted, promptly notify the Controller if it receives a request from a Data Subject to exercise their rights (to access, correct, amend, or delete personal data). 
-                    The Processor shall not respond to any such Data Subject request without the Controller's prior written consent, except to confirm that the request relates to the Controller.
+                    The Processor shall not respond to any such Data Subject request without the Controller&apos;s prior written consent, except to confirm that the request relates to the Controller.
                 </p>
             </section>
 
             <section className="mb-12">
                 <h2>8. Personal Data Breach</h2>
                 <p>
-                    The Processor shall notify the Controller without undue delay after becoming aware of a Personal Data Breach affecting the Controller's Personal Data. 
+                    The Processor shall notify the Controller without undue delay after becoming aware of a Personal Data Breach affecting the Controller&apos;s Personal Data. 
                     The Processor shall provide the Controller with sufficient information to allow the Controller to meet any obligations to report or inform Data Subjects of the Personal Data Breach.
                 </p>
             </section>

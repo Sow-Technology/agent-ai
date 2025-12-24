@@ -27,9 +27,9 @@ export default function PrivacyPolicy() {
             <section className="mb-12">
                 <h2>1. Introduction</h2>
                 <p>
-                    Joaji Inc. ("we," "our," or "us") respects your privacy and is committed to protecting it through our compliance with this policy. 
+                    Joaji Inc. (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) respects your privacy and is committed to protecting it through our compliance with this policy. 
                     This policy describes the types of information we may collect from you or that you may provide when you visit the website 
-                    or use our AI-powered QA services (collectively, our "Services") and our practices for collecting, using, maintaining, protecting, and disclosing that information.
+                    or use our AI-powered QA services (collectively, our &quot;Services&quot;) and our practices for collecting, using, maintaining, protecting, and disclosing that information.
                 </p>
             </section>
 
@@ -71,7 +71,7 @@ export default function PrivacyPolicy() {
             <section className="mb-12">
                 <h2>5. International Transfer of Data</h2>
                 <p>
-                    Your information, including Personal Data, is processed at the Company's operating offices and in any other places where the parties involved in the processing are located. 
+                    Your information, including Personal Data, is processed at the Company&apos;s operating offices and in any other places where the parties involved in the processing are located. 
                     It means that this information may be transferred to — and maintained on — computers located outside of your state, province, country or other governmental jurisdiction 
                     where the data protection laws may differ than those from your jurisdiction.
                 </p>
@@ -111,9 +111,9 @@ export default function PrivacyPolicy() {
             </section>
 
             <section className="mb-12">
-                <h2>8. Children's Privacy</h2>
+                <h2>8. Children&apos;s Privacy</h2>
                 <p>
-                    Our Service does not address anyone under the age of 18 ("Children").
+                    Our Service does not address anyone under the age of 18 (&quot;Children&quot;).
                 </p>
                 <p>
                     We do not knowingly collect personally identifiable information from anyone under the age of 18. If you are a parent or guardian and you are aware that your Children has provided us with Personal Data, please contact us. 

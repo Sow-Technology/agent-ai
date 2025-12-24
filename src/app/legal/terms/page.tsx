@@ -27,8 +27,8 @@ export default function TermsOfService() {
             <section className="mb-12">
                 <h2>1. Acceptance of the Terms of Service</h2>
                 <p>
-                    These terms of service are entered into by and between You and Joaji Inc. ("Company," "we," or "us"). 
-                    The following terms and conditions (these "Terms of Service"), govern your access to and use of our website and services.
+                    These terms of service are entered into by and between You and Joaji Inc. (&quot;Company,&quot; &quot;we,&quot; or &quot;us&quot;). 
+                    The following terms and conditions (these &quot;Terms of Service&quot;), govern your access to and use of our website and services.
                 </p>
                 <p>
                     Please read the Terms of Service carefully before you start to use the Website. By using the Website or by clicking to accept or agree to the Terms of Service 
@@ -76,9 +76,9 @@ export default function TermsOfService() {
                 <ul>
                     <li>In any way that violates any applicable federal, state, local, or international law or regulation.</li>
                     <li>For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way by exposing them to inappropriate content, asking for personally identifiable information, or otherwise.</li>
-                    <li>To transmit, or procure the sending of, any advertising or promotional material, including any "junk mail", "chain letter", "spam", or any other similar solicitation.</li>
+                    <li>To transmit, or procure the sending of, any advertising or promotional material, including any &quot;junk mail&quot;, &quot;chain letter&quot;, &quot;spam&quot;, or any other similar solicitation.</li>
                     <li>To impersonate or attempt to impersonate the Company, a Company employee, another user, or any other person or entity.</li>
-                    <li>To engage in any other conduct that restricts or inhibits anyone's use or enjoyment of the Website, or which, as determined by us, may harm the Company or users of the Website or expose them to liability.</li>
+                    <li>To engage in any other conduct that restricts or inhibits anyone&apos;s use or enjoyment of the Website, or which, as determined by us, may harm the Company or users of the Website or expose them to liability.</li>
                 </ul>
             </section>
 
@@ -114,7 +114,7 @@ export default function TermsOfService() {
             <section className="mb-12">
                 <h2>9. Indemnification</h2>
                 <p>
-                    You agree to defend, indemnify, and hold harmless the Company, its affiliates, licensors, and service providers, and their respective officers, directors, employees, contractors, agents, licensors, suppliers, successors, and assigns from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of or relating to your violation of these Terms of Service or your use of the Website.
+                    You agree to defend, indemnify, and hold harmless the Company, its affiliates, licensors, and service providers, and their respective officers, directors, employees, contractors, agents, licensors, suppliers, successors, and assigns from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys&apos; fees) arising out of or relating to your violation of these Terms of Service or your use of the Website.
                 </p>
             </section>
 
