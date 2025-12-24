@@ -53,7 +53,7 @@ export const VisionPillarCard = ({
             onMouseLeave={handleMouseLeave}
             className="group relative h-full perspective-[1000px] cursor-pointer"
         >
-             <div className="relative h-full overflow-hidden rounded-2xl bg-black border border-white/10 group-hover:border-white/20 transition-all duration-500"
+             <div className="relative h-full overflow-hidden rounded-2xl bg-white dark:bg-black border border-neutral-200 dark:border-white/10 group-hover:border-neutral-300 dark:group-hover:border-white/20 transition-all duration-500 shadow-xl dark:shadow-none"
                   style={{ transform: "translateZ(20px)" }}
              >
                   {/* Energy Core Background */}
@@ -67,13 +67,13 @@ export const VisionPillarCard = ({
                   <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] brightness-100 contrast-150 mix-blend-overlay" />
 
                   {/* Content Container - Glass */}
-                  <div className="relative h-full p-8 backdrop-blur-3xl bg-black/60 flex flex-col items-start justify-between">
+                  <div className="relative h-full p-8 backdrop-blur-md bg-white/90 dark:bg-black/60 flex flex-col items-start justify-between">
                      
                       {/* Floating Icon */}
-                      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 relative group-hover:scale-110 transition-transform duration-500 border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]", 
-                          color === 'indigo' ? "bg-indigo-500/20 text-indigo-400" :
-                          color === 'purple' ? "bg-purple-500/20 text-purple-400" :
-                          "bg-rose-500/20 text-rose-400"
+                      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 relative group-hover:scale-110 transition-transform duration-500 border border-neutral-200 dark:border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.1)] dark:shadow-[0_0_30px_rgba(0,0,0,0.5)]", 
+                          color === 'indigo' ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400" :
+                          color === 'purple' ? "bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400" :
+                          "bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400"
                       )}
                       style={{ transform: "translateZ(40px)" }}>
                           <Icon className="w-7 h-7" />
@@ -85,13 +85,13 @@ export const VisionPillarCard = ({
 
                       <div className="relative">
                         <h4 className={cn("text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r mb-3",
-                             color === 'indigo' ? "from-white to-indigo-300" :
-                             color === 'purple' ? "from-white to-purple-300" :
-                             "from-white to-rose-300"
+                             color === 'indigo' ? "from-neutral-900 to-indigo-600 dark:from-white dark:to-indigo-300" :
+                             color === 'purple' ? "from-neutral-900 to-purple-600 dark:from-white dark:to-purple-300" :
+                             "from-neutral-900 to-rose-600 dark:from-white dark:to-rose-300"
                         )} style={{ transform: "translateZ(30px)" }}>
                             {title}
                         </h4>
-                        <p className="text-sm text-gray-400 leading-relaxed" style={{ transform: "translateZ(20px)" }}>
+                        <p className="text-sm text-neutral-600 dark:text-gray-400 leading-relaxed" style={{ transform: "translateZ(20px)" }}>
                             {desc}
                         </p>
                       </div>

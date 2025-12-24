@@ -51,17 +51,17 @@ export const HowItWorksSection = () => {
     return (
         <section className="py-24 container px-4 relative z-10">
             <div className="text-center mb-16">
-                 <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tighter">
-                     From Chaos to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Clarity.</span>
+                 <h2 className="text-3xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-4 tracking-tighter">
+                     From Chaos to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 dark:from-blue-400 dark:to-emerald-400">Clarity.</span>
                  </h2>
-                 <p className="text-muted-foreground">
+                 <p className="text-lg text-neutral-600 dark:text-muted-foreground">
                      Five steps to full autonomous coverage.
                  </p>
             </div>
 
             <div className="max-w-5xl mx-auto relative">
                 {/* Connecting Line */}
-                <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent md:-translate-x-1/2" />
+                <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-neutral-200 dark:via-white/10 to-transparent md:-translate-x-1/2" />
 
                 <div className="space-y-20">
                      {STEPS.map((step, i) => (
@@ -81,19 +81,19 @@ export const HowItWorksSection = () => {
                                  "flex-1 pl-20 md:pl-0",
                                  i % 2 === 0 ? "md:text-left" : "md:text-right"
                              )}>
-                                 <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{step.title}</h3>
-                                 <p className="text-muted-foreground text-base leading-relaxed">{step.description}</p>
+                                 <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3 tracking-tight">{step.title}</h3>
+                                 <p className="text-neutral-600 dark:text-muted-foreground text-base leading-relaxed">{step.description}</p>
                              </div>
 
                              {/* Center Node */}
-                             <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center w-4 h-4 rounded-full bg-black border-2 border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.2)] z-10">
+                             <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center w-4 h-4 rounded-full bg-white dark:bg-black border-2 border-neutral-300 dark:border-white/20 shadow-sm dark:shadow-[0_0_10px_rgba(255,255,255,0.2)] z-10">
                                  <div className={cn("w-2 h-2 rounded-full", step.bg.replace('/10', ''))} />
                              </div>
 
                              {/* Icon Side */}
                              <div className="flex-1 pl-20 md:pl-0 hidden md:flex justify-center">
                                  <div className={cn(
-                                     "w-20 h-20 rounded-2xl flex items-center justify-center border bg-black/50 backdrop-blur-md shadow-2xl transition-transform duration-300 hover:scale-105",
+                                     "w-20 h-20 rounded-2xl flex items-center justify-center border bg-white dark:bg-black/50 backdrop-blur-md shadow-lg dark:shadow-2xl transition-transform duration-300 hover:scale-105",
                                      step.border,
                                      step.color
                                  )}>

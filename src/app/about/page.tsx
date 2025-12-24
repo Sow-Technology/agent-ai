@@ -36,7 +36,7 @@ const VALUES = [
 
 export default function AboutPage() {
   return (
-    <Spotlight className="min-h-screen bg-black selection:bg-primary/20">
+    <Spotlight className="min-h-screen bg-white dark:bg-black selection:bg-primary/20">
       <Navbar />
       
       <main className="pt-32 pb-16">
@@ -49,15 +49,15 @@ export default function AboutPage() {
                 transition={{ duration: 0.8 }}
                 className="max-w-4xl mx-auto"
             >
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-200 dark:border-white/10 bg-neutral-100 dark:bg-white/5 backdrop-blur-md mb-8">
                      <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                     <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Our Mission</span>
+                     <span className="text-xs font-mono text-neutral-500 dark:text-muted-foreground uppercase tracking-widest">Our Mission</span>
                 </div>
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-8">
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-8">
                     The Architects of <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-rose-400">Automated QA.</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 dark:from-indigo-400 dark:via-purple-400 dark:to-rose-400">Automated QA.</span>
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                <p className="text-xl text-neutral-600 dark:text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                     We built AssureQAi because we believe random sampling is a relic of the past. 
                     In a world of infinite data, &ldquo;good enough&rdquo; coverage is no longer acceptable.
                 </p>
@@ -77,8 +77,8 @@ export default function AboutPage() {
                      <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-[50px] pointer-events-none" />
                      
                      <div className="relative z-10 space-y-6">
-                         <h2 className="text-3xl md:text-4xl font-bold text-white">Built by Practitioners.</h2>
-                         <div className="space-y-4 text-muted-foreground text-lg leading-relaxed">
+                         <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white">Built by Practitioners.</h2>
+                         <div className="space-y-4 text-neutral-600 dark:text-muted-foreground text-lg leading-relaxed">
                              <p>
                                  The founding team spent a decade scaling support teams at high-growth startups. 
                                  We saw the same problem everywhere: QA was a bottleneck.
@@ -102,9 +102,9 @@ export default function AboutPage() {
         {/* --- Vision / The North Star --- */}
         <section className="py-32 relative overflow-hidden">
              {/* Background Grid & Neural Mesh */}
-             <div className="absolute inset-0 bg-black">
-                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px] opacity-20" />
-                 <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
+             <div className="absolute inset-0 bg-white dark:bg-black">
+                 <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.05)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px] opacity-20" />
+                 <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white dark:from-black dark:via-transparent dark:to-black" />
                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[100px] animate-pulse pointer-events-none" />
              </div>
 
@@ -122,33 +122,33 @@ export default function AboutPage() {
                      </motion.div>
                      
                      <h2 className="max-w-4xl mx-auto leading-tight tracking-tight mb-20">
-                         <span className="text-2xl md:text-3xl font-light text-white/40 block mb-6">
+                         <span className="text-2xl md:text-3xl font-light text-neutral-400 dark:text-white/40 block mb-6">
                              Our vision is to lead as a premier AI-driven technology company, transforming industries with 
                          </span>
                          
-                         <span className="block text-4xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400 mb-4">
+                         <span className="block text-4xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 via-indigo-600 to-indigo-800 dark:from-white dark:via-indigo-200 dark:to-indigo-400 mb-4">
                              <ScrambleText text="intelligent, adaptive systems" revealSpeed={40} delay={200} />
                          </span>
 
-                         <span className="text-2xl md:text-3xl font-light text-white/40 block mb-6">
+                         <span className="text-2xl md:text-3xl font-light text-neutral-400 dark:text-white/40 block mb-6">
                             that are
                          </span>
 
-                         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-4xl md:text-6xl font-bold text-white">
-                            <span className="text-indigo-400">
+                         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-4xl md:text-6xl font-bold text-neutral-900 dark:text-white">
+                            <span className="text-indigo-600 dark:text-indigo-400">
                                 <ScrambleText text="connected," delay={1500} />
                             </span>
-                            <span className="text-purple-400">
+                            <span className="text-purple-600 dark:text-purple-400">
                                 <ScrambleText text="autonomous," delay={2000} />
                             </span>
-                            <span className="text-rose-400">
+                            <span className="text-rose-600 dark:text-rose-400">
                                 <ScrambleText text="& predictive." delay={2500} />
                             </span>
                          </div>
                      </h2>
 
                      {/* 3D Pillar Cards */}
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left max-w-5xl mx-auto border-t border-white/10 pt-20 perspective-1000">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left max-w-5xl mx-auto border-t border-neutral-200 dark:border-white/10 pt-20 perspective-1000">
                          <VisionPillarCard 
                              title="Smarter & Ethical"
                              desc="Delivering solutions that empower businesses while maintaining the highest standards of integrity."
@@ -178,7 +178,7 @@ export default function AboutPage() {
         {/* --- Values / Orbital Cards --- */}
         <section className="py-24 container px-4 relative">
              <div className="text-center mb-16">
-                 <h2 className="text-3xl font-bold text-white">Our Core Values</h2>
+                 <h2 className="text-3xl font-bold text-neutral-900 dark:text-white">Our Core Values</h2>
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
@@ -189,9 +189,9 @@ export default function AboutPage() {
         </section>
 
         {/* --- Team / Command Crew --- */}
-        <section className="py-24 container px-4 relative border-t border-white/5">
+        <section className="py-24 container px-4 relative border-t border-neutral-200 dark:border-white/5">
              <div className="text-center mb-16">
-                 <h2 className="text-3xl font-bold text-white">The Command Crew</h2>
+                 <h2 className="text-3xl font-bold text-neutral-900 dark:text-white">The Command Crew</h2>
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
@@ -278,7 +278,7 @@ const TeamCard = ({ member, index }: { member: typeof TEAM[0], index: number }) 
         onMouseLeave={handleMouseLeave}
         className="group relative h-full perspective-[1000px]"
     >
-        <div className="relative h-full overflow-hidden rounded-3xl bg-white/[0.01] border border-white/5 group-hover:border-white/10 transition-all duration-500 shadow-xl"
+        <div className="relative h-full overflow-hidden rounded-3xl bg-white dark:bg-white/[0.01] border border-neutral-200 dark:border-white/5 group-hover:border-neutral-300 dark:group-hover:border-white/10 transition-all duration-500 shadow-xl"
              style={{ transform: "translateZ(20px)" }}
         >
             {/* Scanline Effect */}
@@ -329,16 +329,17 @@ const TeamCard = ({ member, index }: { member: typeof TEAM[0], index: number }) 
                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                  </div>
                  
-                 <h3 className="text-xl font-bold text-white mb-1 group-hover:text-indigo-300 transition-colors" style={{ transform: "translateZ(20px)" }}>{member.name}</h3>
-                 <p className="text-xs font-mono text-indigo-400 mb-4 uppercase tracking-wider" style={{ transform: "translateZ(15px)" }}>{member.role}</p>
-                 <p className="text-sm text-muted-foreground leading-relaxed mb-6" style={{ transform: "translateZ(10px)" }}>
+                 
+                 <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors" style={{ transform: "translateZ(20px)" }}>{member.name}</h3>
+                 <p className="text-xs font-mono text-indigo-500 dark:text-indigo-400 mb-4 uppercase tracking-wider" style={{ transform: "translateZ(15px)" }}>{member.role}</p>
+                 <p className="text-sm text-neutral-600 dark:text-muted-foreground leading-relaxed mb-6" style={{ transform: "translateZ(10px)" }}>
                      {member.bio}
                  </p>
 
                  {/* Skills Tags */}
                  <div className="flex flex-wrap gap-2" style={{ transform: "translateZ(25px)" }}>
                      {member.skills.map((skill, i) => (
-                         <span key={i} className="px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] text-white/50 group-hover:text-white/80 group-hover:border-white/20 transition-colors">
+                         <span key={i} className="px-2 py-1 rounded-md bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-[10px] text-neutral-500 dark:text-white/50 group-hover:text-neutral-900 dark:group-hover:text-white/80 group-hover:border-neutral-300 dark:group-hover:border-white/20 transition-colors">
                              {skill}
                          </span>
                      ))}
@@ -391,7 +392,7 @@ const ValueCard = ({ val, index }: { val: typeof VALUES[0], index: number }) => 
             onMouseLeave={handleMouseLeave}
             className="group relative h-full perspective-[1000px]"
         >
-            <div className="relative h-full p-8 rounded-3xl bg-white/[0.01] border border-white/5 hover:border-white/10 transition-all duration-500 overflow-hidden backdrop-blur-md"
+            <div className="relative h-full p-8 rounded-3xl bg-white dark:bg-white/[0.01] border border-neutral-200 dark:border-white/5 hover:border-neutral-300 dark:hover:border-white/10 transition-all duration-500 overflow-hidden backdrop-blur-md shadow-sm dark:shadow-none"
                  style={{ transform: "translateZ(20px)" }}
             >
                 {/* Nebula Glow Effect - Subtler */}
@@ -406,12 +407,13 @@ const ValueCard = ({ val, index }: { val: typeof VALUES[0], index: number }) => 
                     <val.icon className="w-7 h-7 relative z-10 drop-shadow-md" />
                 </div>
                 
-                <h3 className="text-xl font-bold text-white mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-white/70 transition-colors"
+                
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-600 group-hover:to-purple-600 dark:group-hover:from-white dark:group-hover:to-white/70 transition-colors"
                     style={{ transform: "translateZ(20px)" }}
                 >
                     {val.title}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed group-hover:text-white/70 transition-colors"
+                <p className="text-sm text-neutral-600 dark:text-muted-foreground leading-relaxed group-hover:text-neutral-800 dark:group-hover:text-white/70 transition-colors"
                    style={{ transform: "translateZ(10px)" }}
                 >
                     {val.desc}
@@ -457,7 +459,7 @@ const IntelligenceStack = () => {
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-            className="relative w-full h-full bg-[#080808] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center perspective-[1200px] group/container"
+            className="relative w-full h-full bg-neutral-900 dark:bg-[#080808] border border-neutral-800 dark:border-white/10 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center perspective-[1200px] group/container"
         >
              {/* --- HOLOGRAPHIC CHAMBER ENVIRONMENT --- */}
              

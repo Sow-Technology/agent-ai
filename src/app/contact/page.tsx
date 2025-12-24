@@ -66,7 +66,7 @@ export default function ContactPage() {
   };
 
   return (
-    <Spotlight className="min-h-screen bg-black selection:bg-primary/20 overflow-hidden">
+    <Spotlight className="min-h-screen bg-white dark:bg-black selection:bg-primary/20 overflow-hidden">
       <Navbar />
       
       {/* Background Layer */}
@@ -88,7 +88,7 @@ export default function ContactPage() {
              <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-4"
+                className="text-5xl md:text-7xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-4"
              >
                 Open Frequency.
              </motion.h1>
@@ -106,45 +106,45 @@ export default function ContactPage() {
                 transition={{ delay: 0.2 }}
                 className="lg:col-span-4 space-y-4"
             >
-                <div className="group p-6 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors cursor-default">
+                <div className="group p-6 rounded-2xl bg-white dark:bg-black/40 border border-neutral-200 dark:border-white/10 backdrop-blur-md hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors cursor-default shadow-sm dark:shadow-none">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="p-3 bg-indigo-500/10 rounded-lg text-indigo-400">
+                        <div className="p-3 bg-indigo-500/10 rounded-lg text-indigo-500 dark:text-indigo-400">
                             <MessagesSquare className="w-6 h-6" />
                         </div>
-                        <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                        <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-current" /> ONLINE
                         </span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-1">Sales & Pilots</h3>
-                    <p className="text-sm text-muted-foreground mb-4">For enterprise licensing and custom deployments.</p>
-                    <div className="text-white font-mono text-sm">sales@assureqai.com</div>
+                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-1">Sales & Pilots</h3>
+                    <p className="text-sm text-neutral-600 dark:text-muted-foreground mb-4">For enterprise licensing and custom deployments.</p>
+                    <div className="text-neutral-900 dark:text-white font-mono text-sm">sales@assureqai.com</div>
                 </div>
 
-                <div className="group p-6 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors cursor-default">
+                <div className="group p-6 rounded-2xl bg-white dark:bg-black/40 border border-neutral-200 dark:border-white/10 backdrop-blur-md hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors cursor-default shadow-sm dark:shadow-none">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400">
+                        <div className="p-3 bg-purple-500/10 rounded-lg text-purple-500 dark:text-purple-400">
                             <ShieldCheck className="w-6 h-6" />
                         </div>
-                        <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                        <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-current" /> ONLINE
                         </span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-1">Technical Support</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Direct line to our integration engineers.</p>
-                    <div className="text-white font-mono text-sm">support@assureqai.com</div>
+                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-1">Technical Support</h3>
+                    <p className="text-sm text-neutral-600 dark:text-muted-foreground mb-4">Direct line to our integration engineers.</p>
+                    <div className="text-neutral-900 dark:text-white font-mono text-sm">support@assureqai.com</div>
                 </div>
 
-                <div className="group p-6 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors cursor-default">
+                <div className="group p-6 rounded-2xl bg-white dark:bg-black/40 border border-neutral-200 dark:border-white/10 backdrop-blur-md hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors cursor-default shadow-sm dark:shadow-none">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="p-3 bg-rose-500/10 rounded-lg text-rose-400">
+                        <div className="p-3 bg-rose-500/10 rounded-lg text-rose-500 dark:text-rose-400">
                             <MapPin className="w-6 h-6" />
                         </div>
-                        <span className="text-xs font-mono text-white/50">
+                        <span className="text-xs font-mono text-neutral-500 dark:text-white/50">
                             UTC+5:30
                         </span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-1">Global HQ</h3>
-                    <p className="text-sm text-muted-foreground">Bengaluru, India</p>
+                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-1">Global HQ</h3>
+                    <p className="text-sm text-neutral-600 dark:text-muted-foreground">Bengaluru, India</p>
                 </div>
             </motion.div>
 
@@ -155,56 +155,56 @@ export default function ContactPage() {
                 transition={{ delay: 0.4 }}
                 className="lg:col-span-8"
             >
-                <form onSubmit={handleSubmit} className="relative p-8 md:p-12 rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-2xl overflow-hidden">
+                <form onSubmit={handleSubmit} className="relative p-8 md:p-12 rounded-3xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-black/60 backdrop-blur-xl shadow-xl dark:shadow-2xl overflow-hidden">
                     {/* Decorative Top Bar */}
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 opacity-50" />
                     
                     <div className="grid grid-cols-2 gap-8 mb-8">
                         <div className="space-y-3">
-                            <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // First Name</label>
+                            <label className="text-xs font-mono text-neutral-500 dark:text-white/60 uppercase tracking-widest pl-1">Input // First Name</label>
                             <Input 
                                 name="firstName"
                                 value={formData.firstName}
                                 onChange={handleChange}
                                 required
-                                className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" 
+                                className="bg-transparent border-0 border-b border-neutral-200 dark:border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-neutral-50 dark:focus-visible:bg-white/5 transition-all text-lg text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-white/20" 
                                 placeholder="Jane" 
                             />
                         </div>
                         <div className="space-y-3">
-                            <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Last Name</label>
+                            <label className="text-xs font-mono text-neutral-500 dark:text-white/60 uppercase tracking-widest pl-1">Input // Last Name</label>
                             <Input 
                                 name="lastName"
                                 value={formData.lastName}
                                 onChange={handleChange}
                                 required
-                                className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" 
+                                className="bg-transparent border-0 border-b border-neutral-200 dark:border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-neutral-50 dark:focus-visible:bg-white/5 transition-all text-lg text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-white/20" 
                                 placeholder="Doe" 
                             />
                         </div>
                     </div>
 
                     <div className="space-y-3 mb-8">
-                        <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Work Email</label>
+                        <label className="text-xs font-mono text-neutral-500 dark:text-white/60 uppercase tracking-widest pl-1">Input // Work Email</label>
                         <Input 
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
                             required
                             type="email"
-                            className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" 
+                            className="bg-transparent border-0 border-b border-neutral-200 dark:border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-neutral-50 dark:focus-visible:bg-white/5 transition-all text-lg text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-white/20" 
                             placeholder="jane@company.com" 
                         />
                     </div>
 
                     <div className="space-y-3 mb-10">
-                         <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Directive</label>
+                         <label className="text-xs font-mono text-neutral-500 dark:text-white/60 uppercase tracking-widest pl-1">Input // Directive</label>
                          <Textarea 
                             name="message"
                             value={formData.message}
                             onChange={handleChange}
                             required
-                            className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 min-h-[100px] focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20 resize-none" 
+                            className="bg-transparent border-0 border-b border-neutral-200 dark:border-white/20 rounded-none px-0 min-h-[100px] focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-neutral-50 dark:focus-visible:bg-white/5 transition-all text-lg text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-white/20 resize-none" 
                             placeholder="We need to audit 50k calls/month..." 
                         />
                     </div>
@@ -218,7 +218,7 @@ export default function ContactPage() {
                             type="submit"
                             disabled={isLoading || isSuccess}
                             className={cn(
-                                "h-14 px-8 bg-white text-black hover:bg-white/90 rounded-full font-bold text-lg tracking-tight group disabled:opacity-50 disabled:cursor-not-allowed transition-all",
+                                "h-14 px-8 bg-neutral-900 dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-white/90 rounded-full font-bold text-lg tracking-tight group disabled:opacity-50 disabled:cursor-not-allowed transition-all",
                                 isError && "bg-red-500 text-white hover:bg-red-600"
                             )}
                         >

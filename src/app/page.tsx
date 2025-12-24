@@ -13,7 +13,7 @@ import { Spotlight } from "@/components/landing/Spotlight";
 
 export default function HomePage() {
   return (
-    <div className="landing-page-theme min-h-screen bg-black font-sans selection:bg-primary/30">
+    <div className="landing-page-theme min-h-screen bg-white dark:bg-black font-sans selection:bg-primary/30">
         <Spotlight>
           <Navbar />
           <main className="flex-1 flex flex-col">

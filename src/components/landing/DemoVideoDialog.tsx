@@ -19,9 +19,9 @@ export function DemoVideoDialog({ videoSrc = "https://www.youtube.com/embed/dQw4
         <Button 
             variant="outline" 
             size="lg" 
-            className="h-14 px-8 rounded-full text-white bg-black/60 border-white/20 hover:bg-white/10 backdrop-blur-md hover:border-white/30 transition-all duration-300 group"
+            className="h-14 px-8 rounded-full text-neutral-900 dark:text-white bg-white dark:bg-black/60 border-neutral-200 dark:border-white/20 hover:bg-neutral-100 dark:hover:bg-white/10 backdrop-blur-md hover:border-neutral-300 dark:hover:border-white/30 transition-all duration-300 group shadow-sm dark:shadow-none"
         >
-            <PlayCircle className="mr-2 w-5 h-5 group-hover:text-primary transition-colors" />
+            <PlayCircle className="mr-2 w-5 h-5 text-neutral-900 dark:text-white group-hover:text-primary transition-colors" />
             Watch Demo
         </Button>
       </DialogTrigger>

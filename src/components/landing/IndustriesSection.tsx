@@ -65,10 +65,10 @@ export const IndustriesSection = () => {
     return (
         <section className="py-32 container px-4 relative z-10">
             <div className="text-center mb-20 max-w-3xl mx-auto">
-                 <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tighter">
-                     Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">High Compliance.</span>
+                 <h2 className="text-3xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tighter">
+                     Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">High Compliance.</span>
                  </h2>
-                 <p className="text-muted-foreground text-lg">
+                 <p className="text-neutral-600 dark:text-muted-foreground text-lg">
                      Don&apos;t settle for generic QA. Toggle to see how we handle your specific regulated workflows.
                  </p>
             </div>
@@ -84,8 +84,8 @@ export const IndustriesSection = () => {
                             className={cn(
                                 "group relative p-6 rounded-2xl border text-left transition-all duration-300 overflow-hidden",
                                 activeId === ind.id 
-                                    ? "bg-white/[0.08] border-white/20 shadow-lg" 
-                                    : "bg-[#0A0A0A] border-white/[0.05] hover:border-white/10 hover:bg-white/[0.02]"
+                                    ? "bg-neutral-100 dark:bg-white/[0.08] border-neutral-300 dark:border-white/20 shadow-lg" 
+                                    : "bg-white dark:bg-[#0A0A0A] border-neutral-200 dark:border-white/[0.05] hover:border-neutral-300 dark:hover:border-white/10 hover:bg-neutral-50 dark:hover:bg-white/[0.02]"
                             )}
                          >
                              {/* Active Indicator */}
@@ -99,13 +99,13 @@ export const IndustriesSection = () => {
                              <div className="flex items-center gap-4 relative z-10">
                                  <div className={cn(
                                      "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-                                     activeId === ind.id ? "bg-white/10 text-white" : "bg-white/5 text-muted-foreground group-hover:text-white"
+                                     activeId === ind.id ? "bg-neutral-100 dark:bg-white/10 text-neutral-900 dark:text-white" : "bg-neutral-50 dark:bg-white/5 text-neutral-500 dark:text-muted-foreground group-hover:text-neutral-900 dark:group-hover:text-white"
                                  )}>
                                      <ind.icon className="w-5 h-5" />
                                  </div>
                                  <span className={cn(
                                      "text-lg font-medium transition-colors",
-                                     activeId === ind.id ? "text-white" : "text-muted-foreground group-hover:text-white"
+                                     activeId === ind.id ? "text-neutral-900 dark:text-white" : "text-neutral-500 dark:text-muted-foreground group-hover:text-neutral-900 dark:group-hover:text-white"
                                  )}>
                                      {ind.title}
                                  </span>
@@ -116,7 +116,7 @@ export const IndustriesSection = () => {
                                         animate={{ opacity: 1, x: 0 }} 
                                         className="ml-auto"
                                      >
-                                        <ArrowRight className="w-5 h-5 text-white/50" />
+                                        <ArrowRight className="w-5 h-5 text-neutral-900/50 dark:text-white/50" />
                                      </motion.div>
                                  )}
                              </div>
@@ -133,19 +133,19 @@ export const IndustriesSection = () => {
                             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                             exit={{ opacity: 0, x: -20, filter: "blur(10px)" }}
                             transition={{ duration: 0.4, ease: "circOut" }}
-                            className="h-full min-h-[600px] rounded-3xl bg-[#080808] border border-white/10 overflow-hidden relative flex flex-col p-10 shadow-2xl group"
+                            className="h-full min-h-[600px] rounded-3xl bg-white dark:bg-[#080808] border border-neutral-200 dark:border-white/10 overflow-hidden relative flex flex-col p-10 shadow-xl dark:shadow-2xl group"
                          >
                              {/* Background Gradient & Grid */}
                              <div className={cn("absolute inset-0 bg-gradient-to-br opacity-5 pointer-events-none transition-colors duration-500", activeIndustry.gradient)} />
-                             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20 pointer-events-none mix-blend-overlay" />
+                             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5 dark:opacity-20 pointer-events-none mix-blend-overlay" />
                              
                              {/* Floating Particles/Glow */}
-                             <div className={cn("absolute top-0 right-0 w-64 h-64 bg-gradient-to-b from-white/5 to-transparent blur-[80px] rounded-full pointer-events-none", activeIndustry.color)} />
+                             <div className={cn("absolute top-0 right-0 w-64 h-64 bg-gradient-to-b from-black/5 dark:from-white/5 to-transparent blur-[80px] rounded-full pointer-events-none", activeIndustry.color)} />
 
                              {/* Content Header */}
                              <div className="relative z-10 mb-10">
                                  <div className="flex justify-between items-start mb-6">
-                                     <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-white/5 backdrop-blur-md", activeIndustry.color, activeIndustry.border)}>
+                                     <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-neutral-100 dark:bg-white/5 backdrop-blur-md", activeIndustry.color, activeIndustry.border)}>
                                          <activeIndustry.icon className="w-4 h-4" />
                                          <span className="text-xs font-bold uppercase tracking-wider">{activeIndustry.title} Protocol</span>
                                      </div>
@@ -155,7 +155,7 @@ export const IndustriesSection = () => {
                                          ))}
                                      </div>
                                  </div>
-                                 <h3 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">{activeIndustry.desc}</h3>
+                                 <h3 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-4 leading-tight">{activeIndustry.desc}</h3>
                              </div>
 
                              {/* Checklist Visualization */}
@@ -171,12 +171,12 @@ export const IndustriesSection = () => {
                                             initial={{ opacity: 0, x: 20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: i * 0.1 + 0.2 }}
-                                            className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] transition-colors group/item"
+                                            className="flex items-center gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-white/[0.02] border border-neutral-200 dark:border-white/[0.05] hover:bg-neutral-100 dark:hover:bg-white/[0.05] transition-colors group/item"
                                          >
-                                             <div className={cn("p-1.5 rounded-full bg-white/5 group-hover/item:bg-white/10 transition-colors", activeIndustry.color)}>
+                                             <div className={cn("p-1.5 rounded-full bg-neutral-200 dark:bg-white/5 group-hover/item:bg-neutral-200 dark:group-hover/item:bg-white/10 transition-colors", activeIndustry.color)}>
                                                  <CheckCircle2 className="w-5 h-5" />
                                              </div>
-                                             <span className="text-white/90 font-light text-lg">{check}</span>
+                                             <span className="text-neutral-700 dark:text-white/90 font-light text-lg">{check}</span>
                                              
                                              {/* Tech decoration on hover */}
                                              <div className="ml-auto opacity-0 group-hover/item:opacity-100 transition-opacity text-[10px] font-mono text-muted-foreground">
@@ -188,7 +188,7 @@ export const IndustriesSection = () => {
                              </div>
 
                              {/* Footer Status */}
-                             <div className="mt-auto pt-8 border-t border-white/5 flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase tracking-wider relative z-10">
+                             <div className="mt-auto pt-8 border-t border-neutral-200 dark:border-white/5 flex justify-between items-center text-[10px] font-mono text-neutral-500 dark:text-muted-foreground uppercase tracking-wider relative z-10">
                                  <div>
                                      Status: <span className={cn("font-bold", activeIndustry.color)}>Active Monitoring</span>
                                  </div>

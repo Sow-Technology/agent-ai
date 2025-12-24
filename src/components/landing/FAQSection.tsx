@@ -43,10 +43,10 @@ export const FAQSection = () => {
     return (
         <section className="py-24 container px-4 sm:px-6 max-w-4xl mx-auto">
             <div className="text-center mb-16">
-                 <h2 className="text-3xl text-white font-bold tracking-tight mb-4">
+                 <h2 className="text-3xl text-neutral-900 dark:text-white font-bold tracking-tight mb-4">
                      Common Questions
                  </h2>
-                 <p className="text-muted-foreground">
+                 <p className="text-neutral-600 dark:text-muted-foreground">
                      Everything you need to know about autonomous QA.
                  </p>
             </div>
@@ -60,11 +60,11 @@ export const FAQSection = () => {
                         viewport={{ once: true }}
                         transition={{ delay: i * 0.05 }}
                     >
-                        <AccordionItem value={`item-${i}`} className="border border-white/10 bg-white/[0.02] rounded-lg px-4">
-                            <AccordionTrigger className="text-white hover:no-underline hover:text-primary transition-colors text-left">
+                        <AccordionItem value={`item-${i}`} className="border border-neutral-200 dark:border-white/10 bg-white dark:bg-white/[0.02] rounded-lg px-4 shadow-sm dark:shadow-none">
+                            <AccordionTrigger className="text-neutral-900 dark:text-white hover:no-underline hover:text-indigo-600 dark:hover:text-primary transition-colors text-left">
                                 {faq.q}
                             </AccordionTrigger>
-                            <AccordionContent className="text-muted-foreground leading-relaxed">
+                            <AccordionContent className="text-neutral-600 dark:text-muted-foreground leading-relaxed">
                                 {faq.a}
                             </AccordionContent>
                         </AccordionItem>

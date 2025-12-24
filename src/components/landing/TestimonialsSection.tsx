@@ -62,7 +62,7 @@ const TestimonialCard = ({ item, index }: { item: typeof TESTIMONIALS[0], index:
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="group relative flex flex-col justify-between p-8 rounded-3xl bg-[#080808] border border-white/[0.08] overflow-hidden hover:border-white/[0.15] transition-all duration-500 hover:shadow-2xl"
+            className="group relative flex flex-col justify-between p-8 rounded-3xl bg-white dark:bg-[#080808] border border-neutral-200 dark:border-white/[0.08] overflow-hidden hover:border-black/5 dark:hover:border-white/[0.15] transition-all duration-500 shadow-sm hover:shadow-xl dark:hover:shadow-2xl"
         >
             {/* Ambient Glow */}
             <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${item.color} opacity-[0.03] blur-[50px] group-hover:opacity-[0.08] transition-opacity`} />
@@ -77,16 +77,16 @@ const TestimonialCard = ({ item, index }: { item: typeof TESTIMONIALS[0], index:
 
             {/* Content */}
             <div className="relative z-10">
-                <Quote className="w-8 h-8 text-white/[0.1] mb-4" />
-                <p className="text-lg text-white/90 leading-relaxed font-light mb-6">
+                <Quote className="w-8 h-8 text-neutral-200 dark:text-white/[0.1] mb-4" />
+                <p className="text-lg text-neutral-700 dark:text-white/90 leading-relaxed font-light mb-6">
                     &ldquo;{item.quote}&rdquo;
                 </p>
                 
-                <div className="flex items-center gap-4 pt-6 border-t border-white/[0.05]">
+                <div className="flex items-center gap-4 pt-6 border-t border-neutral-100 dark:border-white/[0.05]">
                     <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${item.color} opacity-20`} />
                      <div>
-                        <h4 className="text-white font-medium text-sm">{item.author}</h4>
-                        <p className="text-muted-foreground text-xs">{item.role}</p>
+                        <h4 className="text-neutral-900 dark:text-white font-medium text-sm">{item.author}</h4>
+                        <p className="text-neutral-500 dark:text-muted-foreground text-xs">{item.role}</p>
                     </div>
                 </div>
             </div>
@@ -97,18 +97,19 @@ const TestimonialCard = ({ item, index }: { item: typeof TESTIMONIALS[0], index:
 
 export const TestimonialsSection = () => {
     return (
-        <section className="py-32 container px-4 relative bg-black">
+        <section className="py-32 relative bg-white dark:bg-black">
+             <div className="container px-4">
              {/* Background Gradients */}
-             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-             <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-white/10 to-transparent" />
+             <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-neutral-200 dark:via-white/10 to-transparent" />
 
             <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8 max-w-6xl mx-auto">
                 <div className="max-w-2xl">
-                    <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tighter mb-6">
+                    <h2 className="text-4xl md:text-6xl font-bold text-neutral-900 dark:text-white tracking-tighter mb-6">
                         Trusted by <br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">High-Velocity Teams.</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-neutral-700 to-neutral-400 dark:from-white dark:to-white/50">High-Velocity Teams.</span>
                     </h2>
-                    <p className="text-lg text-muted-foreground/60 font-light">
+                    <p className="text-lg text-neutral-600 dark:text-muted-foreground/60 font-light">
                         See why compliance-heavy industries are switching to 100% automated audits.
                     </p>
                 </div>
@@ -121,6 +122,7 @@ export const TestimonialsSection = () => {
                 {TESTIMONIALS.map((t, i) => (
                     <TestimonialCard key={i} item={t} index={i} />
                 ))}
+            </div>
             </div>
         </section>
     );

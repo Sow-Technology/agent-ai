@@ -26,7 +26,7 @@ export const Spotlight = ({ children, className }: { children: React.ReactNode; 
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={cn("relative w-full overflow-hidden bg-black", className)}
+      className={cn("relative w-full overflow-hidden bg-white dark:bg-black", className)}
     >
       {/* 
         The Spotlight Effect:
@@ -38,9 +38,16 @@ export const Spotlight = ({ children, className }: { children: React.ReactNode; 
         className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-300"
         style={{
           opacity,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,255,255,0.06), transparent 40%)`,
+          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(0,0,0,0.05), transparent 40%)`, // Light mode: dark glow
         }}
       />
+      <div
+          className="pointer-events-none absolute inset-0 z-30 transition-opacity duration-300 dark:block hidden"
+          style={{
+            opacity,
+            background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,255,255,0.06), transparent 40%)`, // Dark mode: white glow
+          }}
+       />
       
       {children}
     </div>

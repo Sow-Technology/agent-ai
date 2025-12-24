@@ -90,7 +90,7 @@ export default function PricingPage() {
   const savings = manualCost - monthlyCost;
 
   return (
-    <Spotlight className="min-h-screen bg-black selection:bg-primary/20">
+    <Spotlight className="min-h-screen bg-white dark:bg-black selection:bg-primary/20">
       <Navbar />
       
       <main className="pt-32 pb-16">
@@ -100,12 +100,12 @@ export default function PricingPage() {
             <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-6"
+                className="text-5xl md:text-7xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-6"
             >
                 Transparent Scale. <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Zero Surprises.</span>
             </motion.h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-neutral-600 dark:text-muted-foreground max-w-2xl mx-auto">
                 Pricing that adapts to your volume. Start small, scale indefinitely.
             </p>
         </section>
@@ -115,12 +115,12 @@ export default function PricingPage() {
              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
                  
                  {/* Calculator Control */}
-                 <div className="lg:col-span-7 bg-[#080808] border border-white/[0.08] rounded-3xl p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden shadow-2xl group">
+                 <div className="lg:col-span-7 bg-white dark:bg-[#080808] border border-neutral-200 dark:border-white/[0.08] rounded-3xl p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden shadow-xl dark:shadow-2xl group">
                      {/* Background Grid */}
-                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent opacity-40 pointer-events-none" />
+                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-100/50 via-transparent to-transparent dark:from-indigo-900/20 dark:via-transparent dark:to-transparent opacity-40 pointer-events-none" />
                      
                      <div className="relative z-10">
-                         <h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+                         <h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-8 flex items-center gap-3">
                              <div className="w-1.5 h-8 bg-indigo-500 rounded-full" />
                              Volume Estimator
                          </h3>
@@ -128,15 +128,15 @@ export default function PricingPage() {
                          {/* Slider Area */}
                          <div className="mb-12">
                              <div className="flex justify-between items-end mb-8">
-                                 <div className="text-muted-foreground text-sm uppercase tracking-wider font-semibold">Monthly Calls</div>
-                                 <div className="text-6xl font-bold text-white tracking-tighter tabular-nums">
+                                 <div className="text-neutral-500 dark:text-muted-foreground text-sm uppercase tracking-wider font-semibold">Monthly Calls</div>
+                                 <div className="text-6xl font-bold text-neutral-900 dark:text-white tracking-tighter tabular-nums">
                                      {volume[0].toLocaleString()}
                                  </div>
                              </div>
                              
                              <div className="relative h-12 flex items-center group-hover:scale-[1.01] transition-transform duration-300">
                                  {/* Custom Track Background */}
-                                 <div className="absolute w-full h-4 bg-white/[0.05] rounded-full overflow-hidden border border-white/[0.05]">
+                                 <div className="absolute w-full h-4 bg-neutral-100 dark:bg-white/[0.05] rounded-full overflow-hidden border border-neutral-200 dark:border-white/[0.05]">
                                      {/* Progress Fill */}
                                      <div 
                                         className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-100 ease-out"
@@ -161,10 +161,10 @@ export default function PricingPage() {
                      </div>
 
                      {/* Active Plan Badge */}
-                     <div className="mt-auto pt-8 border-t border-white/[0.05]">
+                     <div className="mt-auto pt-8 border-t border-neutral-200 dark:border-white/[0.05]">
                         <div className="flex items-center justify-between">
                              <div className="flex items-center gap-4">
-                                 <div className={cn("p-3 rounded-xl bg-white/5 border border-white/10 text-white", activeSlab.color)}>
+                                 <div className={cn("p-3 rounded-xl bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white", activeSlab.color)}>
                                      <ShieldCheck className="w-6 h-6" />
                                  </div>
                                  <div>
@@ -173,8 +173,8 @@ export default function PricingPage() {
                                  </div>
                              </div>
                              <div className="text-right">
-                                 <div className="text-3xl font-bold text-white font-mono tracking-tight">₹{activeSlab.price}</div>
-                                 <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider opacity-60">Per Call</div>
+                                 <div className="text-3xl font-bold text-neutral-900 dark:text-white font-mono tracking-tight">₹{activeSlab.price}</div>
+                                 <div className="text-neutral-500 dark:text-muted-foreground text-[10px] uppercase font-bold tracking-wider opacity-60">Per Call</div>
                              </div>
                         </div>
                      </div>
@@ -184,31 +184,31 @@ export default function PricingPage() {
                  <div className="lg:col-span-5 flex flex-col gap-6">
                      
                      {/* Cost Card */}
-                     <div className="flex-1 bg-gradient-to-bl from-[#0F0F0F] to-black border border-white/10 rounded-3xl p-10 relative overflow-hidden group hover:border-white/20 transition-all duration-500">
+                     <div className="flex-1 bg-white dark:bg-gradient-to-bl dark:from-[#0F0F0F] dark:to-black border border-neutral-200 dark:border-white/10 rounded-3xl p-10 relative overflow-hidden group hover:border-neutral-300 dark:hover:border-white/20 transition-all duration-500 shadow-xl dark:shadow-none">
                          <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                          
                          <div className="relative z-10 flex flex-col h-full justify-between">
                              <div>
-                                 <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-3">Estimated Investment</div>
+                                 <div className="text-xs text-neutral-500 dark:text-muted-foreground uppercase tracking-wider font-semibold mb-3">Estimated Investment</div>
                                  <div className="flex items-baseline gap-2">
-                                     <span className="text-6xl font-bold text-white tracking-tighter">
+                                     <span className="text-6xl font-bold text-neutral-900 dark:text-white tracking-tighter">
                                          ₹{monthlyCost.toLocaleString()}
                                      </span>
-                                     <span className="text-muted-foreground/60 text-lg font-light">/mo</span>
+                                     <span className="text-neutral-400 dark:text-muted-foreground/60 text-lg font-light">/mo</span>
                                  </div>
                              </div>
 
-                             <div className="mt-8 pt-8 border-t border-white/10">
+                             <div className="mt-8 pt-8 border-t border-neutral-200 dark:border-white/10">
                                  <div className="flex items-center justify-between mb-2">
-                                     <span className="text-sm text-emerald-400 font-bold uppercase tracking-wide flex items-center gap-2">
-                                         <Zap className="w-4 h-4 fill-emerald-400" /> Savings
+                                     <span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wide flex items-center gap-2">
+                                         <Zap className="w-4 h-4 fill-emerald-600 dark:fill-emerald-400" /> Savings
                                      </span>
-                                     <span className="text-xl font-bold text-white">₹{savings.toLocaleString()}</span>
+                                     <span className="text-xl font-bold text-neutral-900 dark:text-white">₹{savings.toLocaleString()}</span>
                                  </div>
-                                 <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                                 <div className="w-full bg-neutral-100 dark:bg-white/10 h-2 rounded-full overflow-hidden">
                                      <div className="bg-emerald-500 h-full w-full animate-pulse" style={{ width: '100%' }} />
                                  </div>
-                                 <p className="text-[10px] text-muted-foreground mt-2 text-right">vs. Manual QA (₹25/call)</p>
+                                 <p className="text-[10px] text-neutral-500 dark:text-muted-foreground mt-2 text-right">vs. Manual QA (₹25/call)</p>
                              </div>
                          </div>
                      </div>
@@ -230,8 +230,8 @@ export default function PricingPage() {
                         className={cn(
                             "relative p-8 rounded-3xl border flex flex-col transition-all duration-500 group hover:-translate-y-2",
                             plan.popular 
-                                ? "bg-white/[0.03] border-indigo-500/50 shadow-[0_0_50px_-20px_rgba(99,102,241,0.3)] h-[640px] z-10" 
-                                : "bg-black border-white/10 h-[580px] hover:border-white/20"
+                                ? "bg-white dark:bg-white/[0.03] border-indigo-500 shadow-xl dark:shadow-[0_0_50px_-20px_rgba(99,102,241,0.3)] h-[640px] z-10" 
+                                : "bg-white dark:bg-black border-neutral-200 dark:border-white/10 h-[580px] hover:border-neutral-300 dark:hover:border-white/20 shadow-sm dark:shadow-none"
                         )}
                     >
                         {/* Glowing Background Effect */}
@@ -257,10 +257,10 @@ export default function PricingPage() {
                             <p className="text-sm text-muted-foreground h-10">{plan.desc}</p>
                         </div>
 
-                        <div className="relative z-10 mb-8 pb-8 border-b border-white/10">
+                        <div className="relative z-10 mb-8 pb-8 border-b border-neutral-200 dark:border-white/10">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-5xl font-bold text-white tracking-tighter">{plan.price}</span>
-                                {plan.unit && <span className="text-muted-foreground">{plan.unit}</span>}
+                                <span className="text-5xl font-bold text-neutral-900 dark:text-white tracking-tighter">{plan.price}</span>
+                                {plan.unit && <span className="text-neutral-500 dark:text-muted-foreground">{plan.unit}</span>}
                             </div>
                         </div>
 
@@ -269,11 +269,11 @@ export default function PricingPage() {
                                 <div key={feat.name} className="flex items-start gap-4 group/item">
                                     <div className={cn(
                                         "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
-                                        feat.included ? "bg-white/10 text-white group-hover/item:bg-white/20" : "bg-transparent text-white/20"
+                                        feat.included ? "bg-neutral-100 dark:bg-white/10 text-neutral-900 dark:text-white group-hover/item:bg-neutral-200 dark:group-hover/item:bg-white/20" : "bg-transparent text-neutral-300 dark:text-white/20"
                                     )}>
                                         {feat.included ? <Check className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
                                     </div>
-                                    <span className={cn("text-sm transition-colors", feat.included ? "text-white/80 group-hover/item:text-white" : "text-white/30")}>
+                                    <span className={cn("text-sm transition-colors", feat.included ? "text-neutral-700 dark:text-white/80 group-hover/item:text-neutral-900 dark:group-hover/item:text-white" : "text-neutral-400 dark:text-white/30")}>
                                         {feat.name}
                                     </span>
                                 </div>
@@ -290,7 +290,7 @@ export default function PricingPage() {
                             </div>
                         ) : (
                             <Button 
-                                className="relative z-10 w-full h-14 text-lg rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/30 transition-all duration-300"
+                                className="relative z-10 w-full h-14 text-lg rounded-xl bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 text-neutral-900 dark:text-white border border-neutral-200 dark:border-white/10 hover:border-neutral-300 dark:hover:border-white/30 transition-all duration-300"
                             >
                                 <span className="flex items-center gap-2">
                                     {plan.cta} <ArrowRight className="w-4 h-4 opacity-50" />
@@ -303,34 +303,34 @@ export default function PricingPage() {
         </section>
 
         <section className="container px-4 mb-24 mt-8">
-            <div className="max-w-7xl mx-auto relative rounded-3xl border border-white/10 overflow-hidden bg-gradient-to-r from-neutral-900 to-black p-8 md:p-16 text-center md:text-left flex flex-col md:flex-row items-center gap-12">
+            <div className="max-w-7xl mx-auto relative rounded-3xl border border-neutral-200 dark:border-white/10 overflow-hidden bg-white dark:bg-gradient-to-r dark:from-neutral-900 dark:to-black p-8 md:p-16 text-center md:text-left flex flex-col md:flex-row items-center gap-12 shadow-xl dark:shadow-none">
                 
                 {/* Background Glow */}
                 <div className="absolute top-0 right-0 w-1/2 h-full bg-rose-500/5 blur-3xl pointer-events-none" />
 
                 <div className="flex-1 relative z-10">
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                        Need an <span className="text-rose-400">Enterprise</span> Solution?
+                    <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-4">
+                        Need an <span className="text-rose-500 dark:text-rose-400">Enterprise</span> Solution?
                     </h2>
-                    <p className="text-lg text-muted-foreground mb-8 text-neutral-400">
+                    <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8">
                         For banks, large BPOs, and regulated industries requiring on-premise deployment, custom LLM fine-tuning, and dedicated security compliance.
                     </p>
                     <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                         <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                            <ShieldCheck className="w-4 h-4 text-rose-400" /> On-Premise / VPC
+                         <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-white/70 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 rounded-full border border-neutral-200 dark:border-white/5">
+                            <ShieldCheck className="w-4 h-4 text-rose-500 dark:text-rose-400" /> On-Premise / VPC
                          </div>
-                         <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                            <Zap className="w-4 h-4 text-rose-400" /> Custom Models
+                         <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-white/70 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 rounded-full border border-neutral-200 dark:border-white/5">
+                            <Zap className="w-4 h-4 text-rose-500 dark:text-rose-400" /> Custom Models
                          </div>
-                         <div className="flex items-center gap-2 text-sm text-white/70 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                            <Check className="w-4 h-4 text-rose-400" /> Dedicated CSM
+                         <div className="flex items-center gap-2 text-sm text-neutral-700 dark:text-white/70 bg-neutral-100 dark:bg-white/5 px-3 py-1.5 rounded-full border border-neutral-200 dark:border-white/5">
+                            <Check className="w-4 h-4 text-rose-500 dark:text-rose-400" /> Dedicated CSM
                          </div>
                     </div>
                 </div>
 
                 <div className="relative z-10">
                     <Button 
-                        className="h-14 px-8 text-lg rounded-xl bg-white text-black hover:bg-neutral-200 transition-all font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                        className="h-14 px-8 text-lg rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all font-bold shadow-lg dark:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
                     >
                         Talk to Enterprise Sales
                     </Button>

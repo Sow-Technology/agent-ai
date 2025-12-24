@@ -60,7 +60,7 @@ export default function BookDemoPage() {
   };
 
   return (
-    <Spotlight className="min-h-screen bg-black selection:bg-primary/20 overflow-hidden">
+    <Spotlight className="min-h-screen bg-white dark:bg-black selection:bg-primary/20 overflow-hidden">
       <Navbar />
       
       <main className="pt-32 pb-16 min-h-screen flex flex-col items-center justify-center relative z-10 px-4">
@@ -79,9 +79,9 @@ export default function BookDemoPage() {
                          <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                          <span className="text-xs font-mono text-indigo-400 tracking-widest uppercase">System Online</span>
                      </div>
-                     <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-6">
+                     <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-6">
                          Initialize <br />
-                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-rose-400">
+                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 dark:from-indigo-400 dark:via-purple-400 dark:to-rose-400">
                              Demo Sequence.
                          </span>
                      </h1>
@@ -97,8 +97,8 @@ export default function BookDemoPage() {
                          "Integration architecture deep-dive",
                          "Security & compliance protocol review"
                      ].map((item, i) => (
-                         <div key={i} className="flex items-center gap-3 text-sm text-gray-300">
-                             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                         <div key={i} className="flex items-center gap-3 text-sm text-neutral-600 dark:text-gray-300">
+                             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
                              <span>{item}</span>
                          </div>
                      ))}
@@ -109,18 +109,18 @@ export default function BookDemoPage() {
              <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="relative lg:h-[600px] w-full rounded-3xl bg-black/40 border border-white/10 flex flex-col overflow-hidden group backdrop-blur-xl shadow-2xl"
+                className="relative lg:h-[600px] w-full rounded-3xl bg-white dark:bg-black/40 border border-neutral-200 dark:border-white/10 flex flex-col overflow-hidden group backdrop-blur-xl shadow-xl dark:shadow-2xl"
              >
                  {/* Terminal Header */}
-                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+                 <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/5 bg-neutral-50 dark:bg-white/[0.02]">
                      <div className="flex items-center gap-2">
                          <div className="flex gap-1.5">
                              <div className="w-2.5 h-2.5 rounded-full bg-rose-500/20 border border-rose-500/50" />
                              <div className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500/50" />
                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
                          </div>
-                         <div className="h-4 w-[1px] bg-white/10 mx-2" />
-                         <span className="text-[10px] font-mono text-white/40 tracking-widest uppercase">Secure Channel // Encrypted</span>
+                         <div className="h-4 w-[1px] bg-neutral-200 dark:bg-white/10 mx-2" />
+                         <span className="text-[10px] font-mono text-neutral-400 dark:text-white/40 tracking-widest uppercase">Secure Channel // Encrypted</span>
                      </div>
                      <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -149,7 +149,7 @@ export default function BookDemoPage() {
                                      value={formData.name}
                                      onChange={handleChange}
                                      required
-                                     className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-white/40 font-mono"
+                                     className="w-full bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-lg px-4 py-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-neutral-400 dark:placeholder:text-white/40 font-mono"
                                      placeholder="Enter designation..."
                                  />
                                  <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-emerald-500 group-focus-within/input:w-full transition-all duration-500" />
@@ -165,7 +165,7 @@ export default function BookDemoPage() {
                                      value={formData.email}
                                      onChange={handleChange}
                                      required
-                                     className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-white/40 font-mono"
+                                     className="w-full bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-lg px-4 py-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-neutral-400 dark:placeholder:text-white/40 font-mono"
                                      placeholder="name@company.com"
                                  />
                                  <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-emerald-500 group-focus-within/input:w-full transition-all duration-500" />
@@ -181,7 +181,7 @@ export default function BookDemoPage() {
                                  name="company"
                                  value={formData.company}
                                  onChange={handleChange}
-                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-white/40 font-mono"
+                                 className="w-full bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-lg px-4 py-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-neutral-400 dark:placeholder:text-white/40 font-mono"
                                  placeholder="Global Corp Ltd."
                              />
                              <div className="absolute top-2 right-2 flex gap-0.5 opacity-0 group-focus-within/input:opacity-100 transition-opacity">
@@ -200,7 +200,7 @@ export default function BookDemoPage() {
                                  value={formData.message}
                                  onChange={handleChange}
                                  required
-                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-white/40 font-mono min-h-[100px] resize-none"
+                                 className="w-full bg-neutral-50 dark:bg-black/40 border border-neutral-200 dark:border-white/10 rounded-lg px-4 py-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-neutral-400 dark:placeholder:text-white/40 font-mono min-h-[100px] resize-none"
                                  placeholder="Requesting 100% audit coverage..."
                              />
                          </div>
@@ -229,7 +229,7 @@ export default function BookDemoPage() {
                          </button>
 
                          <div className="text-center">
-                             <p className="text-[9px] text-white/30 font-mono uppercase tracking-widest">
+                             <p className="text-[9px] text-neutral-400 dark:text-white/30 font-mono uppercase tracking-widest">
                                  Transmission secure via 256-bit encryption
                              </p>
                          </div>

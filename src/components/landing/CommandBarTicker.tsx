@@ -27,7 +27,7 @@ export const CommandBarTicker = () => {
   return (
     <div className="relative group">
       <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-primary/50 to-secondary/50 opacity-20 group-hover:opacity-50 blur transition duration-500" />
-      <div className="relative flex items-center h-12 px-4 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 shadow-xl overflow-hidden min-w-[320px]">
+      <div className="relative flex items-center h-12 px-4 rounded-lg bg-neutral-50 dark:bg-black/40 backdrop-blur-md border border-neutral-200 dark:border-white/10 shadow-sm dark:shadow-xl overflow-hidden min-w-[320px]">
         
         {/* Animated Icon */}
         <AnimatePresence mode="wait">
@@ -51,7 +51,7 @@ export const CommandBarTicker = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -20, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute left-0 text-sm md:text-base text-gray-200 font-mono"
+              className="absolute left-0 text-sm md:text-base text-neutral-900 dark:text-gray-200 font-mono"
             >
               {COMMANDS[index].text}
             </motion.span>
@@ -59,7 +59,7 @@ export const CommandBarTicker = () => {
         </div>
 
         {/* Command shortcut hint */}
-        <div className="ml-auto text-xs text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded border border-white/5 hidden sm:block">
+        <div className="ml-auto text-xs text-neutral-500 dark:text-muted-foreground bg-neutral-200 dark:bg-white/5 px-1.5 py-0.5 rounded border border-neutral-300 dark:border-white/5 hidden sm:block">
           ⌘K
         </div>
       </div>
