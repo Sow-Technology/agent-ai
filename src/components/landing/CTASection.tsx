@@ -59,35 +59,32 @@ export const CTASection = () => {
                     <div className="col-span-1 md:col-span-2 md:col-start-7">
                         <h4 className="font-bold text-white mb-6">Product</h4>
                         <ul className="space-y-4 text-sm text-muted-foreground">
-                            <li><Link href="#" className="hover:text-indigo-400 transition-colors">Features</Link></li>
-                            <li><Link href="#" className="hover:text-indigo-400 transition-colors">Pricing</Link></li>
-                            <li><Link href="#" className="hover:text-indigo-400 transition-colors">Security</Link></li>
+                            <li><Link href="/#features" className="hover:text-indigo-400 transition-colors">Features</Link></li>
+                            <li><Link href="/pricing" className="hover:text-indigo-400 transition-colors">Pricing</Link></li>
                         </ul>
                     </div>
 
                     <div className="col-span-1 md:col-span-2">
                         <h4 className="font-bold text-white mb-6">Company</h4>
                         <ul className="space-y-4 text-sm text-muted-foreground">
-                            <li><Link href="#" className="hover:text-indigo-400 transition-colors">About</Link></li>
-                            <li><Link href="#" className="hover:text-indigo-400 transition-colors">Blog</Link></li>
-                            <li><Link href="#" className="hover:text-indigo-400 transition-colors">Careers</Link></li>
-                            <li><Link href="#" className="hover:text-indigo-400 transition-colors">Contact</Link></li>
+                            <li><Link href="/about" className="hover:text-indigo-400 transition-colors">About</Link></li>
+                            <li><Link href="/contact" className="hover:text-indigo-400 transition-colors">Contact</Link></li>
                         </ul>
                     </div>
 
                     <div className="col-span-2 md:col-span-2">
                         <h4 className="font-bold text-white mb-6">Legal</h4>
                         <ul className="space-y-4 text-sm text-muted-foreground">
-                             <li><Link href="#" className="hover:text-indigo-400 transition-colors">Privacy</Link></li>
-                             <li><Link href="#" className="hover:text-indigo-400 transition-colors">Terms</Link></li>
-                             <li><Link href="#" className="hover:text-indigo-400 transition-colors">DPA</Link></li>
+                             <li><Link href="/legal/privacy" className="hover:text-indigo-400 transition-colors">Privacy</Link></li>
+                             <li><Link href="/legal/terms" className="hover:text-indigo-400 transition-colors">Terms</Link></li>
+                             <li><Link href="/legal/dpa" className="hover:text-indigo-400 transition-colors">DPA</Link></li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
                     <div>
-                        © 2025 AssureQAi Inc. All rights reserved. Bengaluru, India.
+                        © 2025 Joaji Inc. All rights reserved. Bengaluru, India.
                     </div>
                     <div className="flex gap-6">
                         <Twitter className="w-4 h-4 hover:text-white transition-colors cursor-pointer" />

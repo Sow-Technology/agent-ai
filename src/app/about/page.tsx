@@ -7,6 +7,8 @@ import { CTASection } from "@/components/landing/CTASection";
 import { cn } from "@/lib/utils";
 import { BrainCircuit, ShieldCheck, Zap } from "lucide-react";
 import Image from "next/image";
+import { ScrambleText } from "@/components/ui/scramble-text";
+import { VisionPillarCard } from "@/components/landing/VisionPillarCard";
 
 const VALUES = [
   {
@@ -95,6 +97,82 @@ export default function AboutPage() {
                     <IntelligenceStack />
                 </div>
             </div>
+        </section>
+
+        {/* --- Vision / The North Star --- */}
+        <section className="py-32 relative overflow-hidden">
+             {/* Background Grid & Neural Mesh */}
+             <div className="absolute inset-0 bg-black">
+                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px] opacity-20" />
+                 <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+             </div>
+
+             <div className="container px-4 relative z-10">
+                 <div className="max-w-5xl mx-auto text-center">
+                     <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8 }}
+                        className="inline-flex items-center gap-2 mb-16"
+                     >
+                         <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-indigo-500" />
+                         <span className="text-xs font-mono text-indigo-400 uppercase tracking-[0.3em] font-bold">The Directive</span>
+                         <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-indigo-500" />
+                     </motion.div>
+                     
+                     <h2 className="max-w-4xl mx-auto leading-tight tracking-tight mb-20">
+                         <span className="text-2xl md:text-3xl font-light text-white/40 block mb-6">
+                             Our vision is to lead as a premier AI-driven technology company, transforming industries with 
+                         </span>
+                         
+                         <span className="block text-4xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400 mb-4">
+                             <ScrambleText text="intelligent, adaptive systems" revealSpeed={40} delay={200} />
+                         </span>
+
+                         <span className="text-2xl md:text-3xl font-light text-white/40 block mb-6">
+                            that are
+                         </span>
+
+                         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-4xl md:text-6xl font-bold text-white">
+                            <span className="text-indigo-400">
+                                <ScrambleText text="connected," delay={1500} />
+                            </span>
+                            <span className="text-purple-400">
+                                <ScrambleText text="autonomous," delay={2000} />
+                            </span>
+                            <span className="text-rose-400">
+                                <ScrambleText text="& predictive." delay={2500} />
+                            </span>
+                         </div>
+                     </h2>
+
+                     {/* 3D Pillar Cards */}
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left max-w-5xl mx-auto border-t border-white/10 pt-20 perspective-1000">
+                         <VisionPillarCard 
+                             title="Smarter & Ethical"
+                             desc="Delivering solutions that empower businesses while maintaining the highest standards of integrity."
+                             color="indigo"
+                             icon={BrainCircuit}
+                             delay={0}
+                         />
+                         <VisionPillarCard 
+                             title="Sustainable Impact"
+                             desc="Creating adaptable systems that improve lives and ensure long-term value for all stakeholders."
+                             color="purple"
+                             icon={Zap}
+                             delay={0.1}
+                         />
+                         <VisionPillarCard 
+                             title="Responsible Innovation"
+                             desc="Building trust through transparency, ensuring that every leap forward is grounded in safety."
+                             color="rose"
+                             icon={ShieldCheck}
+                             delay={0.2}
+                         />
+                     </div>
+                 </div>
+             </div>
         </section>
 
         {/* --- Values / Orbital Cards --- */}
