@@ -306,19 +306,6 @@ const TeamCard = ({ member, index }: { member: typeof TEAM[0], index: number }) 
                         ID: {member.id}
                     </div>
                 </div>
-
-                {/* Social Links Slide-Up */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-center gap-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 z-30 bg-gradient-to-t from-black/90 to-transparent pt-12">
-                     <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 transition-all border border-white/10">
-                         {/* Placeholder Icon */}
-                         <div className="w-4 h-4 bg-white/70 mask-[url(https://unpkg.com/lucide-static@latest/icons/linkedin.svg)_no-repeat_center]" /> 
-                         <span className="sr-only">LinkedIn</span>
-                     </button>
-                     <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 transition-all border border-white/10">
-                         <div className="w-4 h-4 bg-white/70 mask-[url(https://unpkg.com/lucide-static@latest/icons/twitter.svg)_no-repeat_center]" />
-                         <span className="sr-only">Twitter</span>
-                     </button>
-                </div>
             </div>
 
             {/* Info Section */}

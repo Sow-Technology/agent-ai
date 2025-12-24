@@ -28,9 +28,7 @@ import {
   ListChecks,
   Briefcase,
   Star,
-  Twitter,
   Linkedin,
-  Facebook,
 } from "lucide-react";
 import {
   Accordion,
@@ -827,29 +825,15 @@ export function HomePageContent() {
               <p className="text-gray-700 dark:text-gray-400/80 text-base">
                 Product by AssureQai
               </p>
-              <div className="flex space-x-6">
                 <a
-                  href="#"
-                  className="text-gray-700 dark:text-gray-400/80 hover:text-primary"
-                >
-                  <span className="sr-only">Facebook</span>
-                  <Facebook className="h-6 w-6" />
-                </a>
-                <a
-                  href="#"
+                  href="https://www.linkedin.com/company/assureqai/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-gray-700 dark:text-gray-400/80 hover:text-primary"
                 >
                   <span className="sr-only">LinkedIn</span>
                   <Linkedin className="h-6 w-6" />
                 </a>
-                <a
-                  href="#"
-                  className="text-gray-700 dark:text-gray-400/80 hover:text-primary"
-                >
-                  <span className="sr-only">Twitter</span>
-                  <Twitter className="h-6 w-6" />
-                </a>
-              </div>
             </div>
             <div className="mt-12 grid grid-cols-2 gap-8 xl:mt-0 xl:col-span-2">
               <div className="md:grid md:grid-cols-2 md:gap-8">

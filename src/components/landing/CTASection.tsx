@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Twitter, Linkedin, Github } from "lucide-react";
+import { ArrowRight, Linkedin } from "lucide-react";
 import Link from "next/link";
 import { CosmicButton } from "./CosmicButton";
 import { AssureQaiLogo } from "@/components/common/AssureQaiLogo";
@@ -87,9 +87,9 @@ export const CTASection = () => {
                         © 2025 Joaji Inc. All rights reserved. Bengaluru, India.
                     </div>
                     <div className="flex gap-6">
-                        <Twitter className="w-4 h-4 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer" />
-                        <Linkedin className="w-4 h-4 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer" />
-                        <Github className="w-4 h-4 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer" />
+                        <Link href="https://www.linkedin.com/company/assureqai/" target="_blank" rel="noopener noreferrer">
+                            <Linkedin className="w-4 h-4 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer" />
+                        </Link>
                     </div>
                 </div>
             </div>
