@@ -33,7 +33,7 @@ export const CTASection = () => {
                            Start Free Pilot
                         </span>
                     </CosmicButton>
-                    <Button variant="outline" size="lg" className="h-14 px-8 rounded-full text-lg border-white/10 hover:bg-white/5 text-white">
+                    <Button variant="outline" size="lg" className="h-14 px-8 rounded-full text-lg bg-black/60 border-white/20 hover:bg-white/10 hover:border-white/30 text-white">
                         Contact Sales <ArrowRight className="ml-2 w-5 h-5" />
                     </Button>
                 </div>

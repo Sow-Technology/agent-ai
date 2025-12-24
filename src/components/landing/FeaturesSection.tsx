@@ -158,7 +158,7 @@ export const FeaturesSection = () => {
                     Designed for <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">100% Visibility.</span>
                 </h2>
                 
-                <p className="text-lg text-muted-foreground/60 font-light max-w-xl mx-auto">
+                <p className="text-lg text-muted-foreground/90 font-light max-w-xl mx-auto">
                     Stop guessing. Deploy an autonomous observation layer across your entire operation.
                 </p>
             </div>

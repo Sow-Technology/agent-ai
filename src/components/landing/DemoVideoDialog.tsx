@@ -19,7 +19,7 @@ export function DemoVideoDialog({ videoSrc = "https://www.youtube.com/embed/dQw4
         <Button 
             variant="outline" 
             size="lg" 
-            className="h-14 px-8 rounded-full text-white border-white/10 hover:bg-white/5 backdrop-blur-md hover:border-white/20 transition-all duration-300 group"
+            className="h-14 px-8 rounded-full text-white bg-black/60 border-white/20 hover:bg-white/10 backdrop-blur-md hover:border-white/30 transition-all duration-300 group"
         >
             <PlayCircle className="mr-2 w-5 h-5 group-hover:text-primary transition-colors" />
             Watch Demo
