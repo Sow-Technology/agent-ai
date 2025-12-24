@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/landing/Navbar";
 import { Spotlight } from "@/components/landing/Spotlight";
@@ -7,42 +8,101 @@ import { cn } from "@/lib/utils";
 import { CheckCircle2 } from "lucide-react";
 
 export default function BookDemoPage() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    company: "",
+    message: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setIsError(false);
+
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          type: 'Demo Request'
+        }),
+      });
+
+      if (res.ok) {
+        setIsSuccess(true);
+        setFormData({ name: "", email: "", company: "", message: "" });
+        setTimeout(() => setIsSuccess(false), 5000);
+      } else {
+        setIsError(true);
+        setTimeout(() => setIsError(false), 5000);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setIsError(true);
+      setTimeout(() => setIsError(false), 5000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
   return (
-    <Spotlight className="min-h-screen bg-black selection:bg-primary/20">
+    <Spotlight className="min-h-screen bg-black selection:bg-primary/20 overflow-hidden">
       <Navbar />
       
-      <main className="pt-32 pb-16 min-h-screen flex flex-col justify-center items-center">
+      <main className="pt-32 pb-16 min-h-screen flex flex-col items-center justify-center relative z-10 px-4">
         
-        <div className="container px-4 text-center mb-12">
-             <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-white mb-6">
-                 See the Future of QA.
-             </h1>
-             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                 Book a 30-minute walkthrough with a product expert. No aggressive sales pitch, just a deep dive into the tech.
-             </p>
-        </div>
-
-        <div className="container px-4 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="container mx-auto max-w-6xl">
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
              
-             {/* Left: Expectations */}
+             {/* Left: Content */}
              <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="space-y-8 p-8 rounded-3xl bg-white/[0.03] border border-white/10"
+                className="space-y-8"
              >
-                 <h3 className="text-2xl font-bold text-white mb-6">What to expect:</h3>
-                 
-                 {[
-                    "Live demonstration of the 100% audit workflow.",
-                    "Deep dive into sentiment analysis & fatal error detection.",
-                    "Custom ROI calculation based on your volume.",
-                    "Q&A on integration and security."
-                 ].map((item, i) => (
-                     <div key={i} className="flex items-start gap-4">
-                         <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
-                         <span className="text-lg text-white/80">{item}</span>
+                 <div>
+                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 mb-6">
+                         <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                         <span className="text-xs font-mono text-indigo-400 tracking-widest uppercase">System Online</span>
                      </div>
-                 ))}
+                     <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-6">
+                         Initialize <br />
+                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-rose-400">
+                             Demo Sequence.
+                         </span>
+                     </h1>
+                     <p className="text-xl text-muted-foreground leading-relaxed max-w-md">
+                         Experience the raw power of our QA intelligence engine. Schedule a live walkthrough with our solutions engineers.
+                     </p>
+                 </div>
+
+                 <div className="space-y-4">
+                     {[
+                         "Real-time audio analysis demonstration",
+                         "Custom parameter configuration preview",
+                         "Integration architecture deep-dive",
+                         "Security & compliance protocol review"
+                     ].map((item, i) => (
+                         <div key={i} className="flex items-center gap-3 text-sm text-gray-300">
+                             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                             <span>{item}</span>
+                         </div>
+                     ))}
+                 </div>
              </motion.div>
 
              {/* Right: The Holographic Terminal */}
@@ -76,7 +136,7 @@ export default function BookDemoPage() {
                  
                  {/* Form Content */}
                  <div className="relative z-10 p-8 flex-1 flex flex-col justify-center">
-                     <form className="space-y-6">
+                     <form onSubmit={handleSubmit} className="space-y-6">
                          
                          <div className="grid grid-cols-2 gap-6">
                              <div className="group/input relative">
@@ -84,7 +144,11 @@ export default function BookDemoPage() {
                                      Identity // Name
                                  </label>
                                  <input 
-                                     type="text" 
+                                     type="text"
+                                     name="name"
+                                     value={formData.name}
+                                     onChange={handleChange}
+                                     required
                                      className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-white/40 font-mono"
                                      placeholder="Enter designation..."
                                  />
@@ -97,6 +161,10 @@ export default function BookDemoPage() {
                                  </label>
                                  <input 
                                      type="email" 
+                                     name="email"
+                                     value={formData.email}
+                                     onChange={handleChange}
+                                     required
                                      className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-white/40 font-mono"
                                      placeholder="name@company.com"
                                  />
@@ -110,6 +178,9 @@ export default function BookDemoPage() {
                              </label>
                              <input 
                                  type="text" 
+                                 name="company"
+                                 value={formData.company}
+                                 onChange={handleChange}
                                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-white/40 font-mono"
                                  placeholder="Global Corp Ltd."
                              />
@@ -125,22 +196,36 @@ export default function BookDemoPage() {
                                  Parameters // Message
                              </label>
                              <textarea 
+                                 name="message"
+                                 value={formData.message}
+                                 onChange={handleChange}
+                                 required
                                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:bg-emerald-500/5 transition-all placeholder:text-white/40 font-mono min-h-[100px] resize-none"
                                  placeholder="Requesting 100% audit coverage..."
                              />
                          </div>
 
                          <button 
-                             type="button"
-                             className="group/btn relative w-full h-14 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/50 rounded-lg text-emerald-400 font-bold uppercase tracking-wider overflow-hidden transition-all duration-300"
+                             type="submit"
+                             disabled={isLoading || isSuccess}
+                             className={cn(
+                               "group/btn relative w-full h-14 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/50 rounded-lg text-emerald-400 font-bold uppercase tracking-wider overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed",
+                               isError && "bg-red-500/10 hover:bg-red-500/20 border-red-500/50 text-red-400"
+                             )}
                          >
                              <div className="absolute inset-0 flex items-center justify-center gap-2 z-10">
-                                 <span>Initiate Uplink</span>
-                                 <div className="w-2 h-2 border-t-2 border-r-2 border-emerald-400 transform rotate-45 group-hover/btn:translate-x-1 transition-transform" />
+                                 <span>
+                                   {isLoading ? "Transmitting..." : 
+                                    isSuccess ? "Transmission Complete" : 
+                                    isError ? "Transmission Failed" : 
+                                    "Initiate Uplink"}
+                                 </span>
+                                 {!isLoading && !isSuccess && !isError && <div className="w-2 h-2 border-t-2 border-r-2 border-emerald-400 transform rotate-45 group-hover/btn:translate-x-1 transition-transform" />}
+                                 {isSuccess && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                              </div>
                              
                              {/* Button Scan Effect */}
-                             <div className="absolute inset-0 bg-emerald-500/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 ease-in-out" />
+                             {!isLoading && !isSuccess && !isError && <div className="absolute inset-0 bg-emerald-500/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 ease-in-out" />}
                          </button>
 
                          <div className="text-center">
@@ -151,9 +236,8 @@ export default function BookDemoPage() {
                      </form>
                  </div>
              </motion.div>
-
+           </div>
         </div>
-
       </main>
     </Spotlight>
   );

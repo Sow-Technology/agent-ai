@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/landing/Navbar";
 import { Spotlight } from "@/components/landing/Spotlight";
@@ -10,6 +12,59 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mail, MapPin, MessagesSquare, Radio, ShieldCheck } from "lucide-react";
 
 export default function ContactPage() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    message: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setIsError(false);
+
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          message: formData.message,
+          type: 'Contact Form'
+        }),
+      });
+
+      if (res.ok) {
+        setIsSuccess(true);
+        setFormData({ firstName: "", lastName: "", email: "", message: "" });
+        setTimeout(() => setIsSuccess(false), 5000);
+      } else {
+        setIsError(true);
+        setTimeout(() => setIsError(false), 5000);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setIsError(true);
+      setTimeout(() => setIsError(false), 5000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
   return (
     <Spotlight className="min-h-screen bg-black selection:bg-primary/20 overflow-hidden">
       <Navbar />
@@ -100,29 +155,58 @@ export default function ContactPage() {
                 transition={{ delay: 0.4 }}
                 className="lg:col-span-8"
             >
-                <form className="relative p-8 md:p-12 rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-2xl overflow-hidden">
+                <form onSubmit={handleSubmit} className="relative p-8 md:p-12 rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl shadow-2xl overflow-hidden">
                     {/* Decorative Top Bar */}
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 opacity-50" />
                     
                     <div className="grid grid-cols-2 gap-8 mb-8">
                         <div className="space-y-3">
                             <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // First Name</label>
-                            <Input className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" placeholder="Jane" />
+                            <Input 
+                                name="firstName"
+                                value={formData.firstName}
+                                onChange={handleChange}
+                                required
+                                className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" 
+                                placeholder="Jane" 
+                            />
                         </div>
                         <div className="space-y-3">
                             <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Last Name</label>
-                            <Input className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" placeholder="Doe" />
+                            <Input 
+                                name="lastName"
+                                value={formData.lastName}
+                                onChange={handleChange}
+                                required
+                                className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" 
+                                placeholder="Doe" 
+                            />
                         </div>
                     </div>
 
                     <div className="space-y-3 mb-8">
                         <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Work Email</label>
-                        <Input className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" placeholder="jane@company.com" />
+                        <Input 
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                            type="email"
+                            className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20" 
+                            placeholder="jane@company.com" 
+                        />
                     </div>
 
                     <div className="space-y-3 mb-10">
                          <label className="text-xs font-mono text-white/60 uppercase tracking-widest pl-1">Input // Directive</label>
-                         <Textarea className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 min-h-[100px] focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20 resize-none" placeholder="We need to audit 50k calls/month..." />
+                         <Textarea 
+                            name="message"
+                            value={formData.message}
+                            onChange={handleChange}
+                            required
+                            className="bg-transparent border-0 border-b border-white/20 rounded-none px-0 min-h-[100px] focus-visible:ring-0 focus-visible:border-indigo-500 focus-visible:bg-white/5 transition-all text-lg text-white placeholder:text-white/20 resize-none" 
+                            placeholder="We need to audit 50k calls/month..." 
+                        />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -130,8 +214,18 @@ export default function ContactPage() {
                             <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
                             <span>Encrypted Transmission</span>
                         </div>
-                        <Button className="h-14 px-8 bg-white text-black hover:bg-white/90 rounded-full font-bold text-lg tracking-tight group">
-                            Transmit Request
+                        <Button 
+                            type="submit"
+                            disabled={isLoading || isSuccess}
+                            className={cn(
+                                "h-14 px-8 bg-white text-black hover:bg-white/90 rounded-full font-bold text-lg tracking-tight group disabled:opacity-50 disabled:cursor-not-allowed transition-all",
+                                isError && "bg-red-500 text-white hover:bg-red-600"
+                            )}
+                        >
+                            {isLoading ? "Transmitting..." : 
+                             isSuccess ? "Success" : 
+                             isError ? "Transmission Failed" : 
+                             "Transmit Request"}
                         </Button>
                     </div>
                 </form>
