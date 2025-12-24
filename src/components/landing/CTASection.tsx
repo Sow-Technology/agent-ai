@@ -46,7 +46,8 @@ export const CTASection = () => {
                                  showIcon={true} 
                                  showLogo={true} 
                                  width={140} 
-                                 className="h-9 w-auto" 
+                                 className="h-9 w-auto"
+                                 forceDark={true}
                              />
                         </div>
                         <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">

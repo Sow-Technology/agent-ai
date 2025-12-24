@@ -49,7 +49,8 @@ export const Navbar = () => {
                             showIcon={true} 
                             showLogo={true} 
                             width={120} 
-                            className="h-8 w-auto" 
+                            className="h-8 w-auto"
+                            forceDark={true}
                         />
                     </Link>
 

@@ -7,6 +7,8 @@ interface AssureQaiLogoProps {
   height?: number;
   showIcon?: boolean;
   showLogo?: boolean;
+  /** Force dark mode logo (white logo for dark backgrounds) regardless of system theme */
+  forceDark?: boolean;
 }
 
 export function AssureQaiLogo({ 
@@ -14,7 +16,8 @@ export function AssureQaiLogo({
   width = 110, 
   height = 32,
   showIcon = true,
-  showLogo = true
+  showLogo = true,
+  forceDark = false
 }: AssureQaiLogoProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
@@ -30,24 +33,38 @@ export function AssureQaiLogo({
       )}
       {showLogo && (
         <div className="relative">
-          {/* Light Mode Logo */}
-          <Image
-            src="/logo.png"
-            alt="AssureQai Logo"
-            width={width}
-            height={height}
-            className="h-auto w-auto dark:hidden transition-opacity duration-200"
-            priority
-          />
-          {/* Dark Mode Logo */}
-          <Image
-            src="/logo-dark.png"
-            alt="AssureQai Logo"
-            width={width}
-            height={height}
-            className="h-auto w-auto hidden dark:block transition-opacity duration-200"
-            priority
-          />
+          {forceDark ? (
+            // Always show dark mode (white) logo when forceDark is true
+            <Image
+              src="/logo-dark.png"
+              alt="AssureQai Logo"
+              width={width}
+              height={height}
+              className="h-auto w-auto transition-opacity duration-200"
+              priority
+            />
+          ) : (
+            <>
+              {/* Light Mode Logo */}
+              <Image
+                src="/logo.png"
+                alt="AssureQai Logo"
+                width={width}
+                height={height}
+                className="h-auto w-auto dark:hidden transition-opacity duration-200"
+                priority
+              />
+              {/* Dark Mode Logo */}
+              <Image
+                src="/logo-dark.png"
+                alt="AssureQai Logo"
+                width={width}
+                height={height}
+                className="h-auto w-auto hidden dark:block transition-opacity duration-200"
+                priority
+              />
+            </>
+          )}
         </div>
       )}
     </div>
