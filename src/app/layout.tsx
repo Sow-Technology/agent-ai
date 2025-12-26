@@ -52,7 +52,8 @@ export const metadata: Metadata = {
     title: 'AssureQAi - AI-Powered Quality Assurance Platform',
     description: 'Transform your QA process with 100% automated conversation auditing.',
     images: ['/og/home.png'],
-    creator: '@assureqai',
+    creator: '@assureQAI',
+    site: '@assureQAI',
   },
   verification: {
     google: 'your-google-verification-code',

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Linkedin } from "lucide-react";
+import { ArrowRight, Linkedin, Twitter } from "lucide-react";
 import Link from "next/link";
 import { CosmicButton } from "./CosmicButton";
 import { AssureQaiLogo } from "@/components/common/AssureQaiLogo";
@@ -96,9 +96,9 @@ export const CTASection = () => {
                     <Link href="https://www.linkedin.com/company/assureqai" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
                         <Linkedin className="w-4 h-4" />
                     </Link>
-                    {/* <Link href="#" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                    <Link href="https://x.com/assureQAI" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
                         <Twitter className="w-4 h-4" />
-                    </Link> */}
+                    </Link>
                 </div>
             </div>
             </div>

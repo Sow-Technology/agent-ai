@@ -23,6 +23,8 @@ export const metadata: Metadata = {
     title: 'Brochure // AssureQAi',
     description: 'The platform built to audit 100% of your calls.',
     images: ['https://assureqai.com/og/brochure.png'],
+    site: '@assureQAI',
+    creator: '@assureQAI',
   },
   robots: {
     index: true,

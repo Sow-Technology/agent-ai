@@ -22,6 +22,8 @@ export const metadata: Metadata = {
     title: 'About AssureQAi - The Architects of Automated QA',
     description: 'Meet the team behind AssureQAi. We are practitioners who built the AI-powered QA platform.',
     images: ['/og/about.png'],
+    site: '@assureQAI',
+    creator: '@assureQAI',
   },
   alternates: {
     canonical: 'https://assureqai.com/about',

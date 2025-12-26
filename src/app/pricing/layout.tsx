@@ -22,6 +22,8 @@ export const metadata: Metadata = {
     title: 'AssureQAi Pricing - Transparent Scale, Zero Surprises',
     description: 'Flexible, volume-based pricing that adapts to your needs.',
     images: ['/og/pricing.png'],
+    site: '@assureQAI',
+    creator: '@assureQAI',
   },
   alternates: {
     canonical: 'https://assureqai.com/pricing',
