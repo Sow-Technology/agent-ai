@@ -32,8 +32,8 @@ const BOOK_PAGES: PageContent[] = [
                 <div className="absolute top-0 left-8 w-[1px] h-full bg-neutral-800/50" />
                 
                 <div className="relative z-10 border-2 border-emerald-500/30 p-8 w-full h-full flex flex-col items-center justify-center rounded-sm">
-                    {/* Fixed Logo Colors: Removed 'invert' to keep original brand colors */}
-                    <AssureQaiLogo showIcon showLogo width={180} className="mb-12" />
+                    {/* Fixed Logo Colors: Force Dark Mode (White) for dark cover background */}
+                    <AssureQaiLogo showIcon showLogo width={180} className="mb-12" forceDark />
                     
                     <h1 className="text-4xl font-mono font-bold text-emerald-500 uppercase tracking-widest mb-4">
                         Mission<br/>Dossier
@@ -339,7 +339,7 @@ const BOOK_PAGES: PageContent[] = [
                 </div>
 
                 <div className="mt-12 opacity-50 relative z-10">
-                    <AssureQaiLogo showIcon={false} showLogo width={120} />
+                    <AssureQaiLogo showIcon={true} showLogo width={120} forceDark />
                 </div>
             </div>
         )
@@ -514,7 +514,7 @@ export default function BrochurePage() {
         <motion.div 
             className={cn(
                 "relative z-10 perspective-[2000px] cursor-grab active:cursor-grabbing touch-none", // Added touch-none to prevent browser scrolling
-                isMobile ? "w-[85vw] h-[65vh]" : "w-[380px] md:w-[480px] h-[540px] md:h-[680px]"
+                isMobile ? "w-[85vw] h-[65vh] -mt-12" : "w-[380px] md:w-[480px] h-[540px] md:h-[680px]"
             )}
             animate={{ 
                 x: isMobile 
