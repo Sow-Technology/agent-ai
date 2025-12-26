@@ -650,8 +650,8 @@ export default function BrochurePage() {
                      </div>
                 </motion.div>
 
-                <div className="relative w-full aspect-square md:aspect-[4/3] perspective-1000 group">
-                    <IntelligenceStack />
+                <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900">
+                    <BrochureVideo src="/dashboard/videos/TopQA.mp4" />
                 </div>
             </div>
       </section>

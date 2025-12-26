@@ -22,6 +22,15 @@ export const BrochureVideo = ({ src }: BrochureVideoProps) => {
         return () => document.removeEventListener("fullscreenchange", handleFullScreenChange);
     }, []);
 
+    // Force play on mount to ensure autoplay works on iOS/Safari
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.play().catch(error => {
+                console.log("Autoplay prevented:", error);
+            });
+        }
+    }, []);
+
     const toggleFullScreen = () => {
         if (!containerRef.current) return;
 
