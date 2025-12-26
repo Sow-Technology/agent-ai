@@ -83,16 +83,22 @@ export const CTASection = () => {
                 </div>
 
                 <div className="border-t border-neutral-200 dark:border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-neutral-500 dark:text-muted-foreground">
-                    <div>
-                        © 2025 Joaji Inc. All rights reserved. Bengaluru, India.
-                    </div>
-                    <div className="flex gap-6">
-                        <Link href="https://www.linkedin.com/company/assureqai/" target="_blank" rel="noopener noreferrer">
-                            <Linkedin className="w-4 h-4 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer" />
-                        </Link>
-                    </div>
+                <div className="flex flex-col md:flex-row gap-2 md:gap-8 text-center md:text-left">
+                    <span>© 2025 Joaji Inc. All rights reserved. Bengaluru, India.</span>
+                    <span className="font-mono text-neutral-900 dark:text-neutral-300">Ph: +91 63636 44521</span>
                 </div>
+                
+                <div className="flex gap-4">
+                    <Link href="https://www.linkedin.com/company/assureqai" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                        <Linkedin className="w-4 h-4" />
+                    </Link>
+                    {/* <Link href="#" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
+                        <Twitter className="w-4 h-4" />
+                    </Link> */}
+                </div>
+            </div>
             </div>
         </footer>
     );
 };
+
