@@ -61,7 +61,6 @@ export const CTASection = () => {
                         <ul className="space-y-4 text-sm text-neutral-500 dark:text-muted-foreground">
                             <li><Link href="/#features" className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">Features</Link></li>
                             <li><Link href="/pricing" className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">Pricing</Link></li>
-                            <li><Link href="/brochure" className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">Brochure</Link></li>
                         </ul>
                     </div>
 

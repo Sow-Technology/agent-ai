@@ -82,7 +82,6 @@ export default function NotFound() {
                      <ul className="space-y-2 text-xs text-neutral-500 dark:text-neutral-400">
                          <li><Link href="/#features" className="hover:text-indigo-600 dark:hover:text-indigo-400">Features</Link></li>
                          <li><Link href="/pricing" className="hover:text-indigo-600 dark:hover:text-indigo-400">Pricing</Link></li>
-                         <li><Link href="/brochure" className="hover:text-indigo-600 dark:hover:text-indigo-400">Brochure</Link></li>
                      </ul>
                 </div>
                 <div>
