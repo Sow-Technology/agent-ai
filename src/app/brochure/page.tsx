@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import Image from "next/image";
+import { useCallback } from "react";
 
 // --- Components for Stats ---
 
@@ -147,7 +148,7 @@ const DOSSIER_PAGES = [
         <div className="p-6 bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 rounded-2xl md:backdrop-blur-sm shadow-xl dark:shadow-2xl">
           <h3 className="text-sm font-mono text-neutral-500 dark:text-neutral-400 mb-2 uppercase">Unique Selling Proposition</h3>
           <p className="text-lg text-neutral-800 dark:text-white font-medium">
-            "Full coverage at scale, deeper diagnostics, faster turnarounds—at a fraction of manual QA costs."
+            &quot;Full coverage at scale, deeper diagnostics, faster turnarounds—at a fraction of manual QA costs.&quot;
           </p>
         </div>
 
@@ -331,7 +332,7 @@ const DOSSIER_PAGES = [
                 <h3 className="font-bold text-neutral-900 dark:text-white text-base mb-1">Collections Campaign</h3>
                 <div className="text-[10px] font-mono text-neutral-500 mb-2">Volume: 75K calls/month</div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                    "Fatal error rate reduced by <Counter value={42} suffix="%" />, audit cost down <Counter value={38} suffix="%" />."
+                  &quot;Fatal error rate reduced by <Counter value={42} suffix="%" />, audit cost down <Counter value={38} suffix="%" />.&quot;
                 </p>
             </div>
 
@@ -339,14 +340,14 @@ const DOSSIER_PAGES = [
                 <div className="absolute left-0 top-0 w-1 h-full bg-indigo-500" />
                 <h3 className="font-bold text-neutral-900 dark:text-white text-base mb-1">Sales Campaign</h3>
                 <div className="text-[10px] font-mono text-neutral-500 mb-2">Volume: 40K calls/month</div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">"Parameter compliance up <Counter value={27} suffix="%" />; improved conversion hygiene."</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">&quot;Parameter compliance up <Counter value={27} suffix="%" />; improved conversion hygiene.&quot;</p>
             </div>
 
             <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 relative overflow-hidden group hover:bg-neutral-50 dark:hover:bg-white/10 transition-colors shadow-sm dark:shadow-none">
                 <div className="absolute left-0 top-0 w-1 h-full bg-emerald-500" />
                 <h3 className="font-bold text-neutral-900 dark:text-white text-base mb-1">Customer Support</h3>
                 <div className="text-[10px] font-mono text-neutral-500 mb-2">Volume: 100K+ calls/month</div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">"GAR distribution stabilized with <Counter value={51} suffix="%" /> Green scores in 8 weeks."</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">&quot;GAR distribution stabilized with <Counter value={51} suffix="%" /> Green scores in 8 weeks.&quot;</p>
             </div>
         </div>
       </div>
@@ -403,6 +404,20 @@ export default function BrochurePage() {
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const { theme } = useTheme();
 
+  const nextPage = useCallback(() => {
+    if (currentPage < DOSSIER_PAGES.length - 1) {
+      setDirection(1);
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [currentPage]);
+
+  const prevPage = useCallback(() => {
+    if (currentPage > 0) {
+      setDirection(-1);
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [currentPage]);
+
   useEffect(() => {
     // Keyboard Navigation
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -412,7 +427,7 @@ export default function BrochurePage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentPage]);
+  }, [nextPage, prevPage]);
 
   // Trigger glitch effect on page change
   useEffect(() => {
@@ -420,20 +435,6 @@ export default function BrochurePage() {
     const timer = setTimeout(() => setGlitch(false), 300);
     return () => clearTimeout(timer);
   }, [currentPage]);
-
-  const nextPage = () => {
-    if (currentPage < DOSSIER_PAGES.length - 1) {
-      setDirection(1);
-      setCurrentPage(prev => prev + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setDirection(-1);
-      setCurrentPage(prev => prev - 1);
-    }
-  };
 
   // 3D Holographic Animated Transitions
   const variants = {
@@ -468,7 +469,7 @@ export default function BrochurePage() {
         ease: "easeInOut"
       }
     })
-  };
+  } as any;
 
   return (
     <Spotlight className="min-h-screen bg-neutral-50 dark:bg-black selection:bg-emerald-500/20 flex flex-col pt-12 pb-12 overflow-hidden transition-colors duration-500 relative">
