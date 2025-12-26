@@ -243,6 +243,14 @@ const TEAM = [
         id: "Qai0004"
     },
     {
+        name: "Jessica",
+        role: "Head of Finance (HR)",
+        bio: "",
+        image: "",
+        skills: ["Finance", "People", "Culture"],
+        id: "Qai0005"
+    },
+    {
         name: "Basco",
         role: "Head of Sales",
         bio: "",
