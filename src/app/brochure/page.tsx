@@ -72,7 +72,7 @@ const BOOK_PAGES: PageContent[] = [
                  </p>
 
                  <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500 text-sm italic opacity-80">
-                    "Full coverage at scale, deeper diagnostics, faster turnarounds—at a fraction of manual QA costs."
+                    &quot;Full coverage at scale, deeper diagnostics, faster turnarounds—at a fraction of manual QA costs.&quot;
                  </div>
                  
                  <div className="mt-auto border-t border-neutral-200 dark:border-white/10 pt-6">
@@ -248,7 +248,7 @@ const BOOK_PAGES: PageContent[] = [
 
                  <div className="mt-8">
                      <p className="text-sm italic opacity-60">
-                         "AssureQAi’s 100% audit visibility changed our governance approach—pricing is a no-brainer."
+                         &quot;AssureQAi’s 100% audit visibility changed our governance approach—pricing is a no-brainer.&quot;
                      </p>
                      <p className="text-xs font-bold mt-2">— Head of Ops, Tier-1 BPO</p>
                  </div>
