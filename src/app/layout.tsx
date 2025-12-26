@@ -1,6 +1,7 @@
 
 import type {Metadata} from 'next';
 import { Inter, Outfit } from "next/font/google";
+import Script from "next/script";
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/common/ThemeProvider';
@@ -78,6 +79,21 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
+        
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-V09H926VWQ"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-V09H926VWQ');
+          `}
+        </Script>
       </body>
     </html>
   );
