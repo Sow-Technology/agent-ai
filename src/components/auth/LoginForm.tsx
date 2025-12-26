@@ -2,72 +2,72 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-// Removed direct import of server-side function
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { clientStoreToken } from "../../lib/clientAuthService";
+import { cn } from "@/lib/utils";
 
 export function LoginForm() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: ""
+  });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     setIsLoading(true);
 
-    if (!username || !password) {
-      setError("Please enter your username/email and password.");
+    if (!formData.username || !formData.password) {
+      setError("Credentials missing.");
       setIsLoading(false);
       return;
     }
 
-    // Call API route for login
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
+        setIsSuccess(true);
         clientStoreToken(data.token, data.user);
         toast({
-          title: "Login Successful",
-          description: "Welcome back!",
+          title: "Access Granted",
+          description: "Welcome back, verified user.",
+          className: "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
         });
-        // Add a small delay to ensure token is stored before redirect
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 100);
+        setTimeout(() => router.push("/dashboard"), 1000);
       } else {
-        setError(data.error || "Invalid username or password.");
+        setError(data.error || "Authentication Failed");
         toast({
-          title: "Login Failed",
-          description: data.error || "Invalid username or password.",
+          title: "Access Denied",
+          description: data.error || "Invalid credentials.",
           variant: "destructive",
         });
+        setTimeout(() => setError(""), 3000);
       }
     } catch (error) {
-      console.error("Login error:", error);
-      setError("An error occurred during login. Please try again.");
+      setError("Connection Error");
       toast({
-        title: "Login Failed",
-        description: "An error occurred during login. Please try again.",
+        title: "Network Failure",
+        description: "Unable to reach auth server.",
         variant: "destructive",
       });
     } finally {
@@ -76,109 +76,77 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full">
-      <div className="mb-10 text-left">
-        <h1 className="text-4xl font-semibold text-foreground mb-3">
-          Welcome Back!
-        </h1>
-        <p className="text-base text-muted-foreground">
-          Please enter your details to continue.
-        </p>
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-6">
+        {/* Username Field */}
+        <div className="group/input relative">
+            <label className="text-[10px] font-mono text-emerald-500/70 mb-1.5 block uppercase tracking-wider group-focus-within/input:text-emerald-400 transition-colors">
+                Identity // Username
+            </label>
+            <input 
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+                className="w-full bg-neutral-50 dark:bg-black/40 border-b border-neutral-200 dark:border-white/10 rounded-t-lg px-4 py-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:bg-emerald-500/5 transition-all placeholder:text-neutral-400 dark:placeholder:text-white/20 font-mono"
+                placeholder="Enter verified ID..."
+            />
+            <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-emerald-500 group-focus-within/input:w-full transition-all duration-500" />
+        </div>
+
+        {/* Password Field */}
+        <div className="group/input relative">
+            <label className="text-[10px] font-mono text-emerald-500/70 mb-1.5 block uppercase tracking-wider group-focus-within/input:text-emerald-400 transition-colors">
+                Security // Password
+            </label>
+            <input 
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="w-full bg-neutral-50 dark:bg-black/40 border-b border-neutral-200 dark:border-white/10 rounded-t-lg px-4 py-3 text-neutral-900 dark:text-white text-sm focus:outline-none focus:bg-emerald-500/5 transition-all placeholder:text-neutral-400 dark:placeholder:text-white/20 font-mono tracking-widest"
+                placeholder="••••••••••••"
+            />
+            <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-emerald-500 group-focus-within/input:w-full transition-all duration-500" />
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label
-            htmlFor="username"
-            className="text-sm font-medium text-foreground/80"
-          >
-            Email or Username
-          </Label>
-          <Input
-            id="username"
-            type="text"
-            placeholder="Enter your email or username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            className="text-base bg-input text-foreground placeholder:text-muted-foreground/70 border-border focus:border-accent"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label
-            htmlFor="password"
-            className="text-sm font-medium text-foreground/80"
-          >
-            Password
-          </Label>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="text-base bg-input text-foreground placeholder:text-muted-foreground/70 border-border focus:border-accent pr-10"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </Button>
-          </div>
-        </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="rememberMe"
-              checked={rememberMe}
-              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-              className="data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground border-muted-foreground/50"
-            />
-            <Label
-              htmlFor="rememberMe"
-              className="text-sm font-medium text-muted-foreground cursor-pointer"
-            >
-              Remember me
-            </Label>
-          </div>
-          <Button
-            type="button"
-            variant="link"
-            className="text-sm text-muted-foreground hover:text-accent transition-colors p-0 h-auto font-normal hover:no-underline"
-            onClick={() => {
-              toast({
-                title: "Feature Not Available",
-                description: "Password recovery is not yet implemented.",
-              });
-            }}
-          >
-            Forgot password?
-          </Button>
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-xs font-mono text-center animate-pulse">
+            ! {error}
         </div>
+      )}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
-        <Button
+      <button 
           type="submit"
-          className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-base py-3 h-12 font-semibold"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
-            </>
-          ) : (
-            "Login"
+          disabled={isLoading || isSuccess}
+          className={cn(
+            "group/btn relative w-full h-14 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/50 rounded-lg text-emerald-400 font-bold uppercase tracking-wider overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed",
+            error && "shake"
           )}
-        </Button>
-      </form>
-    </div>
+      >
+          <div className="absolute inset-0 flex items-center justify-center gap-2 z-10">
+              <span>
+                {isLoading ? "Authenticating..." : 
+                 isSuccess ? "Access Granted" : 
+                 "Initiate Uplink"}
+              </span>
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {!isLoading && !isSuccess && <div className="w-2 h-2 border-t-2 border-r-2 border-emerald-400 transform rotate-45 group-hover/btn:translate-x-1 transition-transform" />}
+              {isSuccess && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+          </div>
+          
+          {/* Button Scan Effect */}
+          {!isLoading && !isSuccess && <div className="absolute inset-0 bg-emerald-500/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 ease-in-out" />}
+      </button>
+
+      <div className="text-center">
+         <button type="button" className="text-[10px] text-neutral-500 dark:text-white/40 font-mono uppercase tracking-widest hover:text-emerald-500 transition-colors">
+             Recover Access Keys
+         </button>
+      </div>
+    </form>
   );
 }

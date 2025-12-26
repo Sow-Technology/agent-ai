@@ -1,49 +1,107 @@
+"use client";
+
 import { LoginForm } from "@/components/auth/LoginForm";
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Navbar } from "@/components/landing/Navbar";
+import { Spotlight } from "@/components/landing/Spotlight";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { CheckCircle2, ShieldCheck, Zap } from "lucide-react";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen w-full flex items-center justify-center bg-background p-4 lg:p-0 relative">
-      <div className="absolute top-6 right-6 z-10">
-        <Link href="/" passHref>
-          <Button variant="outline">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Button>
-        </Link>
-      </div>
+    <Spotlight className="min-h-screen bg-white dark:bg-black selection:bg-primary/20 overflow-hidden flex flex-col">
+      <Navbar />
+      
+      <main className="flex-1 pt-32 pb-16 min-h-screen flex flex-col items-center justify-center relative z-10 px-4">
+        
+        <div className="container mx-auto max-w-6xl">
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+             
+             {/* Left: Content & Status */}
+             <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-8 order-2 lg:order-1"
+             >
+                 <div>
+                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 mb-6">
+                         <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                         <span className="text-xs font-mono text-indigo-400 tracking-widest uppercase">System Online</span>
+                     </div>
+                     <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-neutral-900 dark:text-white mb-6">
+                         Access <br />
+                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 dark:from-indigo-400 dark:via-purple-400 dark:to-rose-400">
+                             Control Panel.
+                         </span>
+                     </h1>
+                     <p className="text-xl text-muted-foreground leading-relaxed max-w-md">
+                         Authenticate to manage audit parameters, view real-time intelligence, and configure AI agents.
+                     </p>
+                 </div>
 
-      <div className="flex w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl h-auto lg:min-h-[80vh] xl:min-h-[700px] bg-card shadow-2xl rounded-lg overflow-hidden">
-        {/* Content Section (Login) */}
-        <div className="w-full lg:w-1/2 p-8 sm:p-10 md:p-12 flex flex-col justify-center">
-          <LoginForm />
+                 <div className="space-y-4">
+                     {[
+                         "Secure 256-bit encryption session",
+                         "Real-time audit dashboard access",
+                         "AI agent configuration & training",
+                         "Enterprise-grade role management"
+                     ].map((item, i) => (
+                         <div key={i} className="flex items-center gap-3 text-sm text-neutral-600 dark:text-gray-300">
+                             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
+                             <span>{item}</span>
+                         </div>
+                     ))}
+                 </div>
+             </motion.div>
+
+             {/* Right: The Holographic Terminal (Login Form) */}
+             <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="relative w-full rounded-3xl bg-white dark:bg-black/40 border border-neutral-200 dark:border-white/10 flex flex-col overflow-hidden group backdrop-blur-xl shadow-xl dark:shadow-2xl order-1 lg:order-2"
+             >
+                 {/* Terminal Header */}
+                 <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-white/5 bg-neutral-50 dark:bg-white/[0.02]">
+                     <div className="flex items-center gap-2">
+                         <div className="flex gap-1.5">
+                             <div className="w-2.5 h-2.5 rounded-full bg-rose-500/20 border border-rose-500/50" />
+                             <div className="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500/50" />
+                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
+                         </div>
+                         <div className="h-4 w-[1px] bg-neutral-200 dark:bg-white/10 mx-2" />
+                         <span className="text-[10px] font-mono text-neutral-400 dark:text-white/40 tracking-widest uppercase">Secure Channel // Encrypted</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[10px] font-mono text-emerald-500 font-bold">LIVE</span>
+                     </div>
+                 </div>
+
+                 {/* Scanline & Grid Background */}
+                 <div className="absolute inset-0 pointer-events-none">
+                     <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:32px_32px] opacity-20" />
+                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent opacity-0 group-hover:opacity-100 animate-scan" />
+                 </div>
+                 
+                 {/* Form Content */}
+                 <div className="relative z-10 p-8 flex-1">
+                     <LoginForm />
+                     
+                     <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-white/5 flex justify-center gap-4 text-[10px] text-neutral-400 dark:text-white/30 font-mono uppercase tracking-wider">
+                         <span className="flex items-center gap-1.5">
+                             <ShieldCheck className="w-3 h-3" /> E2E Encrypted
+                         </span>
+                         <span className="flex items-center gap-1.5">
+                             <Zap className="w-3 h-3" /> SSO Enabled
+                         </span>
+                     </div>
+                 </div>
+             </motion.div>
+           </div>
         </div>
 
-        {/* Image Section */}
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative bg-secondary">
-          <Image
-            src="https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=1200&q=80"
-            alt="Welcome Background"
-            fill
-            style={{ objectFit: "cover" }}
-            data-ai-hint="office abstract"
-            priority
-          />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 p-6">
-            <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground shadow-lg leading-tight">
-                AssureQAI
-              </h2>
-              <p className="text-xl text-muted-foreground mt-2 shadow-lg">
-                AI-Powered Quality Assurance
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+      </main>
+    </Spotlight>
   );
 }

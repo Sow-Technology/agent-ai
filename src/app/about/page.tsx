@@ -10,6 +10,9 @@ import Image from "next/image";
 import { ScrambleText } from "@/components/ui/scramble-text";
 import { VisionPillarCard } from "@/components/landing/VisionPillarCard";
 
+// Note: Metadata is exported from a separate file for client components
+// See: about/metadata.ts
+
 const VALUES = [
   {
     title: "Accuracy over Assumptions",
