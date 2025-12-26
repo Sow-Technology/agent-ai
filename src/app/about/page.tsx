@@ -220,7 +220,7 @@ const TEAM = [
     },
     {
         name: "Joel J.",
-        role: "Head of Operations",
+        role: "Co-Founder & COO",
         bio: "",
         image: "/team/2.jpeg",
         skills: ["Ops", "Human-AI", "Process"],
@@ -233,6 +233,38 @@ const TEAM = [
         image: "/team/3.jpeg",
         skills: ["LLMs", "Architecture", "RAG"],
         id: "Qai0003"
+    },
+    {
+        name: "Sai Laaxmi",
+        role: "Head of Design",
+        bio: "",
+        image: "",
+        skills: ["Visual", "Product", "Brand"],
+        id: "Qai0004"
+    },
+    {
+        name: "Basco",
+        role: "Head of Sales",
+        bio: "",
+        image: "",
+        skills: ["GTM", "Revenue", "Growth"],
+        id: "Qai0006"
+    },
+    {
+        name: "Devi",
+        role: "Head of Operations",
+        bio: "",
+        image: "",
+        skills: ["Process", "Scale", "Efficiency"],
+        id: "Qai0007"
+    },
+    {
+        name: "Harshit",
+        role: "Head of Customer Success",
+        bio: "",
+        image: "",
+        skills: ["Retention", "Support", "CX"],
+        id: "QAi0008"
     }
 ];
 
@@ -285,14 +317,27 @@ const TeamCard = ({ member, index }: { member: typeof TEAM[0], index: number }) 
             <div className="absolute inset-0 bg-[linear-gradient(transparent_2px,rgba(0,0,0,0.1)_2px)] bg-[size:100%_4px] opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none z-10" />
             
             {/* Image Container */}
-            <div className="relative aspect-[4/5] overflow-hidden">
+            <div className="relative aspect-[4/5] overflow-hidden bg-neutral-100 dark:bg-neutral-900">
                 <div className="absolute inset-0 bg-indigo-500/10 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-                <Image 
-                    src={member.image} 
-                    alt={member.name}
-                    fill
-                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
-                />
+                
+                {member.image ? (
+                    <Image 
+                        src={member.image} 
+                        alt={member.name}
+                        fill
+                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-100 group-hover:scale-110"
+                    />
+                ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden relative">
+                         {/* Abstract Background for Placeholder */}
+                         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-500/10 via-neutral-900 to-neutral-900" />
+                         <div className="absolute inset-0 opacity-20 bg-[size:20px_20px] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)]" />
+                         
+                         <span className="relative z-10 text-5xl font-bold text-neutral-300/20 group-hover:text-indigo-500/40 transition-colors uppercase select-none">
+                            {member.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                         </span>
+                    </div>
+                )}
                 
                 {/* Tech Corners */}
                 <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-white/30 z-20" />
