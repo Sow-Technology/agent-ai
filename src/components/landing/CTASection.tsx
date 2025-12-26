@@ -28,14 +28,18 @@ export const CTASection = () => {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-32">
-                    <CosmicButton>
-                        <span className="flex items-center gap-2">
-                           Start Free Pilot
-                        </span>
-                    </CosmicButton>
-                    <Button variant="outline" size="lg" className="h-14 px-8 rounded-full text-lg bg-white dark:bg-black/60 border-neutral-200 dark:border-white/20 hover:bg-neutral-100 dark:hover:bg-white/10 dark:hover:border-white/30 text-neutral-900 dark:text-white shadow-sm dark:shadow-none">
-                        Contact Sales <ArrowRight className="ml-2 w-5 h-5" />
-                    </Button>
+                    <Link href="/pricing">
+                        <CosmicButton>
+                            <span className="flex items-center gap-2">
+                            Start Free Pilot
+                            </span>
+                        </CosmicButton>
+                    </Link>
+                    <Link href="/contact">
+                        <Button variant="outline" size="lg" className="h-14 px-8 rounded-full text-lg bg-white dark:bg-black/60 border-neutral-200 dark:border-white/20 hover:bg-neutral-100 dark:hover:bg-white/10 dark:hover:border-white/30 text-neutral-900 dark:text-white shadow-sm dark:shadow-none">
+                            Contact Sales <ArrowRight className="ml-2 w-5 h-5" />
+                        </Button>
+                    </Link>
                 </div>
 
                 {/* Footer Links */}

@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/landing.css";
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { Navbar } from "@/components/landing/Navbar";
 import { CTASection } from "@/components/landing/CTASection";
