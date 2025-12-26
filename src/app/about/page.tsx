@@ -259,7 +259,7 @@ const TEAM = [
         id: "Qai0006"
     },
     {
-        name: "Devi",
+        name: "Rathi R.",
         role: "Head of Operations",
         bio: "",
         image: "",
