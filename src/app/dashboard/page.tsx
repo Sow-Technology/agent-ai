@@ -50,6 +50,7 @@ import {
   CartesianGrid,
   Tooltip,
   Bar,
+  Cell,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -2067,7 +2068,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     // Compute Top Issues for this agent
     const issuesMap = new Map<
       string,
-      { count: number; criticalCount: number; subParams: Map<string, number> }
+      { count: number; criticalCount: number; type: string; subParams: Map<string, number> }
     >();
 
     agentAudits.forEach((audit) => {
@@ -2075,6 +2076,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         if (res.score < 80) {
           let mainParamName = res.parameter;
           let subParamName = "";
+          let paramType = res.type || "Non-Fatal"; // Get the type from the result
           let found = false;
 
           // Try to parse Main Parameter from "Main - Sub" format
@@ -2092,6 +2094,8 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                   if (res.parameter === combined || res.parameter.includes(combined)) {
                     mainParamName = group.name;
                     subParamName = sub.name;
+                    // Get type from the sub-parameter definition if available
+                    paramType = sub.type || res.type || "Non-Fatal";
                     found = true;
                     break;
                   }
@@ -2124,9 +2128,14 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           const existing = issuesMap.get(mainParamName) || {
             count: 0,
             criticalCount: 0,
+            type: paramType,
             subParams: new Map(),
           };
           existing.count++;
+          // Update type to Fatal if any failure in this param is Fatal
+          if (paramType === "Fatal" || paramType === "ZTP") {
+            existing.type = paramType;
+          }
           if (res.score < 50) existing.criticalCount++;
           if (subParamName) {
             existing.subParams.set(
@@ -2139,13 +2148,9 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       });
     });
 
-    // Build Top Issues data
+    // Build Top Issues data (now including Fatal/Critical parameters)
     const topIssues = Array.from(issuesMap.entries())
       .sort(([, a], [, b]) => b.count - a.count)
-      .filter(([parameter]) => {
-        const normalizedParam = parameter.toUpperCase().replace(/\s/g, "");
-        return normalizedParam !== "FATAL/CRITICAL";
-      })
       .slice(0, 5)
       .map(([reason, data]) => {
         const subParamsList = Array.from(data.subParams.entries())
@@ -2156,24 +2161,21 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           reason,
           count: data.count,
           critical: data.criticalCount > 0,
+          type: data.type, // Include the type (Fatal/Non-Fatal/ZTP)
           subParameters: subParamsList,
         };
       });
 
-    // Build Pareto data
+    // Build Pareto data (now including Fatal/Critical parameters)
     const totalFailures = Array.from(issuesMap.values()).reduce(
       (sum, data) => sum + data.count,
       0
     );
 
-    let paretoData: { parameter: string; count: number; frequencyPercentage: number; cumulative: number; percentage: number }[] = [];
+    let paretoData: { parameter: string; count: number; frequencyPercentage: number; cumulative: number; percentage: number; type: string }[] = [];
     if (totalFailures > 0) {
       const paretoIssues = Array.from(issuesMap.entries())
         .sort(([, a], [, b]) => b.count - a.count)
-        .filter(([parameter]) => {
-          const normalizedParam = parameter.toUpperCase().replace(/\s/g, "");
-          return normalizedParam !== "FATAL/CRITICAL";
-        })
         .slice(0, 10);
 
       let cumulative = 0;
@@ -2185,6 +2187,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           frequencyPercentage: (data.count / totalFailures) * 100,
           cumulative,
           percentage: (cumulative / totalFailures) * 100,
+          type: data.type, // Include the type (Fatal/Non-Fatal/ZTP)
         };
       });
     }
@@ -3392,7 +3395,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                       <CardHeader className="pb-2">
                         <CardTitle className="text-base">Pareto Analysis</CardTitle>
                         <CardDescription className="text-xs">
-                          Parameter-wise failure distribution (80/20 rule)
+                          Parameter-wise failure distribution (80/20 rule) - <span className="text-red-500 font-medium">Fatal</span> / <span className="text-orange-500 font-medium">ZTP</span> / <span className="text-purple-500 font-medium">Non-Fatal</span>
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -3428,14 +3431,37 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                                   tick={{ fontSize: 10 }}
                                   label={{ value: "Cumulative %", angle: 90, position: "insideRight", fontSize: 10 }}
                                 />
-                                <Tooltip content={<ChartTooltipContent />} />
+                                <Tooltip 
+                                  content={({ active, payload, label }) => {
+                                    if (active && payload && payload.length) {
+                                      const data = payload[0]?.payload;
+                                      return (
+                                        <div className="bg-background border rounded-lg p-2 shadow-lg text-xs">
+                                          <p className="font-semibold">{label}</p>
+                                          <p className={`font-medium ${data?.type === 'Fatal' ? 'text-red-500' : data?.type === 'ZTP' ? 'text-orange-500' : 'text-purple-500'}`}>
+                                            Type: {data?.type || 'Non-Fatal'}
+                                          </p>
+                                          <p>Frequency: {data?.frequencyPercentage?.toFixed(1)}%</p>
+                                          <p>Count: {data?.count}</p>
+                                          <p>Cumulative: {data?.percentage?.toFixed(1)}%</p>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
                                 <ReferenceLine yAxisId="right" y={80} stroke="hsl(var(--chart-2))" strokeDasharray="5 5" label={{ value: "80% Cut-off", position: "top", fontSize: 9 }} />
                                 <Bar
                                   yAxisId="left"
                                   dataKey="frequencyPercentage"
-                                  fill="hsl(249, 81%, 67%)"
                                   radius={[4, 4, 0, 0]}
                                 >
+                                  {agentSpecificChartData.paretoData.map((entry: any, index: number) => (
+                                    <Cell 
+                                      key={`cell-${index}`} 
+                                      fill={entry.type === 'Fatal' ? '#ef4444' : entry.type === 'ZTP' ? '#f97316' : 'hsl(249, 81%, 67%)'} 
+                                    />
+                                  ))}
                                   <LabelList dataKey="frequencyPercentage" position="top" fontSize={8} formatter={(v: number) => `${v.toFixed(1)}%`} />
                                 </Bar>
                                 <Line
@@ -3738,6 +3764,55 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                   actionSheet.addRow(["Week 1", "Shadowing & Practice", "Pair with a high-performing agent for 2-3 live call observations."]);
                   actionSheet.addRow(["Week 2", "Progress Audit", `Conduct 3-5 follow-up audits. Target: Reduce failures in ${topIssue} by 50%.`]);
                   actionSheet.addRow(["Week 4", "Performance Review", "Re-evaluate overall score. Escalate if improvement <10%."]);
+
+                  // Sheet 5: Formulas & Methodology (Pareto only with values)
+                  const formulaSheet = workbook.addWorksheet("Formulas");
+                  formulaSheet.columns = [{ width: 30 }, { width: 60 }, { width: 20 }];
+                  formulaSheet.addRow(["Pareto Analysis - Calculation Methodology"]).font = { bold: true, size: 16 };
+                  formulaSheet.addRow([]);
+                  
+                  // Calculate total failures for formula display
+                  const totalFailures = agentSpecificChartData.paretoData.reduce((sum: number, p: any) => sum + p.count, 0);
+                  
+                  formulaSheet.addRow(["Total Failures (across all parameters)", totalFailures]).font = { bold: true };
+                  formulaSheet.addRow([]);
+                  
+                  // Headers
+                  const formulaHeaders = formulaSheet.addRow(["Parameter", "Formula with Values", "Result"]);
+                  formulaHeaders.font = { bold: true };
+                  formulaHeaders.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF6366F1" } }; c.font = { bold: true, color: { argb: "FFFFFFFF" } }; });
+                  
+                  // Show each parameter with its actual formula calculation
+                  let runningCumulative = 0;
+                  agentSpecificChartData.paretoData.forEach((p: any, idx: number) => {
+                    const frequencyPct = totalFailures > 0 ? (p.count / totalFailures) * 100 : 0;
+                    runningCumulative += frequencyPct;
+                    
+                    // Frequency % row
+                    formulaSheet.addRow([
+                      `${p.parameter} - Frequency %`,
+                      `= (${p.count} / ${totalFailures}) × 100`,
+                      `${frequencyPct.toFixed(1)}%`
+                    ]);
+                    
+                    // Cumulative % row  
+                    const prevCumulative = runningCumulative - frequencyPct;
+                    formulaSheet.addRow([
+                      `${p.parameter} - Cumulative %`,
+                      idx === 0 
+                        ? `= ${frequencyPct.toFixed(1)}% (first parameter)`
+                        : `= ${prevCumulative.toFixed(1)}% + ${frequencyPct.toFixed(1)}%`,
+                      `${runningCumulative.toFixed(1)}%`
+                    ]);
+                    
+                    formulaSheet.addRow([]); // Empty row between parameters
+                  });
+                  
+                  // Legend
+                  formulaSheet.addRow([]);
+                  formulaSheet.addRow(["Formula Definitions:"]).font = { bold: true, size: 12 };
+                  formulaSheet.addRow(["Frequency %", "= (Parameter Failure Count / Total Failures) × 100"]);
+                  formulaSheet.addRow(["Cumulative %", "= Sum of all Frequency % values up to and including this parameter"]);
                   
                   const buffer = await workbook.xlsx.writeBuffer();
                   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });

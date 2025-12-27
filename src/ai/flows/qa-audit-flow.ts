@@ -273,7 +273,22 @@ ${transcriptionInstructions}
    - Account/Card numbers → [ACCOUNT MASKED]
    - Email addresses → [EMAIL MASKED]
    - Aadhaar/PAN/ID numbers → [ID MASKED]
-3. **Audit Scoring**: Evaluate EACH parameter based on the call content. Be precise and fair in your scoring. THIS IS THE MOST IMPORTANT PART.
+3. **Audit Scoring Guidelines**:
+   
+   **Score Scale (0-100):**
+   - **100**: Perfect compliance - agent fully met the requirement
+   - **80-99**: Good - minor issues but acceptable performance
+   - **50-79**: Needs improvement - noticeable issues but not critical
+   - **1-49**: Poor - significant failure, requires immediate attention
+   - **0**: Complete failure - requirement was not met at all
+   
+   **Parameter Types & Their Impact:**
+   - **Fatal Parameters**: Critical compliance items. Score > 50% (not perfect) on ANY Fatal parameter triggers Zero Tolerance Policy (ZTP) - overall audit score becomes 0.
+   - **Non-Fatal Parameters**: Standard quality metrics. Low scores reduce overall score but don't trigger ZTP.
+   - **ZTP Parameters**: Absolute zero tolerance. ANY failure (score < 80%) on ZTP parameters should result in score of 0 for that parameter.
+   
+   **IMPORTANT**: Be precise and fair in your scoring. The score should reflect actual performance observed in the call.
+   
 4. **Root Cause Analysis**: If issues are found, provide thoughtful analysis of why they occurred.
 5. **Summary**: Give constructive feedback highlighting strengths and areas for improvement.
 6. **CRITICAL - COMPLETE ALL AUDIT RESULTS**: You MUST provide a score and comments for EVERY sub-parameter listed above. Do not truncate or skip any parameters.
@@ -281,6 +296,7 @@ ${transcriptionInstructions}
 **Output Requirements:**
 - Calculate weighted scores correctly (score × weight ÷ 100)
 - Overall score should be the sum of all weighted scores
+- **CRITICAL ZTP RULE**: If ANY Fatal-type parameter scores GREATER than 50% (meaning not perfect compliance), the overall audit score MUST be set to 0 (Zero Tolerance Policy)
 - Provide detailed, actionable feedback
 - Use the identified agent name in the summary
 - PRIORITIZE completing all auditResults over transcription length
@@ -454,6 +470,17 @@ ${transcriptionInstructions}
     if (output.auditResults && Array.isArray(output.auditResults) && output.auditResults.length > 0) {
       output.overallScore = output.auditResults.reduce((sum, r) => sum + (r.weightedScore || 0), 0);
     } else {
+      output.overallScore = 0;
+    }
+  }
+  
+  // ZTP (Zero Tolerance Policy): If any Fatal parameter scores > 50, set overall score to 0
+  if (output.auditResults && Array.isArray(output.auditResults)) {
+    const hasFatalFailure = output.auditResults.some(
+      (r) => r.type === "Fatal" && r.score > 50
+    );
+    if (hasFatalFailure) {
+      console.log("ZTP Applied: Fatal parameter scored above 50%, setting overall score to 0");
       output.overallScore = 0;
     }
   }
