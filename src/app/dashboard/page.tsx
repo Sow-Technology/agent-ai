@@ -536,16 +536,20 @@ function applyAuditFilters(
 
   // Role-based access control:
   // - Administrator: Can see ALL audits across the system
-  // - Project Admin: Can see all audits within their project only
-  // - Manager, QA Analyst, Auditor, Agent: Can only see audits they performed
+  // - Project Admin, Manager: Can see all audits within their project only
+  // - Agent: Can see audits where they are the subject (agentUserId)
+  // - QA Analyst, Auditor: Can only see audits they performed
   if (currentUser) {
     if (currentUser.role === "Administrator") {
       // Administrator can see all audits - no filtering
-    } else if (currentUser.role === "Project Admin") {
-      // Project Admin can see all audits within their project
+    } else if (currentUser.role === "Project Admin" || currentUser.role === "Manager") {
+      // Project Admin and Manager can see all audits within their project
       filtered = filtered.filter((a) => a.projectId === currentUser.projectId);
+    } else if (currentUser.role === "Agent") {
+      // Agent can see audits where they are the agent being audited
+      filtered = filtered.filter((a) => a.agentUserId === currentUser.id);
     } else {
-      // All other roles can only see audits they performed
+      // All other roles (QA Analyst, Auditor) can only see audits they performed
       filtered = filtered.filter((a) => a.auditedBy === currentUser.id);
     }
   }

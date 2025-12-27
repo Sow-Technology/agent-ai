@@ -166,6 +166,7 @@ export async function getAllAudits(): Promise<AuditDocument[]> {
 export interface AuditFilters {
   auditType?: "manual" | "ai";
   agentName?: string;
+  agentUserId?: string | string[]; // Can be single value or array for OR matching
   campaignName?: string;
   qaParameterSetId?: string;
   projectId?: string;
@@ -211,6 +212,13 @@ export async function getAuditsWithFilters(
     }
     if (filters.projectId) {
       query.projectId = filters.projectId;
+    }
+    if (filters.agentUserId) {
+      if (Array.isArray(filters.agentUserId)) {
+        query.agentUserId = { $in: filters.agentUserId };
+      } else {
+        query.agentUserId = filters.agentUserId;
+      }
     }
     if (filters.auditedBy) {
       if (Array.isArray(filters.auditedBy)) {

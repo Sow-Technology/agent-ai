@@ -192,10 +192,14 @@ export async function GET(request: NextRequest) {
     if (endDate) filters.endDate = new Date(endDate);
 
     // Apply role-based filtering at database level
-    if (currentUserRole === "Agent" || currentUserRole === "Auditor") {
-      // Match by username OR user ID
+    if (currentUserRole === "Agent") {
+      // Agent sees audits where they are the subject being audited
+      filters.agentUserId = [currentUsername, currentUserId].filter(Boolean);
+    } else if (currentUserRole === "Auditor") {
+      // Auditor sees audits they performed
       filters.auditedBy = [currentUsername, currentUserId].filter(Boolean);
-    } else if (currentUserRole === "Project Admin") {
+    } else if (currentUserRole === "Project Admin" || currentUserRole === "Manager") {
+      // Project Admin and Manager see all audits within their project
       filters.projectId = currentUser?.projectId;
     }
     // Administrator sees all audits - no additional filter
