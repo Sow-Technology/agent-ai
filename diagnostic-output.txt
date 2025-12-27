@@ -1,0 +1,51 @@
+[dotenv@17.2.1] injecting env (0) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.2.1] injecting env (6) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+✅ Connected
+
+═══════════════════════════════════════════════════════
+              SINGLE AUDIT DEEP ANALYSIS               
+═══════════════════════════════════════════════════════
+
+ID: 68f7cdeb7bee59951afb9c6a
+Agent: Sathish
+Overall Score (in DB): 600
+Max Possible Score: 100
+Call Date: Tue Oct 21 2025 23:46:11 GMT+0530 (India Standard Time)
+
+📊 Audit Results (6 parameters):
+
+ 1. Unknown
+    score: 100 | maxScore: 100 | weight: N/A | weightedScore: N/A | type: Non-Fatal
+ 2. Unknown
+    score: 100 | maxScore: 100 | weight: N/A | weightedScore: N/A | type: Non-Fatal
+ 3. Unknown
+    score: 100 | maxScore: 100 | weight: N/A | weightedScore: N/A | type: Non-Fatal
+ 4. Unknown
+    score: 100 | maxScore: 100 | weight: N/A | weightedScore: N/A | type: Non-Fatal
+ 5. Unknown
+    score: 100 | maxScore: 100 | weight: N/A | weightedScore: N/A | type: Fatal
+ 6. Unknown
+    score: 100 | maxScore: 100 | weight: N/A | weightedScore: N/A | type: Non-Fatal
+
+═══════════════════════════════════════════════════════
+                    CALCULATIONS                        
+═══════════════════════════════════════════════════════
+
+Sum of all "score" values: 600
+Sum of all "maxScore" values: 600
+Sum of all "weight" values: N/A (no weight field)
+Stored overallScore: 600
+Stored maxPossibleScore: 100
+
+💡 INTERPRETATION:
+   overallScore = sum of maxScore values
+
+📐 If we normalize: 600 / 100 * 100 = 600.0%
+
+═══════════════════════════════════════════════════════
+          SAMPLE ZTP AUDIT (score = 0)                 
+═══════════════════════════════════════════════════════
+
+Agent: Unknown Agent
+Fatal parameters: 1
+   - undefined: score 0%

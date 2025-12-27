@@ -1,25 +1,22 @@
 /**
- * Migration Script: Apply ZTP Logic to Existing Audits
+ * Fixed Migration Script: Apply ZTP Without Recalculation
  * 
- * This script updates all existing audits to apply the new ZTP rule:
- * If any Fatal parameter has score > 50%, set overall score to 0.
+ * This script applies ZTP logic to existing scores WITHOUT recalculating them.
+ * It preserves the AI's original score calculations.
  * 
- * Run with: npx tsx scripts/migrate-ztp-scores.ts
+ * Run with: npx tsx scripts/apply-ztp-fixed.ts
  */
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config({ path: '.env.local' });
-dotenv.config({ path: '.env' }); // Also try .env file
+dotenv.config({ path: '.env' });
 
-// Use the same pattern as src/lib/mongoose.ts
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sop-management';
 
 console.log(`📡 Using MongoDB URI: ${MONGODB_URI.substring(0, 30)}...`);
 
-// Define the audit schema inline for the script
 const auditResultSchema = new mongoose.Schema({
   parameterId: String,
   parameterName: String,
@@ -31,53 +28,31 @@ const auditResultSchema = new mongoose.Schema({
 
 const callAuditSchema = new mongoose.Schema({
   callId: String,
-  agentName: String,
-  agentUserId: String,
-  customerName: String,
-  callDate: Date,
-  campaignId: String,
-  campaignName: String,
-  projectId: String,
   auditResults: [auditResultSchema],
   overallScore: Number,
   maxPossibleScore: Number,
-  transcript: String,
-  englishTranslation: String,
-  audioUrl: String,
-  auditedBy: String,
-  auditType: String,
-  tokenUsage: {
-    inputTokens: Number,
-    outputTokens: Number,
-    totalTokens: Number,
-  },
-  auditDurationMs: Number,
-  audioHash: String,
 }, { timestamps: true });
 
-async function migrateAudits() {
-  console.log('🔄 Starting ZTP Migration Script...');
-  console.log('📊 Rule: If any Fatal parameter score > 50%, set overall score to 0\n');
+async function applyZTP() {
+  console.log('🔄 Starting ZTP Application (No Recalculation)...');
+  console.log('📊 Rule: If any Fatal parameter score < 50%, set overall score to 0\n');
 
   try {
-    // Connect to MongoDB
     await mongoose.connect(MONGODB_URI!);
     console.log('✅ Connected to MongoDB\n');
 
-    // Get or create the model
     const CallAudit = mongoose.models.CallAudit || mongoose.model('CallAudit', callAuditSchema);
 
-    // Find all audits
+    // Get all audits
     const audits = await CallAudit.find({}).lean();
     console.log(`📋 Found ${audits.length} total audits\n`);
 
-    let updatedCount = 0;
-    let skippedCount = 0;
+    let ztpAppliedCount = 0;
+    let normalScoringCount = 0;
     let alreadyZeroCount = 0;
 
     for (const audit of audits) {
       const auditDoc = audit as any;
-      const auditId = auditDoc._id.toString();
       const currentScore = auditDoc.overallScore || 0;
       
       // Check if any Fatal parameter has score < 50
@@ -87,29 +62,33 @@ async function migrateAudits() {
       );
 
       if (hasFatalFailure) {
-        if (currentScore === 0) {
-          // Already zero, no need to update
-          alreadyZeroCount++;
-          console.log(`⏭️  Audit ${auditId}: Already has score 0 (skipping)`);
-        } else {
-          // Update the score to 0
+        if (currentScore !== 0) {
+          // Apply ZTP
           await CallAudit.updateOne(
             { _id: auditDoc._id },
             { $set: { overallScore: 0 } }
           );
-          updatedCount++;
-          console.log(`✅ Audit ${auditId}: Updated score from ${currentScore} to 0 (Fatal parameter < 50, ZTP triggered)`);
+          ztpAppliedCount++;
+          if (ztpAppliedCount <= 5) {
+            console.log(`✅ ZTP applied: ${auditDoc._id} (was ${currentScore}, now 0)`);
+          }
+        } else {
+          alreadyZeroCount++;
         }
       } else {
-        skippedCount++;
+        normalScoringCount++;
       }
+    }
+
+    if (ztpAppliedCount > 5) {
+      console.log(`   ... and ${ztpAppliedCount - 5} more audits`);
     }
 
     console.log('\n📊 Migration Summary:');
     console.log(`   Total audits processed: ${audits.length}`);
-    console.log(`   Updated to score 0: ${updatedCount}`);
+    console.log(`   ZTP applied (set to 0): ${ztpAppliedCount}`);
     console.log(`   Already had score 0: ${alreadyZeroCount}`);
-    console.log(`   No Fatal failure (unchanged): ${skippedCount}`);
+    console.log(`   Normal scoring (no ZTP): ${normalScoringCount}`);
     console.log('\n✅ Migration completed successfully!');
 
   } catch (error) {
@@ -121,5 +100,4 @@ async function migrateAudits() {
   }
 }
 
-// Run the migration
-migrateAudits();
+applyZTP();

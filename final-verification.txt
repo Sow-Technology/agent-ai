@@ -1,0 +1,55 @@
+[dotenv@17.2.1] injecting env (0) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.1] injecting env (6) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+📡 Using MongoDB URI: mongodb+srv://ajithtexpertcall...
+🔍 Starting QA Calculations Analysis...
+
+✅ Connected to MongoDB
+
+📋 Found 1023 audits in December 2025
+
+═══════════════════════════════════════════════════════
+                   CALCULATION RESULTS                 
+═══════════════════════════════════════════════════════
+
+📊 BASIC STATISTICS:
+   Total Audits: 1023
+   Audits with score = 0: 919 (89.8%)
+   Audits with score > 0: 104 (10.2%)
+
+📈 SCORE AVERAGES:
+   Overall Average (including zeros): 9.4%
+   Average (excluding zeros): 92.4%
+
+🔴 FATAL ERRORS:
+   Audits with Fatal < 80: 919 (89.8%)
+   Audits with Fatal < 50 (ZTP): 919 (89.8%)
+
+📊 SCORE DISTRIBUTION:
+   0           919 ( 89.8%)  █████████████████████████████████████████████
+   1-20          0 (  0.0%)  
+   21-40         0 (  0.0%)  
+   41-60         1 (  0.1%)  
+   61-80         5 (  0.5%)  
+   81-100       98 (  9.6%)  █████
+
+═══════════════════════════════════════════════════════
+                  DASHBOARD COMPARISON                 
+═══════════════════════════════════════════════════════
+
+Dashboard shows:
+   - Overall QA Score: 79.4%
+   - Fatal Rate: 89.8% (919 audits)
+   - ZTP Triggered: 89.8% (919 audits)
+
+Our calculations show:
+   - Overall Average (incl. zeros): 9.4%
+   - Overall Average (excl. zeros): 92.4%
+   - Fatal Rate (< 80): 89.8%
+   - ZTP Rate (< 50): 89.8%
+
+💡 ANALYSIS:
+   ⚠️  Neither calculation matches 79.4% - investigating further...
+
+✅ Analysis completed successfully!
+
+🔌 Disconnected from MongoDB

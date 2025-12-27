@@ -1378,6 +1378,10 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     fatalRate: 0,
     fatalAuditsCount: 0,
   });
+  const [ztpData, setZtpData] = useState({
+    ztpAuditsCount: 0,
+    ztpRate: 0,
+  });
   const [isFatalExplanationOpen, setIsFatalExplanationOpen] = useState(false);
 
   // Time series data for line charts
@@ -1483,7 +1487,14 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   useEffect(() => {
     if (filteredAudits.length > 0) {
       const totalScore = filteredAudits.reduce(
-        (sum, audit) => sum + audit.overallScore,
+        (sum, audit) => {
+          // Normalize score: if maxPossibleScore exists and is > 100, normalize to 0-100 scale
+          const maxPossible = audit.auditData?.maxPossibleScore || 100;
+          const normalizedScore = maxPossible > 100 
+            ? (audit.overallScore / maxPossible) * 100 
+            : audit.overallScore;
+          return sum + normalizedScore;
+        },
         0
       );
       setOverallQAScore(
@@ -1944,6 +1955,17 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             : 0,
       });
 
+      // Calculate ZTP audits (overall score = 0)
+      const ztpAuditsCount = filteredAudits.filter((audit) => audit.overallScore === 0).length;
+      const ztpRate = filteredAudits.length > 0
+        ? parseFloat(((ztpAuditsCount / filteredAudits.length) * 100).toFixed(1))
+        : 0;
+      
+      setZtpData({
+        ztpAuditsCount,
+        ztpRate,
+      });
+
       // Calculate daily audits and fatal errors
       const dailyAuditsMap = new Map<string, number>();
       const dailyFatalErrorsMap = new Map<string, number>();
@@ -2288,6 +2310,8 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                   {fatalErrorsData.fatalAuditsCount} audits with fatal errors
                 </p>
               </GlassCard>
+
+       
 
               <GlassCard 
                 title="Training Needs" 

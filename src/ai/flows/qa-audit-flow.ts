@@ -283,7 +283,7 @@ ${transcriptionInstructions}
    - **0**: Complete failure - requirement was not met at all
    
    **Parameter Types & Their Impact:**
-   - **Fatal Parameters**: Critical compliance items. Score > 50% (not perfect) on ANY Fatal parameter triggers Zero Tolerance Policy (ZTP) - overall audit score becomes 0.
+   - **Fatal Parameters**: Critical compliance items. Score < 50% on ANY Fatal parameter triggers Zero Tolerance Policy (ZTP) - overall audit score becomes 0.
    - **Non-Fatal Parameters**: Standard quality metrics. Low scores reduce overall score but don't trigger ZTP.
    - **ZTP Parameters**: Absolute zero tolerance. ANY failure (score < 80%) on ZTP parameters should result in score of 0 for that parameter.
    
@@ -296,7 +296,7 @@ ${transcriptionInstructions}
 **Output Requirements:**
 - Calculate weighted scores correctly (score × weight ÷ 100)
 - Overall score should be the sum of all weighted scores
-- **CRITICAL ZTP RULE**: If ANY Fatal-type parameter scores GREATER than 50% (meaning not perfect compliance), the overall audit score MUST be set to 0 (Zero Tolerance Policy)
+- **CRITICAL ZTP RULE**: If ANY Fatal-type parameter scores BELOW 50% (critical failure), the overall audit score MUST be set to 0 (Zero Tolerance Policy)
 - Provide detailed, actionable feedback
 - Use the identified agent name in the summary
 - PRIORITIZE completing all auditResults over transcription length
@@ -474,13 +474,13 @@ ${transcriptionInstructions}
     }
   }
   
-  // ZTP (Zero Tolerance Policy): If any Fatal parameter scores > 50, set overall score to 0
+  // ZTP (Zero Tolerance Policy): If any Fatal parameter scores < 50, set overall score to 0
   if (output.auditResults && Array.isArray(output.auditResults)) {
     const hasFatalFailure = output.auditResults.some(
-      (r) => r.type === "Fatal" && r.score > 50
+      (r) => r.type === "Fatal" && r.score < 50
     );
     if (hasFatalFailure) {
-      console.log("ZTP Applied: Fatal parameter scored above 50%, setting overall score to 0");
+      console.log("ZTP Applied: Fatal parameter scored below 50%, setting overall score to 0");
       output.overallScore = 0;
     }
   }
