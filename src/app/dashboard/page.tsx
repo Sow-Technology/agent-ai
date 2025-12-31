@@ -179,7 +179,7 @@ import type { AuditResultDocument } from "@/lib/models";
 
 import { Suspense } from "react";
 import { getAuthHeaders } from "@/lib/authUtils";
-import { exportChartWithData, exportDashboardWithAllCharts } from "@/lib/exportUtils";
+import { exportAuditDataAsXLSX, exportChartWithData, exportDashboardWithAllCharts, type AuditExportData, type ExportSummaryMetrics } from "@/lib/exportUtils";
 
 // Helper function to convert AuditDocument to SavedAuditItem
 function convertQAParameterDocumentToQAParameter(
@@ -481,14 +481,15 @@ function generateCSV(audits: SavedAuditItem[], includeTokens: boolean = false) {
   return rows.join("\n");
 }
 
-function handleDownload(
+async function handleDownload(
   audits: SavedAuditItem[],
   activeTab: string,
   dateRange: DateRange | undefined,
   selectedCampaignIdForFilter: string,
   availableQaParameterSets: QAParameter[],
   currentUser: User | null,
-  includeTokens: boolean = false
+  includeTokens: boolean = false,
+  chartRefs: { name: string; element: HTMLElement | null }[] = []
 ) {
   try {
     // Compute filtered audits based on current UI filters
@@ -507,17 +508,151 @@ function handleDownload(
       currentUser
     );
 
-    // Generate CSV with reasoning included
-    const csv = generateCSV(filtered, includeTokens);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `Audit Template for QAI.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Transform audits to export format
+    const exportData: AuditExportData[] = filtered.map((audit) => {
+      // Determine call category based on score
+      let callCategory = "Bad";
+      if (audit.overallScore >= 90) {
+        callCategory = "Good";
+      } else if (audit.overallScore >= 80) {
+        callCategory = "Average";
+      }
+
+      // Determine pass/fail
+      const passFail = audit.overallScore >= 90 ? "Pass" : "Fail";
+
+      // Determine fatal status and count
+      const auditResults = audit.auditData?.auditResults || [];
+      const fatalCount = auditResults.filter(
+        (result: any) => result?.type === "Fatal" && result?.score < 80
+      ).length;
+      let fatalStatus = "Non-Fatal";
+      if (fatalCount > 0) {
+        fatalStatus = "Fatal";
+      } else if (audit.overallScore === 0) {
+        fatalStatus = "ZTP";
+      }
+
+      // Format audit date as DD-MM-YYYY
+      const auditDate = new Date(audit.auditDate);
+      const formattedDate = `${auditDate
+        .getDate()
+        .toString()
+        .padStart(2, "0")}-${(auditDate.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${auditDate.getFullYear()}`;
+
+      // Calculate audit duration
+      let auditDuration = "";
+      let startTime = "";
+      let endTime = "";
+
+      if (audit.auditData?.auditDurationMs) {
+        const durationMs = audit.auditData.auditDurationMs;
+        const hours = Math.floor(durationMs / (1000 * 60 * 60));
+        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+        auditDuration = `${hours.toString().padStart(2, "0")}:${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+        const endDateVal = auditDate;
+        const startDateVal = new Date(auditDate.getTime() - durationMs);
+
+        const formatDateTime = (date: Date) => {
+          const d = date.getDate().toString().padStart(2, "0");
+          const m = (date.getMonth() + 1).toString().padStart(2, "0");
+          const y = date.getFullYear();
+          const hh = date.getHours().toString().padStart(2, "0");
+          const mm = date.getMinutes().toString().padStart(2, "0");
+          const ss = date.getSeconds().toString().padStart(2, "0");
+          return `${d}-${m}-${y} ${hh}:${mm}:${ss}`;
+        };
+
+        startTime = formatDateTime(startDateVal);
+        endTime = formatDateTime(endDateVal);
+      }
+
+      // Call duration
+      let callDuration = "";
+      if (audit.auditData?.callDuration) {
+        callDuration = audit.auditData.callDuration;
+      } else if (audit.auditData?.audioDuration) {
+        const duration = parseFloat(audit.auditData.audioDuration);
+        if (!isNaN(duration)) {
+          const minutes = Math.floor(duration / 60);
+          const seconds = Math.floor(duration % 60);
+          callDuration = `${minutes.toString().padStart(2, "0")}:${seconds
+            .toString()
+            .padStart(2, "0")}`;
+        }
+      }
+
+      // Build parameter scores map
+      const parameterScores: Record<string, number | string> = {};
+      auditResults.forEach((result: any) => {
+        if (result?.parameter) {
+          parameterScores[result.parameter] =
+            result?.score ?? result?.percentage ?? "";
+        }
+      });
+
+      return {
+        employeeId: audit.agentUserId || audit.auditData?.agentUserId || audit.agentName || "",
+        campaign: audit.campaignName || "",
+        callCategory,
+        agentName: audit.agentName || "",
+        auditId: audit.id,
+        callDuration,
+        auditDate: formattedDate,
+        auditedBy: audit.auditType === "ai" ? "AI" : "Manual",
+        passFail,
+        auditDuration,
+        startTime,
+        endTime,
+        overallScore: audit.overallScore,
+        fatalStatus,
+        fatalCount,
+        parameterScores,
+        tokenUsage: audit.auditData?.tokenUsage,
+      };
+    });
+
+    // Calculate summary metrics
+    const passCount = filtered.filter((a) => a.overallScore >= 90).length;
+    const fatalTotal = filtered.reduce((acc, audit) => {
+      const results = audit.auditData?.auditResults || [];
+      return acc + results.filter((r: any) => r?.type === "Fatal" && r?.score < 80).length;
+    }, 0);
+    const ztpCount = filtered.filter((a) => a.overallScore === 0).length;
+    const avgScore = filtered.length > 0
+      ? filtered.reduce((sum, a) => sum + a.overallScore, 0) / filtered.length
+      : 0;
+
+    const reportPeriod = dateRange?.from && dateRange?.to
+      ? `${format(dateRange.from, "MMM d, yyyy")} - ${format(dateRange.to, "MMM d, yyyy")}`
+      : "All Time";
+
+    const summaryMetrics: ExportSummaryMetrics = {
+      reportPeriod,
+      totalAudits: filtered.length,
+      passRate: filtered.length > 0 ? (passCount / filtered.length) * 100 : 0,
+      averageScore: avgScore,
+      fatalCount: fatalTotal,
+      ztpCount,
+      aiAudits: filtered.filter((a) => a.auditType === "ai").length,
+      manualAudits: filtered.filter((a) => a.auditType === "manual").length,
+    };
+
+    // Export to XLSX
+    const result = await exportAuditDataAsXLSX(exportData, summaryMetrics, chartRefs, {
+      includeTokens,
+      filename: `QA_Audit_Report`,
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || "Export failed");
+    }
   } catch (err) {
     console.error("Failed to download audits:", err);
     alert("Failed to download audits. Please try again.");
