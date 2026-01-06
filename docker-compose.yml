@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  # Main domain - agent-ai-main
+  agent-ai-main:
+    build: .
+    container_name: agent-ai-main
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - MONGODB_URI=${MONGODB_URI_MAIN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      # Add other env vars as needed
+    restart: unless-stopped
+    networks:
+      - agent-network
+
+  # Worker for main domain
+  worker-main:
+    build: .
+    container_name: bulk-worker-main
+    command: npm run worker:bulk
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=${MONGODB_URI_MAIN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_RPM=2
+      - GEMINI_RPH=100
+    restart: unless-stopped
+    networks:
+      - agent-network
+
+  # Second domain - agent-ai-insure24
+  agent-ai-insure24:
+    build: .
+    container_name: agent-ai-insure24
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - MONGODB_URI=${MONGODB_URI_INSURE24}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      # Add other env vars as needed
+    restart: unless-stopped
+    networks:
+      - agent-network
+
+  # Worker for insure24 domain
+  worker-insure24:
+    build: .
+    container_name: bulk-worker-insure24
+    command: npm run worker:bulk
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=${MONGODB_URI_INSURE24}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_RPM=2
+      - GEMINI_RPH=100
+    restart: unless-stopped
+    networks:
+      - agent-network
+
+networks:
+  agent-network:
+    driver: bridge

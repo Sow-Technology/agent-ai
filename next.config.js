@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone', // Required for Docker deployment
   /* config options here */
   // Note: bodyParser size limits should be configured per-route using route segment config in Next.js 14.
   typescript: {

@@ -204,6 +204,7 @@ export async function runBulkWorkerOnce() {
               overallScore: cachedAudit.overallScore,
               englishTranslation: cachedAudit.englishTranslation,
               transcriptionInOriginalLanguage: cachedAudit.transcript,
+              callSummary: cachedAudit.callSummary,
               tokenUsage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
               auditDurationMs: 0,
             };
@@ -213,7 +214,7 @@ export async function runBulkWorkerOnce() {
               agentUserId: mapped.agentUserId,
               campaignName: mapped.campaignName,
               audioDataUri,
-              callLanguage: "English",
+              callLanguage: "Auto-detect",
               auditParameters,
               applyRateLimit: campaign.applyRateLimit,
             } as any);
@@ -250,6 +251,7 @@ export async function runBulkWorkerOnce() {
               qaResult.englishTranslation ||
               qaResult.transcriptionInOriginalLanguage,
             englishTranslation: qaResult.englishTranslation,
+            callSummary: qaResult.callSummary,
             audioUrl: mapped.audioUrl,
             auditedBy: campaign.createdBy,
             auditType: "ai",

@@ -20,6 +20,7 @@ function transformToAuditDocument(doc: any): AuditDocument {
     maxPossibleScore: doc.maxPossibleScore,
     transcript: doc.transcript,
     englishTranslation: doc.englishTranslation,
+    callSummary: doc.callSummary,
     audioUrl: doc.audioUrl,
     auditedBy: doc.auditedBy,
     auditType: doc.auditType,
@@ -49,6 +50,7 @@ export async function createAudit(auditData: {
   maxPossibleScore: number;
   transcript?: string;
   englishTranslation?: string;
+  callSummary?: string;
   audioUrl?: string;
   auditedBy: string;
   auditType: "manual" | "ai";
@@ -75,6 +77,7 @@ export async function createAudit(auditData: {
       maxPossibleScore: auditData.maxPossibleScore,
       transcript: auditData.transcript,
       englishTranslation: auditData.englishTranslation,
+      callSummary: auditData.callSummary,
       audioUrl: auditData.audioUrl,
       auditedBy: auditData.auditedBy,
       auditType: auditData.auditType,
@@ -100,6 +103,7 @@ export async function createAudit(auditData: {
       maxPossibleScore: savedAudit.maxPossibleScore,
       transcript: savedAudit.transcript,
       englishTranslation: savedAudit.englishTranslation,
+      callSummary: savedAudit.callSummary,
       audioUrl: savedAudit.audioUrl,
       auditedBy: savedAudit.auditedBy,
       auditType: savedAudit.auditType,
