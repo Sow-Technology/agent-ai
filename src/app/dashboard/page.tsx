@@ -769,31 +769,6 @@ function DashboardPageContent() {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isLoadingQaParams, setIsLoadingQaParams] = useState(true);
   const [isLoadingAudits, setIsLoadingAudits] = useState(true);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
-
-  // Dashboard stats from the stats API (aggregated at database level)
-  const [dashboardStats, setDashboardStats] = useState<{
-    overallQAScore: number;
-    totalAudits: number;
-    aiAudits: number;
-    manualAudits: number;
-    passRate: number;
-    fatalRate: number;
-    totalFatalErrors: number;
-    fatalAuditsCount: number;
-    ztpCount: number;
-    ztpRate: number;
-    trainingNeeds: { agentName: string; lowestParam: string } | null;
-    trainingNeedsList: any[];
-    dailyAuditsTrend: { date: string; audits: number }[];
-    dailyFatalTrend: { date: string; fatalErrors: number }[];
-    topIssues: any[];
-    paretoData?: any[];
-    agentPerformance: { topAgents: any[]; underperformingAgents: any[] };
-    campaignPerformance: any[];
-    sentiment?: { positive: number; neutral: number; negative: number };
-    compliance?: { interactionsWithIssues: number; totalAuditedInteractionsForCompliance: number; complianceRate: number };
-  } | null>(null);
 
   // Effect for setting isClient
   useEffect(() => {
@@ -1589,99 +1564,6 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   const [dailyFatalErrorsData, setDailyFatalErrorsData] = useState<
     { date: string; fatalErrors: number }[]
   >([]);
-
-  // Effect to populate state from dashboardStats API (replaces expensive client-side calculations)
-  useEffect(() => {
-    if (dashboardStats) {
-      // Overall score
-      setOverallQAScore(dashboardStats.overallQAScore || 0);
-      
-      // Fatal errors data
-      setFatalErrorsData({
-        totalFatalErrors: dashboardStats.totalFatalErrors || 0,
-        fatalRate: dashboardStats.fatalRate || 0,
-        fatalAuditsCount: dashboardStats.fatalAuditsCount || 0,
-      });
-      
-      // ZTP data
-      setZtpData({
-        ztpAuditsCount: dashboardStats.ztpCount || 0,
-        ztpRate: dashboardStats.ztpRate || 0,
-      });
-      
-      // Training needs
-      setTrainingNeedsData(dashboardStats.trainingNeeds);
-      if (dashboardStats.trainingNeedsList) {
-        setTrainingNeedsList(dashboardStats.trainingNeedsList.map((t: any) => ({
-          agentName: t.agentName,
-          agentId: t.agentId,
-          score: t.score,
-          lowestParam: t.lowestParam,
-          lowestParamScore: t.lowestParamScore,
-        })));
-      }
-      
-      // Daily trends
-      if (dashboardStats.dailyAuditsTrend) {
-        setDailyAuditsData(dashboardStats.dailyAuditsTrend);
-      }
-      if (dashboardStats.dailyFatalTrend) {
-        setDailyFatalErrorsData(dashboardStats.dailyFatalTrend);
-      }
-      
-      // Top issues for charts (API already formats these)
-      if (dashboardStats.topIssues && dashboardStats.topIssues.length > 0) {
-        setTopIssuesData(dashboardStats.topIssues);
-      }
-      
-      // Pareto data (API already calculates this)
-      if ((dashboardStats as any).paretoData && (dashboardStats as any).paretoData.length > 0) {
-        setParetoData((dashboardStats as any).paretoData);
-      }
-      
-      // Agent performance (API returns with correct field names)
-      if (dashboardStats.agentPerformance) {
-        setAgentPerformanceData({
-          topAgents: dashboardStats.agentPerformance.topAgents.map((a: any) => ({
-            id: a.id,
-            name: a.name,
-            score: a.score,
-            audits: a.audits,
-            pass: a.pass,
-            fail: a.fail,
-          })),
-          underperformingAgents: dashboardStats.agentPerformance.underperformingAgents.map((a: any) => ({
-            id: a.id,
-            name: a.name,
-            score: a.score,
-            audits: a.audits,
-            pass: a.pass,
-            fail: a.fail,
-          })),
-        });
-      }
-      
-      // Campaign performance
-      if (dashboardStats.campaignPerformance) {
-        setCampaignPerformanceData(dashboardStats.campaignPerformance.map((c: any) => ({
-          name: c.name,
-          score: c.score,
-          compliance: c.compliance,
-          audits: c.audits,
-        })));
-      }
-      
-      // Sentiment data
-      if ((dashboardStats as any).sentiment) {
-        setSentimentData((dashboardStats as any).sentiment);
-      }
-      
-      // Compliance data
-      if ((dashboardStats as any).compliance) {
-        setComplianceData((dashboardStats as any).compliance);
-      }
-    }
-  }, [dashboardStats]);
 
   // Refs for chart screenshots
   const dailyAuditsChartRef = useRef<HTMLDivElement>(null);

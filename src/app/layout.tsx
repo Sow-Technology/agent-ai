@@ -61,6 +61,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://assureqai.com',
   },
+  icons: {
+    icon: '/favicon-v2.ico',
+  },
 };
 
 export default function RootLayout({
