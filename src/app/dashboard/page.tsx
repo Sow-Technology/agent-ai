@@ -788,8 +788,11 @@ function DashboardPageContent() {
     dailyAuditsTrend: { date: string; audits: number }[];
     dailyFatalTrend: { date: string; fatalErrors: number }[];
     topIssues: any[];
+    paretoData?: any[];
     agentPerformance: { topAgents: any[]; underperformingAgents: any[] };
     campaignPerformance: any[];
+    sentiment?: { positive: number; neutral: number; negative: number };
+    compliance?: { interactionsWithIssues: number; totalAuditedInteractionsForCompliance: number; complianceRate: number };
   } | null>(null);
 
   // Effect for setting isClient
@@ -1492,8 +1495,11 @@ interface DashboardTabContentProps {
     dailyAuditsTrend: { date: string; audits: number }[];
     dailyFatalTrend: { date: string; fatalErrors: number }[];
     topIssues: any[];
+    paretoData?: any[];
     agentPerformance: { topAgents: any[]; underperformingAgents: any[] };
     campaignPerformance: any[];
+    sentiment?: { positive: number; neutral: number; negative: number };
+    compliance?: { interactionsWithIssues: number; totalAuditedInteractionsForCompliance: number; complianceRate: number };
   } | null;
   isLoadingStats?: boolean;
 }
@@ -1644,9 +1650,9 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         setTrainingNeedsList(dashboardStats.trainingNeedsList.map((t: any) => ({
           agentName: t.agentName,
           agentId: t.agentId,
-          score: t.avgScore,
+          score: t.score,
           lowestParam: t.lowestParam,
-          lowestParamScore: t.avgScore,
+          lowestParamScore: t.lowestParamScore,
         })));
       }
       
@@ -1658,51 +1664,34 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         setDailyFatalErrorsData(dashboardStats.dailyFatalTrend);
       }
       
-      // Top issues for charts
+      // Top issues for charts (API already formats these)
       if (dashboardStats.topIssues && dashboardStats.topIssues.length > 0) {
-        setTopIssuesData(dashboardStats.topIssues.map((issue: any) => ({
-          id: issue.parameter,
-          reason: issue.parameter,
-          count: issue.count,
-          critical: issue.critical,
-          subParameters: [],
-          suggestion: `Average score: ${issue.avgScore}%. Focus on improving this parameter.`,
-        })));
-        
-        // Pareto data from top issues
-        const totalIssues = dashboardStats.topIssues.reduce((sum: number, i: any) => sum + i.count, 0);
-        let cumulative = 0;
-        setParetoData(dashboardStats.topIssues.map((issue: any) => {
-          const percentage = totalIssues > 0 ? (issue.count / totalIssues) * 100 : 0;
-          cumulative += percentage;
-          return {
-            parameter: issue.parameter,
-            count: issue.count,
-            frequencyPercentage: Math.round(percentage * 10) / 10,
-            cumulative: Math.round(cumulative * 10) / 10,
-            percentage: Math.round(percentage * 10) / 10,
-          };
-        }));
+        setTopIssuesData(dashboardStats.topIssues);
       }
       
-      // Agent performance
+      // Pareto data (API already calculates this)
+      if ((dashboardStats as any).paretoData && (dashboardStats as any).paretoData.length > 0) {
+        setParetoData((dashboardStats as any).paretoData);
+      }
+      
+      // Agent performance (API returns with correct field names)
       if (dashboardStats.agentPerformance) {
         setAgentPerformanceData({
           topAgents: dashboardStats.agentPerformance.topAgents.map((a: any) => ({
-            id: a.agentId,
-            name: a.agentName,
-            score: a.avgScore,
+            id: a.id,
+            name: a.name,
+            score: a.score,
             audits: a.audits,
-            pass: a.passCount,
-            fail: a.failCount,
+            pass: a.pass,
+            fail: a.fail,
           })),
           underperformingAgents: dashboardStats.agentPerformance.underperformingAgents.map((a: any) => ({
-            id: a.agentId,
-            name: a.agentName,
-            score: a.avgScore,
+            id: a.id,
+            name: a.name,
+            score: a.score,
             audits: a.audits,
-            pass: a.passCount,
-            fail: a.failCount,
+            pass: a.pass,
+            fail: a.fail,
           })),
         });
       }
@@ -1711,10 +1700,20 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       if (dashboardStats.campaignPerformance) {
         setCampaignPerformanceData(dashboardStats.campaignPerformance.map((c: any) => ({
           name: c.name,
-          score: c.avgScore,
+          score: c.score,
           compliance: c.compliance,
           audits: c.audits,
         })));
+      }
+      
+      // Sentiment data
+      if ((dashboardStats as any).sentiment) {
+        setSentimentData((dashboardStats as any).sentiment);
+      }
+      
+      // Compliance data
+      if ((dashboardStats as any).compliance) {
+        setComplianceData((dashboardStats as any).compliance);
       }
     }
   }, [dashboardStats]);
@@ -1811,7 +1810,14 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     availableQaParameterSets
   ]);
 
+  // Client-side fallback calculation - ONLY runs if dashboardStats is not available from API
+  // This ensures we don't overwrite the more accurate aggregated stats from MongoDB
   useEffect(() => {
+    // Skip if we have stats from the API
+    if (dashboardStats) {
+      return;
+    }
+
     if (filteredAudits.length > 0) {
       const totalScore = filteredAudits.reduce(
         (sum, audit) => {
@@ -2390,7 +2396,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         fatalAuditsCount: 0,
       });
     }
-  }, [filteredAudits, availableQaParameterSets, dateRange]);
+  }, [filteredAudits, availableQaParameterSets, dateRange, dashboardStats]);
 
   // Reset page when filters change
   useEffect(() => {

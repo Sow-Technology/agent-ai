@@ -1,19 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateJWTToken } from "@/lib/jwtAuthService";
 import CallAudit from "@/models/CallAudit";
+import connectDB from "@/lib/mongoose";
 
 /**
  * GET /api/audits/stats - Get aggregated dashboard statistics
  * 
  * This endpoint is optimized for dashboard rendering by performing
  * aggregations at the database level instead of fetching all records.
+ * 
+ * Logic matches the client-side calculations in DashboardTabContent:
+ * - Pass threshold: overallScore >= 80
+ * - Fatal error: auditResults.type === "Fatal" && score < 80
+ * - ZTP (Zero Tolerance Policy): overallScore === 0
  */
 export async function GET(request: NextRequest) {
   try {
+    // Ensure database connection
+    await connectDB();
+
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const campaignName = searchParams.get("campaignName");
+    const auditType = searchParams.get("auditType") as "ai" | "manual" | null;
 
     // Get current user from JWT token for role-based filtering
     const authHeader = request.headers.get("Authorization");
@@ -30,14 +40,14 @@ export async function GET(request: NextRequest) {
     // Build match query
     const matchQuery: any = {};
 
-    // Date range filter
+    // Date range filter using createdAt (same as client-side uses auditDate which maps to createdAt)
     if (startDate || endDate) {
       matchQuery.createdAt = {};
       if (startDate) {
         matchQuery.createdAt.$gte = new Date(startDate);
       }
       if (endDate) {
-        // Set to end of day
+        // Set to end of day (23:59:59.999)
         const endOfDay = new Date(endDate);
         endOfDay.setHours(23, 59, 59, 999);
         matchQuery.createdAt.$lte = endOfDay;
@@ -49,19 +59,27 @@ export async function GET(request: NextRequest) {
       matchQuery.campaignName = campaignName;
     }
 
-    // Role-based filtering
+    // Audit type filter
+    if (auditType) {
+      matchQuery.auditType = auditType;
+    }
+
+    // Role-based filtering (matches applyAuditFilters in frontend)
     if (currentUser) {
       if (currentUser.role === "Agent") {
+        // Agent sees audits where they are the subject
         matchQuery.$or = [
           { agentUserId: currentUser.username },
           { agentUserId: currentUser.id }
         ];
       } else if (currentUser.role === "Auditor") {
+        // Auditor sees audits they performed
         matchQuery.$or = [
           { auditedBy: currentUser.username },
           { auditedBy: currentUser.id }
         ];
       } else if (currentUser.role === "Project Admin" || currentUser.role === "Manager") {
+        // Project Admin and Manager see all audits within their project
         if (currentUser.projectId) {
           matchQuery.projectId = currentUser.projectId;
         }
@@ -83,34 +101,37 @@ export async function GET(request: NextRequest) {
                 totalScore: { $sum: "$overallScore" },
                 aiAudits: { $sum: { $cond: [{ $eq: ["$auditType", "ai"] }, 1, 0] } },
                 manualAudits: { $sum: { $cond: [{ $eq: ["$auditType", "manual"] }, 1, 0] } },
+                // Pass is >= 80 (matching client-side logic)
                 passCount: { $sum: { $cond: [{ $gte: ["$overallScore", 80] }, 1, 0] } },
+                // ZTP is score === 0 (matching client-side logic)
+                ztpCount: { $sum: { $cond: [{ $eq: ["$overallScore", 0] }, 1, 0] } },
               }
             }
           ],
-          // Fatal errors analysis
+          // Fatal errors analysis - type === "Fatal" && score < 80
           fatalErrors: [
             { $unwind: { path: "$auditResults", preserveNullAndEmptyArrays: false } },
-            { $match: { "auditResults.type": "Fatal", "auditResults.score": { $lt: 80 } } },
+            { 
+              $match: { 
+                "auditResults.type": "Fatal", 
+                "auditResults.score": { $lt: 80 } 
+              } 
+            },
             {
               $group: {
                 _id: null,
                 totalFatalErrors: { $sum: 1 },
-                fatalAudits: { $addToSet: "$_id" }
+                fatalAuditIds: { $addToSet: "$_id" }
               }
             },
             {
               $project: {
                 totalFatalErrors: 1,
-                fatalAuditsCount: { $size: "$fatalAudits" }
+                fatalAuditsCount: { $size: "$fatalAuditIds" }
               }
             }
           ],
-          // ZTP audits (zero tolerance policy - score = 0)
-          ztpAudits: [
-            { $match: { overallScore: 0 } },
-            { $count: "count" }
-          ],
-          // Daily audits trend
+          // Daily audits trend (grouped by date)
           dailyTrend: [
             {
               $group: {
@@ -124,7 +145,12 @@ export async function GET(request: NextRequest) {
           // Daily fatal errors trend
           dailyFatalTrend: [
             { $unwind: { path: "$auditResults", preserveNullAndEmptyArrays: false } },
-            { $match: { "auditResults.type": "Fatal", "auditResults.score": { $lt: 80 } } },
+            { 
+              $match: { 
+                "auditResults.type": "Fatal", 
+                "auditResults.score": { $lt: 80 } 
+              } 
+            },
             {
               $group: {
                 _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
@@ -134,7 +160,7 @@ export async function GET(request: NextRequest) {
             { $sort: { _id: 1 } },
             { $project: { date: "$_id", fatalErrors: 1, _id: 0 } }
           ],
-          // Top QA issues (parameters with low scores)
+          // Top QA issues - parameters with score < 80 (matching client-side logic)
           topIssues: [
             { $unwind: { path: "$auditResults", preserveNullAndEmptyArrays: false } },
             { $match: { "auditResults.score": { $lt: 80 } } },
@@ -142,8 +168,9 @@ export async function GET(request: NextRequest) {
               $group: {
                 _id: "$auditResults.parameterName",
                 count: { $sum: 1 },
-                avgScore: { $avg: "$auditResults.score" },
-                criticalCount: { $sum: { $cond: [{ $lt: ["$auditResults.score", 50] }, 1, 0] } }
+                totalScore: { $sum: "$auditResults.score" },
+                criticalCount: { $sum: { $cond: [{ $lt: ["$auditResults.score", 50] }, 1, 0] } },
+                type: { $first: "$auditResults.type" }
               }
             },
             { $sort: { count: -1 } },
@@ -152,19 +179,21 @@ export async function GET(request: NextRequest) {
               $project: {
                 parameter: "$_id",
                 count: 1,
-                avgScore: { $round: ["$avgScore", 1] },
+                avgScore: { $round: [{ $divide: ["$totalScore", "$count"] }, 1] },
                 critical: { $gt: ["$criticalCount", 0] },
+                type: 1,
                 _id: 0
               }
             }
           ],
-          // Agent performance (top and bottom performers)
+          // Agent performance (matches client-side agentScores calculation)
           agentPerformance: [
             {
               $group: {
                 _id: { agentUserId: "$agentUserId", agentName: "$agentName" },
                 totalScore: { $sum: "$overallScore" },
                 auditCount: { $sum: 1 },
+                // Pass is >= 80 (matching client-side logic)
                 passCount: { $sum: { $cond: [{ $gte: ["$overallScore", 80] }, 1, 0] } }
               }
             },
@@ -174,54 +203,120 @@ export async function GET(request: NextRequest) {
                 agentName: "$_id.agentName",
                 avgScore: { $round: [{ $divide: ["$totalScore", "$auditCount"] }, 1] },
                 audits: "$auditCount",
-                passCount: 1,
-                failCount: { $subtract: ["$auditCount", "$passCount"] },
+                pass: "$passCount",
+                fail: { $subtract: ["$auditCount", "$passCount"] },
                 _id: 0
               }
             },
             { $sort: { avgScore: -1 } }
           ],
-          // Campaign performance
+          // Campaign performance (matches client-side campaignScores calculation)
           campaignPerformance: [
             {
               $group: {
                 _id: "$campaignName",
                 totalScore: { $sum: "$overallScore" },
                 auditCount: { $sum: 1 },
-                passCount: { $sum: { $cond: [{ $gte: ["$overallScore", 80] }, 1, 0] } }
+                // Check for fatal errors in each audit for compliance
+                complianceIssues: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $gt: [
+                          {
+                            $size: {
+                              $filter: {
+                                input: { $ifNull: ["$auditResults", []] },
+                                as: "r",
+                                cond: { 
+                                  $and: [
+                                    { $eq: ["$$r.type", "Fatal"] },
+                                    { $lt: ["$$r.score", 80] }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          0
+                        ]
+                      },
+                      1,
+                      0
+                    ]
+                  }
+                }
               }
             },
             {
               $project: {
-                name: "$_id",
+                name: { $ifNull: ["$_id", "Uncategorized"] },
                 avgScore: { $round: [{ $divide: ["$totalScore", "$auditCount"] }, 1] },
                 audits: "$auditCount",
-                compliance: { $round: [{ $multiply: [{ $divide: ["$passCount", "$auditCount"] }, 100] }, 1] },
+                // Compliance = (auditCount - complianceIssues) / auditCount * 100
+                compliance: {
+                  $round: [
+                    { $multiply: [
+                      { $divide: [
+                        { $subtract: ["$auditCount", "$complianceIssues"] },
+                        "$auditCount"
+                      ] },
+                      100
+                    ] },
+                    1
+                  ]
+                },
                 _id: 0
               }
             },
             { $sort: { audits: -1 } }
           ],
-          // Training needs (agents with lowest scores on specific parameters)
+          // Training needs - agents with lowest scores on specific parameters
           trainingNeeds: [
             { $unwind: { path: "$auditResults", preserveNullAndEmptyArrays: false } },
             {
               $group: {
-                _id: { agentUserId: "$agentUserId", agentName: "$agentName", param: "$auditResults.parameterName" },
-                avgScore: { $avg: "$auditResults.score" },
+                _id: { 
+                  agentUserId: "$agentUserId", 
+                  agentName: "$agentName", 
+                  param: "$auditResults.parameterName" 
+                },
+                totalScore: { $sum: "$auditResults.score" },
                 count: { $sum: 1 }
               }
             },
-            { $match: { avgScore: { $lt: 70 }, count: { $gte: 2 } } },
-            { $sort: { avgScore: 1 } },
-            { $limit: 10 },
             {
               $project: {
                 agentId: "$_id.agentUserId",
                 agentName: "$_id.agentName",
-                lowestParam: "$_id.param",
-                avgScore: { $round: ["$avgScore", 1] },
+                param: "$_id.param",
+                avgScore: { $round: [{ $divide: ["$totalScore", "$count"] }, 1] },
+                count: 1,
                 _id: 0
+              }
+            },
+            { $sort: { avgScore: 1 } },
+            { $limit: 20 }
+          ],
+          // Sentiment distribution (matching client-side logic)
+          sentiment: [
+            {
+              $group: {
+                _id: null,
+                totalAudits: { $sum: 1 },
+                positive: { $sum: { $cond: [{ $gte: ["$overallScore", 85] }, 1, 0] } },
+                neutral: { 
+                  $sum: { 
+                    $cond: [
+                      { $and: [
+                        { $gte: ["$overallScore", 70] },
+                        { $lt: ["$overallScore", 85] }
+                      ] },
+                      1,
+                      0
+                    ]
+                  }
+                },
+                negative: { $sum: { $cond: [{ $lt: ["$overallScore", 70] }, 1, 0] } }
               }
             }
           ]
@@ -230,24 +325,120 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Process results
-    const overview = stats?.overview?.[0] || { totalAudits: 0, totalScore: 0, aiAudits: 0, manualAudits: 0, passCount: 0 };
+    const overview = stats?.overview?.[0] || { 
+      totalAudits: 0, 
+      totalScore: 0, 
+      aiAudits: 0, 
+      manualAudits: 0, 
+      passCount: 0,
+      ztpCount: 0 
+    };
     const fatalData = stats?.fatalErrors?.[0] || { totalFatalErrors: 0, fatalAuditsCount: 0 };
-    const ztpCount = stats?.ztpAudits?.[0]?.count || 0;
+    const sentimentData = stats?.sentiment?.[0] || { totalAudits: 0, positive: 0, neutral: 0, negative: 0 };
 
     const totalAudits = overview.totalAudits || 0;
-    const overallQAScore = totalAudits > 0 ? Math.round((overview.totalScore / totalAudits) * 10) / 10 : 0;
-    const fatalRate = totalAudits > 0 ? Math.round((fatalData.fatalAuditsCount / totalAudits) * 1000) / 10 : 0;
+    const overallQAScore = totalAudits > 0 
+      ? parseFloat((overview.totalScore / totalAudits).toFixed(1)) 
+      : 0;
+    const fatalRate = totalAudits > 0 
+      ? parseFloat(((fatalData.fatalAuditsCount / totalAudits) * 100).toFixed(1)) 
+      : 0;
+    const ztpRate = totalAudits > 0
+      ? parseFloat(((overview.ztpCount / totalAudits) * 100).toFixed(1))
+      : 0;
+    const passRate = totalAudits > 0
+      ? parseFloat(((overview.passCount / totalAudits) * 100).toFixed(1))
+      : 0;
 
     // Agent performance: split into top and underperforming
     const allAgents = stats?.agentPerformance || [];
     const topAgents = allAgents.slice(0, 5);
-    const underperformingAgents = allAgents.filter((a: any) => a.avgScore < 80).slice(-5).reverse();
+    const underperformingAgents = allAgents
+      .filter((a: any) => a.avgScore < 80)
+      .slice(-5)
+      .reverse();
 
-    // Training needs: find the most common training need
+    // Training needs: find the agent with the lowest score on any parameter
     const trainingNeedsList = stats?.trainingNeeds || [];
     const primaryTrainingNeed = trainingNeedsList.length > 0 
-      ? { agentName: trainingNeedsList[0].agentName, lowestParam: trainingNeedsList[0].lowestParam }
+      ? { 
+          agentName: trainingNeedsList[0].agentName, 
+          lowestParam: trainingNeedsList[0].param 
+        }
       : null;
+
+    // Build training needs list for modal (bottom 5 agents by score)
+    const trainingNeedsForModal = underperformingAgents.map((agent: any) => {
+      // Find worst parameter for this agent
+      const agentParams = trainingNeedsList.filter((t: any) => t.agentId === agent.agentId);
+      const worstParam = agentParams.length > 0 ? agentParams[0] : null;
+      
+      return {
+        agentName: agent.agentName,
+        agentId: agent.agentId,
+        score: agent.avgScore,
+        lowestParam: worstParam?.param || "N/A",
+        lowestParamScore: worstParam?.avgScore || 0,
+      };
+    });
+
+    // Fill in missing dates for daily trends
+    const dailyAuditsTrend = stats?.dailyTrend || [];
+    const dailyFatalTrend = stats?.dailyFatalTrend || [];
+
+    // Generate all dates in range and fill with 0s for missing dates
+    let filledDailyAuditsTrend = dailyAuditsTrend;
+    let filledDailyFatalTrend = dailyFatalTrend;
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const dateMap = new Map(dailyAuditsTrend.map((d: any) => [d.date, d.audits]));
+      const fatalDateMap = new Map(dailyFatalTrend.map((d: any) => [d.date, d.fatalErrors]));
+      
+      filledDailyAuditsTrend = [];
+      filledDailyFatalTrend = [];
+      
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        filledDailyAuditsTrend.push({
+          date: dateStr,
+          audits: dateMap.get(dateStr) || 0
+        });
+        filledDailyFatalTrend.push({
+          date: dateStr,
+          fatalErrors: fatalDateMap.get(dateStr) || 0
+        });
+      }
+    }
+
+    // Process top issues - filter out FATAL/CRITICAL group
+    const topIssues = (stats?.topIssues || []).filter((issue: any) => {
+      const normalizedParam = issue.parameter?.toUpperCase().replace(/\s/g, "") || "";
+      return normalizedParam !== "FATAL/CRITICAL";
+    });
+
+    // Calculate Pareto data from top issues
+    const totalFailures = topIssues.reduce((sum: number, i: any) => sum + i.count, 0);
+    let cumulative = 0;
+    const paretoData = topIssues.slice(0, 10).map((issue: any) => {
+      const frequencyPercentage = totalFailures > 0 ? (issue.count / totalFailures) * 100 : 0;
+      cumulative += issue.count;
+      return {
+        parameter: issue.parameter,
+        count: issue.count,
+        frequencyPercentage: parseFloat(frequencyPercentage.toFixed(1)),
+        cumulative,
+        percentage: totalFailures > 0 ? parseFloat(((cumulative / totalFailures) * 100).toFixed(1)) : 0,
+      };
+    });
+
+    // Sentiment percentages
+    const sentimentPercentages = {
+      positive: totalAudits > 0 ? parseFloat(((sentimentData.positive / totalAudits) * 100).toFixed(1)) : 0,
+      neutral: totalAudits > 0 ? parseFloat(((sentimentData.neutral / totalAudits) * 100).toFixed(1)) : 0,
+      negative: totalAudits > 0 ? parseFloat(((sentimentData.negative / totalAudits) * 100).toFixed(1)) : 0,
+    };
 
     return NextResponse.json({
       success: true,
@@ -257,7 +448,8 @@ export async function GET(request: NextRequest) {
         totalAudits,
         aiAudits: overview.aiAudits || 0,
         manualAudits: overview.manualAudits || 0,
-        passRate: totalAudits > 0 ? Math.round((overview.passCount / totalAudits) * 1000) / 10 : 0,
+        passRate,
+        passCount: overview.passCount || 0,
 
         // Fatal errors
         fatalRate,
@@ -265,24 +457,64 @@ export async function GET(request: NextRequest) {
         fatalAuditsCount: fatalData.fatalAuditsCount || 0,
 
         // ZTP
-        ztpCount,
-        ztpRate: totalAudits > 0 ? Math.round((ztpCount / totalAudits) * 1000) / 10 : 0,
+        ztpCount: overview.ztpCount || 0,
+        ztpRate,
 
         // Training needs
         trainingNeeds: primaryTrainingNeed,
-        trainingNeedsList,
+        trainingNeedsList: trainingNeedsForModal,
 
         // Charts data
-        dailyAuditsTrend: stats?.dailyTrend || [],
-        dailyFatalTrend: stats?.dailyFatalTrend || [],
-        topIssues: stats?.topIssues || [],
+        dailyAuditsTrend: filledDailyAuditsTrend,
+        dailyFatalTrend: filledDailyFatalTrend,
+        topIssues: topIssues.slice(0, 5).map((issue: any) => ({
+          id: issue.parameter,
+          reason: issue.parameter,
+          count: issue.count,
+          critical: issue.critical,
+          avgScore: issue.avgScore,
+          subParameters: [],
+          suggestion: `Average score: ${issue.avgScore}%. Focus on improving this parameter.`,
+        })),
+        paretoData,
 
         // Performance data
         agentPerformance: {
-          topAgents,
-          underperformingAgents
+          topAgents: topAgents.map((a: any) => ({
+            id: a.agentId,
+            name: a.agentName,
+            score: a.avgScore,
+            audits: a.audits,
+            pass: a.pass,
+            fail: a.fail,
+          })),
+          underperformingAgents: underperformingAgents.map((a: any) => ({
+            id: a.agentId,
+            name: a.agentName,
+            score: a.avgScore,
+            audits: a.audits,
+            pass: a.pass,
+            fail: a.fail,
+          })),
         },
-        campaignPerformance: stats?.campaignPerformance || []
+        campaignPerformance: (stats?.campaignPerformance || []).map((c: any) => ({
+          name: c.name,
+          score: c.avgScore,
+          compliance: c.compliance,
+          audits: c.audits,
+        })),
+
+        // Sentiment
+        sentiment: sentimentPercentages,
+
+        // Compliance data
+        compliance: {
+          interactionsWithIssues: fatalData.fatalAuditsCount || 0,
+          totalAuditedInteractionsForCompliance: totalAudits,
+          complianceRate: totalAudits > 0 
+            ? parseFloat((((totalAudits - fatalData.fatalAuditsCount) / totalAudits) * 100).toFixed(1))
+            : 0,
+        }
       }
     });
 
