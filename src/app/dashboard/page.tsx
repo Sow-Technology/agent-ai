@@ -860,53 +860,18 @@ function DashboardPageContent() {
     loadQaParams();
   }, [isClient]);
 
-  // Load dashboard stats from the stats API - aggregated at database level
+  // Load audits independently - re-fetch when dateRange changes
   useEffect(() => {
     if (!isClient) return;
-    if (!dateRange?.from) return;
-    
-    const loadStats = async () => {
-      setIsLoadingStats(true);
-      try {
-        const params = new URLSearchParams();
-        if (dateRange.from) {
-          params.set("startDate", dateRange.from.toISOString());
-        }
-        if (dateRange.to) {
-          params.set("endDate", dateRange.to.toISOString());
-        }
-        if (selectedCampaignIdForFilter && selectedCampaignIdForFilter !== "all") {
-          const campaign = availableQaParameterSets.find(c => c.id === selectedCampaignIdForFilter);
-          if (campaign) {
-            params.set("campaignName", campaign.name);
-          }
-        }
-        
-        const res = await fetch(`/api/audits/stats?${params.toString()}`, { headers: getAuthHeaders() });
-        const data = await res.json();
-        if (data?.success && data.data) {
-          setDashboardStats(data.data);
-        }
-      } catch (e) {
-        console.error("Failed to load dashboard stats from API", e);
-      } finally {
-        setIsLoadingStats(false);
-      }
-    };
-    loadStats();
-  }, [isClient, dateRange, selectedCampaignIdForFilter, availableQaParameterSets]);
-
-  // Load audits with pagination - for the table display only
-  useEffect(() => {
-    if (!isClient) return;
+    // Don't fetch until dateRange is set
     if (!dateRange?.from) return;
     
     const loadAudits = async () => {
       setIsLoadingAudits(true);
       try {
-        // Use proper pagination - no longer fetching all audits
+        // Build URL with date range parameters and high limit for stats
         const params = new URLSearchParams();
-        params.set("limit", "50"); // Paginated limit for table display
+        params.set("limit", "10000"); // High limit to get all audits for accurate stats
         
         if (dateRange.from) {
           params.set("startDate", dateRange.from.toISOString());
@@ -1810,14 +1775,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     availableQaParameterSets
   ]);
 
-  // Client-side fallback calculation - ONLY runs if dashboardStats is not available from API
-  // This ensures we don't overwrite the more accurate aggregated stats from MongoDB
   useEffect(() => {
-    // Skip if we have stats from the API
-    if (dashboardStats) {
-      return;
-    }
-
     if (filteredAudits.length > 0) {
       const totalScore = filteredAudits.reduce(
         (sum, audit) => {
@@ -2396,7 +2354,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         fatalAuditsCount: 0,
       });
     }
-  }, [filteredAudits, availableQaParameterSets, dateRange, dashboardStats]);
+  }, [filteredAudits, availableQaParameterSets, dateRange]);
 
   // Reset page when filters change
   useEffect(() => {
