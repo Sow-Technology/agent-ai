@@ -237,7 +237,10 @@ export async function getAuditsWithFilters(
         query.createdAt.$gte = filters.startDate;
       }
       if (filters.endDate) {
-        query.createdAt.$lte = filters.endDate;
+        // Set to end of day (23:59:59.999) to include all audits on the last day
+        const endOfDay = new Date(filters.endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = endOfDay;
       }
     }
 

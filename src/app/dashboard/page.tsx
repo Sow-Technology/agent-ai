@@ -769,6 +769,28 @@ function DashboardPageContent() {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isLoadingQaParams, setIsLoadingQaParams] = useState(true);
   const [isLoadingAudits, setIsLoadingAudits] = useState(true);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  // Dashboard stats from the stats API (aggregated at database level)
+  const [dashboardStats, setDashboardStats] = useState<{
+    overallQAScore: number;
+    totalAudits: number;
+    aiAudits: number;
+    manualAudits: number;
+    passRate: number;
+    fatalRate: number;
+    totalFatalErrors: number;
+    fatalAuditsCount: number;
+    ztpCount: number;
+    ztpRate: number;
+    trainingNeeds: { agentName: string; lowestParam: string } | null;
+    trainingNeedsList: any[];
+    dailyAuditsTrend: { date: string; audits: number }[];
+    dailyFatalTrend: { date: string; fatalErrors: number }[];
+    topIssues: any[];
+    agentPerformance: { topAgents: any[]; underperformingAgents: any[] };
+    campaignPerformance: any[];
+  } | null>(null);
 
   // Effect for setting isClient
   useEffect(() => {
@@ -835,18 +857,53 @@ function DashboardPageContent() {
     loadQaParams();
   }, [isClient]);
 
-  // Load audits independently - re-fetch when dateRange changes
+  // Load dashboard stats from the stats API - aggregated at database level
   useEffect(() => {
     if (!isClient) return;
-    // Don't fetch until dateRange is set
+    if (!dateRange?.from) return;
+    
+    const loadStats = async () => {
+      setIsLoadingStats(true);
+      try {
+        const params = new URLSearchParams();
+        if (dateRange.from) {
+          params.set("startDate", dateRange.from.toISOString());
+        }
+        if (dateRange.to) {
+          params.set("endDate", dateRange.to.toISOString());
+        }
+        if (selectedCampaignIdForFilter && selectedCampaignIdForFilter !== "all") {
+          const campaign = availableQaParameterSets.find(c => c.id === selectedCampaignIdForFilter);
+          if (campaign) {
+            params.set("campaignName", campaign.name);
+          }
+        }
+        
+        const res = await fetch(`/api/audits/stats?${params.toString()}`, { headers: getAuthHeaders() });
+        const data = await res.json();
+        if (data?.success && data.data) {
+          setDashboardStats(data.data);
+        }
+      } catch (e) {
+        console.error("Failed to load dashboard stats from API", e);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+    loadStats();
+  }, [isClient, dateRange, selectedCampaignIdForFilter, availableQaParameterSets]);
+
+  // Load audits with pagination - for the table display only
+  useEffect(() => {
+    if (!isClient) return;
     if (!dateRange?.from) return;
     
     const loadAudits = async () => {
       setIsLoadingAudits(true);
       try {
-        // Build URL with date range parameters and high limit for stats
+        // Use proper pagination - no longer fetching all audits
         const params = new URLSearchParams();
-        params.set("limit", "10000"); // High limit to get all audits for accurate stats
+        params.set("limit", "50"); // Paginated limit for table display
         
         if (dateRange.from) {
           params.set("startDate", dateRange.from.toISOString());
@@ -1203,6 +1260,8 @@ function DashboardPageContent() {
           isLoadingAudits={isLoadingAudits}
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
+          dashboardStats={dashboardStats}
+          isLoadingStats={isLoadingStats}
         />
       ) : currentUser?.role === "Auditor" ? (
         <Tabs
@@ -1237,6 +1296,8 @@ function DashboardPageContent() {
               isLoadingAudits={isLoadingAudits}
               filterStatus={filterStatus}
               setFilterStatus={setFilterStatus}
+              dashboardStats={dashboardStats}
+              isLoadingStats={isLoadingStats}
             />
           </TabsContent>
           <TabsContent value="manual-dashboard" className="space-y-4">
@@ -1255,6 +1316,8 @@ function DashboardPageContent() {
               isLoadingAudits={isLoadingAudits}
               filterStatus={filterStatus}
               setFilterStatus={setFilterStatus}
+              dashboardStats={dashboardStats}
+              isLoadingStats={isLoadingStats}
             />
           </TabsContent>
         </Tabs>
@@ -1295,6 +1358,8 @@ function DashboardPageContent() {
               isLoadingAudits={isLoadingAudits}
               filterStatus={filterStatus}
               setFilterStatus={setFilterStatus}
+              dashboardStats={dashboardStats}
+              isLoadingStats={isLoadingStats}
             />
           </TabsContent>
           <TabsContent value="qa-dashboard" className="space-y-4">
@@ -1313,6 +1378,8 @@ function DashboardPageContent() {
               isLoadingAudits={isLoadingAudits}
               filterStatus={filterStatus}
               setFilterStatus={setFilterStatus}
+              dashboardStats={dashboardStats}
+              isLoadingStats={isLoadingStats}
             />
           </TabsContent>
           <TabsContent value="manual-dashboard" className="space-y-4">
@@ -1331,6 +1398,8 @@ function DashboardPageContent() {
               isLoadingAudits={isLoadingAudits}
               filterStatus={filterStatus}
               setFilterStatus={setFilterStatus}
+              dashboardStats={dashboardStats}
+              isLoadingStats={isLoadingStats}
             />
           </TabsContent>
         </Tabs>
@@ -1406,6 +1475,27 @@ interface DashboardTabContentProps {
   isLoadingAudits: boolean;
   filterStatus: "ALL" | "PASS" | "FAIL";
   setFilterStatus: (status: "ALL" | "PASS" | "FAIL") => void;
+  // New props for stats from the stats API
+  dashboardStats?: {
+    overallQAScore: number;
+    totalAudits: number;
+    aiAudits: number;
+    manualAudits: number;
+    passRate: number;
+    fatalRate: number;
+    totalFatalErrors: number;
+    fatalAuditsCount: number;
+    ztpCount: number;
+    ztpRate: number;
+    trainingNeeds: { agentName: string; lowestParam: string } | null;
+    trainingNeedsList: any[];
+    dailyAuditsTrend: { date: string; audits: number }[];
+    dailyFatalTrend: { date: string; fatalErrors: number }[];
+    topIssues: any[];
+    agentPerformance: { topAgents: any[]; underperformingAgents: any[] };
+    campaignPerformance: any[];
+  } | null;
+  isLoadingStats?: boolean;
 }
 
 const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
@@ -1422,6 +1512,8 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   isLoadingAudits,
   filterStatus,
   setFilterStatus,
+  dashboardStats,
+  isLoadingStats,
 }) => {
   type AgentPerformanceData = {
     topAgents: {
@@ -1526,6 +1618,106 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   const [dailyFatalErrorsData, setDailyFatalErrorsData] = useState<
     { date: string; fatalErrors: number }[]
   >([]);
+
+  // Effect to populate state from dashboardStats API (replaces expensive client-side calculations)
+  useEffect(() => {
+    if (dashboardStats) {
+      // Overall score
+      setOverallQAScore(dashboardStats.overallQAScore || 0);
+      
+      // Fatal errors data
+      setFatalErrorsData({
+        totalFatalErrors: dashboardStats.totalFatalErrors || 0,
+        fatalRate: dashboardStats.fatalRate || 0,
+        fatalAuditsCount: dashboardStats.fatalAuditsCount || 0,
+      });
+      
+      // ZTP data
+      setZtpData({
+        ztpAuditsCount: dashboardStats.ztpCount || 0,
+        ztpRate: dashboardStats.ztpRate || 0,
+      });
+      
+      // Training needs
+      setTrainingNeedsData(dashboardStats.trainingNeeds);
+      if (dashboardStats.trainingNeedsList) {
+        setTrainingNeedsList(dashboardStats.trainingNeedsList.map((t: any) => ({
+          agentName: t.agentName,
+          agentId: t.agentId,
+          score: t.avgScore,
+          lowestParam: t.lowestParam,
+          lowestParamScore: t.avgScore,
+        })));
+      }
+      
+      // Daily trends
+      if (dashboardStats.dailyAuditsTrend) {
+        setDailyAuditsData(dashboardStats.dailyAuditsTrend);
+      }
+      if (dashboardStats.dailyFatalTrend) {
+        setDailyFatalErrorsData(dashboardStats.dailyFatalTrend);
+      }
+      
+      // Top issues for charts
+      if (dashboardStats.topIssues && dashboardStats.topIssues.length > 0) {
+        setTopIssuesData(dashboardStats.topIssues.map((issue: any) => ({
+          id: issue.parameter,
+          reason: issue.parameter,
+          count: issue.count,
+          critical: issue.critical,
+          subParameters: [],
+          suggestion: `Average score: ${issue.avgScore}%. Focus on improving this parameter.`,
+        })));
+        
+        // Pareto data from top issues
+        const totalIssues = dashboardStats.topIssues.reduce((sum: number, i: any) => sum + i.count, 0);
+        let cumulative = 0;
+        setParetoData(dashboardStats.topIssues.map((issue: any) => {
+          const percentage = totalIssues > 0 ? (issue.count / totalIssues) * 100 : 0;
+          cumulative += percentage;
+          return {
+            parameter: issue.parameter,
+            count: issue.count,
+            frequencyPercentage: Math.round(percentage * 10) / 10,
+            cumulative: Math.round(cumulative * 10) / 10,
+            percentage: Math.round(percentage * 10) / 10,
+          };
+        }));
+      }
+      
+      // Agent performance
+      if (dashboardStats.agentPerformance) {
+        setAgentPerformanceData({
+          topAgents: dashboardStats.agentPerformance.topAgents.map((a: any) => ({
+            id: a.agentId,
+            name: a.agentName,
+            score: a.avgScore,
+            audits: a.audits,
+            pass: a.passCount,
+            fail: a.failCount,
+          })),
+          underperformingAgents: dashboardStats.agentPerformance.underperformingAgents.map((a: any) => ({
+            id: a.agentId,
+            name: a.agentName,
+            score: a.avgScore,
+            audits: a.audits,
+            pass: a.passCount,
+            fail: a.failCount,
+          })),
+        });
+      }
+      
+      // Campaign performance
+      if (dashboardStats.campaignPerformance) {
+        setCampaignPerformanceData(dashboardStats.campaignPerformance.map((c: any) => ({
+          name: c.name,
+          score: c.avgScore,
+          compliance: c.compliance,
+          audits: c.audits,
+        })));
+      }
+    }
+  }, [dashboardStats]);
 
   // Refs for chart screenshots
   const dailyAuditsChartRef = useRef<HTMLDivElement>(null);
