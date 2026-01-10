@@ -769,6 +769,9 @@ function DashboardPageContent() {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isLoadingQaParams, setIsLoadingQaParams] = useState(true);
   const [isLoadingAudits, setIsLoadingAudits] = useState(true);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
 
   // Effect for setting isClient
   useEffect(() => {
@@ -871,6 +874,60 @@ function DashboardPageContent() {
     };
     loadAudits();
   }, [isClient, dateRange]);
+
+  // Load dashboard stats
+  useEffect(() => {
+    if (!isClient) return;
+    if (!dateRange?.from) return;
+
+    const loadStats = async () => {
+      setIsLoadingStats(true);
+      try {
+        const params = new URLSearchParams();
+        
+        if (dateRange.from) {
+          params.set("startDate", dateRange.from.toISOString());
+        }
+        if (dateRange.to) {
+          params.set("endDate", dateRange.to.toISOString());
+        }
+        
+        if (selectedCampaignIdForFilter && selectedCampaignIdForFilter !== "all") {
+          const campaign = availableQaParameterSets.find(c => c.id === selectedCampaignIdForFilter);
+          if (campaign) {
+            params.set("campaignName", campaign.name);
+          }
+        }
+
+        // Determine audit type based on active tab
+        let auditType: string | null = null;
+        if (activeTab === "qa-dashboard") {
+          auditType = "ai";
+        } else if (activeTab === "manual-dashboard") {
+          auditType = "manual";
+        }
+        
+        if (auditType) {
+          params.set("auditType", auditType);
+        }
+
+        const res = await fetch(`/api/audits/stats?${params.toString()}`, { 
+          headers: getAuthHeaders() 
+        });
+        const data = await res.json();
+        
+        if (data?.success && data.data) {
+          setDashboardStats(data.data);
+        }
+      } catch (e) {
+        console.error("Failed to load dashboard stats", e);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    loadStats();
+  }, [isClient, dateRange, selectedCampaignIdForFilter, activeTab, availableQaParameterSets]);
 
   const handleDeleteAudit = async (audit: SavedAuditItem) => {
     setIsDeleting(true);
