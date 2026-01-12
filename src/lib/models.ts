@@ -8,7 +8,7 @@ export interface UserDocument {
   email?: string;
   fullName?: string;
   role:
-    | "Administrator"
+    | "super_admin"
     | "Project Admin"
     | "Manager"
     | "QA Analyst"

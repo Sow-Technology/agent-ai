@@ -8,7 +8,7 @@ async function seed() {
       username: "AQI01",
       email: "AQI01@assureqai.com",
       fullName: "Insure24",
-      role: "Administrator",
+      role: "super_admin",
       password: "AQI01$67#@jHjj_)",
     });
     if (user) {

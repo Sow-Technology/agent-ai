@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only administrators can use this endpoint
-    if (tokenResult.user.role !== "Administrator") {
+    if (tokenResult.user.role !== "super_admin") {
       return NextResponse.json(
         {
           success: false,
@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Only administrators can use this endpoint
-    if (tokenResult.user.role !== "Administrator") {
+    if (tokenResult.user.role !== "super_admin") {
       return NextResponse.json(
         {
           success: false,
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only administrators can use this endpoint
-    if (tokenResult.user.role !== "Administrator") {
+    if (tokenResult.user.role !== "super_admin") {
       return NextResponse.json(
         {
           success: false,
@@ -271,7 +271,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Only administrators can use this endpoint
-    if (tokenResult.user.role !== "Administrator") {
+    if (tokenResult.user.role !== "super_admin") {
       return NextResponse.json(
         {
           success: false,

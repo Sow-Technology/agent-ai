@@ -6,7 +6,7 @@ export interface User {
   email?: string;
   fullName?: string;
   role:
-    | "Administrator"
+    | "super_admin"
     | "Project Admin"
     | "Manager"
     | "QA Analyst"

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { UserNav } from "@/components/dashboard/UserNav";
-import { getAuthToken, clientLogout } from "../../lib/clientAuthService";
+import { getAuthToken, clientLogout, getCurrentUser } from "../../lib/clientAuthService";
 import { getAuthHeaders } from "@/lib/authUtils";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -20,6 +20,7 @@ import {
   SidebarMenuButton,
   SidebarInset,
   SidebarTrigger,
+  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import {
   Collapsible,
@@ -57,6 +58,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [isAuditsOpen, setIsAuditsOpen] = useState(true);
 
   useEffect(() => {
+    setIsClient(true);
+    const storedUser = getCurrentUser();
+
+    console.log(storedUser);
+    if (storedUser) {
+      setCurrentUser(storedUser);
+    }
+
     const fetchUserDetails = async () => {
       try {
         const token = getAuthToken();
@@ -82,7 +91,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       }
     };
     fetchUserDetails();
-    setIsClient(true);
   }, []);
 
   const allNavItems = [
@@ -92,35 +100,35 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       tabName: "overview",
       icon: BarChart2,
       type: "link",
-      roles: ["Administrator", "Manager", "QA Analyst", "Agent"],
+      roles: ["super_admin", "Project Admin", "Manager", "QA Analyst", "Agent"],
     },
     {
       label: "Audits",
       icon: ClipboardList,
       type: "collapsible",
       tabName: "audits_group",
-      roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
+      roles: ["super_admin", "Project Admin", "Manager", "QA Analyst", "Auditor"],
       subItems: [
         {
           href: "/dashboard/qa-audit",
           label: "QAi Audit Form",
           tabName: "qa-audit",
           icon: Layers,
-          roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
+          roles: ["super_admin", "Project Admin", "Manager", "QA Analyst", "Auditor"],
         },
         {
           href: "/dashboard/manual-audit",
           label: "Manual Audit Form",
           tabName: "manual-audit",
           icon: Edit,
-          roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
+          roles: ["super_admin", "Project Admin", "Manager", "QA Analyst", "Auditor"],
         },
         {
           href: "/dashboard/qa-audit/bulk",
           label: "Bulk AI Audit",
           tabName: "qa-audit-bulk",
           icon: UploadCloud,
-          roles: ["Administrator", "Manager", "QA Analyst", "Auditor"],
+          roles: ["super_admin", "Project Admin", "Manager", "QA Analyst", "Auditor"],
         },
       ],
     },
@@ -130,7 +138,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       tabName: "sop-management",
       icon: BookText,
       type: "link",
-      roles: ["Administrator", "Manager"],
+      roles: ["super_admin", "Project Admin", "Manager"],
     },
     {
       href: "/dashboard/parameter-management",
@@ -138,7 +146,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       tabName: "parameter-management",
       icon: ListChecks,
       type: "link",
-      roles: ["Administrator", "Manager"],
+      roles: ["super_admin", "Manager"],
     },
     {
       href: "/dashboard/profile",
@@ -146,7 +154,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       tabName: "profile",
       icon: UserIcon,
       type: "link",
-      roles: ["Administrator", "Manager", "QA Analyst", "Agent"],
+      roles: ["super_admin", "Project Admin", "Manager", "QA Analyst", "Agent"],
     },
     {
       href: "/dashboard/add-user",
@@ -154,7 +162,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       tabName: "add-user",
       icon: Users,
       type: "link",
-      roles: ["Administrator"],
+      roles: ["super_admin", "Project Admin"],
     },
     {
       href: "/dashboard/token-analytics",
@@ -162,7 +170,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       tabName: "token-analytics",
       icon: Coins,
       type: "link",
-      roles: ["Administrator"],
+      roles: ["super_admin", "Project Admin"],
     },
     {
       href: "/dashboard/audit-details",
@@ -170,10 +178,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       tabName: "audit-details",
       icon: FileText,
       type: "link",
-      roles: ["Administrator"],
+      roles: ["super_admin"],
     },
   ];
-
+console.log(currentUser);
   const navItems = currentUser
     ? allNavItems
         .filter((item) => item.roles.includes(currentUser.role))
@@ -270,7 +278,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </SidebarHeader>
         <SidebarContent className="px-2 py-4 gap-1">
           <SidebarMenu>
-            {navItems.map((item) => {
+            {!currentUser ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <SidebarMenuItem key={i}>
+                  <SidebarMenuSkeleton showIcon />
+                </SidebarMenuItem>
+              ))
+            ) : navItems.map((item) => {
               if (!item) return null;
               if (item.type === "link") {
                 const isLinkActive = Boolean(

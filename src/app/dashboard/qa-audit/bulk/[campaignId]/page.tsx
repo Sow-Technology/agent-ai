@@ -546,7 +546,7 @@ export default function CampaignPreviewPage() {
                     ? `${(selectedJob.auditDurationMs / 1000).toFixed(2)}s`
                     : "-"}
                 </p>
-                {currentUser?.role === "Administrator" && (
+                {currentUser?.role === "super_admin" && (
                   <p>
                     <strong>Tokens:</strong>{" "}
                     {selectedJob.tokenUsage

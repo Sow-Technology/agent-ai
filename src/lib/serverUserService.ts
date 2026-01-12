@@ -33,7 +33,7 @@ export async function addUser(userData: {
   email?: string;
   fullName?: string;
   role?:
-    | "Administrator"
+    | "super_admin"
     | "Project Admin"
     | "Manager"
     | "QA Analyst"
@@ -88,7 +88,7 @@ export async function updateUser(userData: {
   email?: string;
   fullName?: string;
   role?:
-    | "Administrator"
+    | "super_admin"
     | "Project Admin"
     | "Manager"
     | "QA Analyst"

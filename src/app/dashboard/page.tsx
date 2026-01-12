@@ -676,7 +676,7 @@ function applyAuditFilters(
   // - Agent: Can see audits where they are the subject (agentUserId)
   // - QA Analyst, Auditor: Can only see audits they performed
   if (currentUser) {
-    if (currentUser.role === "Administrator") {
+    if (currentUser.role === "super_admin") {
       // Administrator can see all audits - no filtering
     } else if (currentUser.role === "Project Admin" || currentUser.role === "Manager") {
       // Project Admin and Manager can see all audits within their project
@@ -1022,7 +1022,7 @@ function DashboardPageContent() {
                   {audit.auditType.toUpperCase()}
                 </Badge>
               </p>
-              {currentUser?.role === "Administrator" &&
+              {currentUser?.role === "super_admin" &&
                 audit.auditType === "ai" && (
                   <>
                     <p>
@@ -1182,7 +1182,7 @@ function DashboardPageContent() {
               />
             </PopoverContent>
           </Popover>
-          {currentUser?.role === "Administrator" ? (
+          {currentUser?.role === "super_admin" ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
@@ -1621,6 +1621,84 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   const [dailyFatalErrorsData, setDailyFatalErrorsData] = useState<
     { date: string; fatalErrors: number }[]
   >([]);
+
+  // Populate state from dashboardStats API response when available
+  useEffect(() => {
+    if (dashboardStats) {
+      // Overview data
+      setOverallQAScore(dashboardStats.overallQAScore || 0);
+      
+      // Fatal errors
+      setFatalErrorsData({
+        totalFatalErrors: dashboardStats.totalFatalErrors || 0,
+        fatalRate: dashboardStats.fatalRate || 0,
+        fatalAuditsCount: dashboardStats.fatalAuditsCount || 0,
+      });
+      
+      // ZTP data
+      setZtpData({
+        ztpAuditsCount: dashboardStats.ztpCount || 0,
+        ztpRate: dashboardStats.ztpRate || 0,
+      });
+      
+      // Sentiment
+      if (dashboardStats.sentiment) {
+        setSentimentData({
+          positive: dashboardStats.sentiment.positive || 0,
+          neutral: dashboardStats.sentiment.neutral || 0,
+          negative: dashboardStats.sentiment.negative || 0,
+        });
+      }
+      
+      // Daily trends
+      if (dashboardStats.dailyAuditsTrend) {
+        setDailyAuditsData(dashboardStats.dailyAuditsTrend);
+      }
+      if (dashboardStats.dailyFatalTrend) {
+        setDailyFatalErrorsData(dashboardStats.dailyFatalTrend);
+      }
+      
+      // Top issues
+      if (dashboardStats.topIssues && dashboardStats.topIssues.length > 0) {
+        setTopIssuesData(dashboardStats.topIssues);
+      }
+      
+      // Pareto data
+      if (dashboardStats.paretoData && dashboardStats.paretoData.length > 0) {
+        setParetoData(dashboardStats.paretoData);
+      }
+      
+      // Agent performance
+      if (dashboardStats.agentPerformance) {
+        setAgentPerformanceData({
+          topAgents: dashboardStats.agentPerformance.topAgents || [],
+          underperformingAgents: dashboardStats.agentPerformance.underperformingAgents || [],
+        });
+      }
+      
+      // Campaign performance
+      if (dashboardStats.campaignPerformance) {
+        setCampaignPerformanceData(dashboardStats.campaignPerformance);
+      }
+      
+      // Compliance
+      if (dashboardStats.compliance) {
+        setComplianceData({
+          interactionsWithIssues: dashboardStats.compliance.interactionsWithIssues || 0,
+          totalAuditedInteractionsForCompliance: dashboardStats.compliance.totalAuditedInteractionsForCompliance || 0,
+          complianceRate: dashboardStats.compliance.complianceRate || 0,
+        });
+      }
+      
+      // Training needs
+      if (dashboardStats.trainingNeeds) {
+        setTrainingNeedsData(dashboardStats.trainingNeeds);
+      }
+      if (dashboardStats.trainingNeedsList) {
+        setTrainingNeedsList(dashboardStats.trainingNeedsList);
+      }
+    }
+  }, [dashboardStats]);
 
   // Refs for chart screenshots
   const dailyAuditsChartRef = useRef<HTMLDivElement>(null);
@@ -3260,7 +3338,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                   {!isAgentView && <TableHead className="font-semibold">Agent</TableHead>}
                   <TableHead className="font-semibold">Score</TableHead>
                   <TableHead className="font-semibold">Audit Type</TableHead>
-                  {currentUser?.role === "Administrator" && (
+                  {currentUser?.role === "super_admin" && (
                     <>
                       <TableHead className="font-semibold text-xs">Duration</TableHead>
                       <TableHead className="font-semibold text-xs">Tokens (In/Out)</TableHead>
@@ -3303,7 +3381,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                         {audit.auditType.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    {currentUser?.role === "Administrator" && (
+                    {currentUser?.role === "super_admin" && (
                       <>
                         <TableCell className="text-xs text-muted-foreground">
                           {audit.auditData?.auditDurationMs
@@ -3339,7 +3417,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                 {paginatedAudits.length === 0 && (
                    <TableRow>
                     <TableCell
-                      colSpan={isAgentView ? (currentUser?.role === "Administrator" ? 7 : 5) : (currentUser?.role === "Administrator" ? 8 : 6)}
+                      colSpan={isAgentView ? (currentUser?.role === "super_admin" ? 7 : 5) : (currentUser?.role === "super_admin" ? 8 : 6)}
                       className="text-center text-muted-foreground py-12 h-48"
                     >
                       <div className="flex flex-col items-center justify-center gap-2">

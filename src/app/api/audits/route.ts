@@ -202,7 +202,7 @@ export async function GET(request: NextRequest) {
       // Project Admin and Manager see all audits within their project
       filters.projectId = currentUser?.projectId;
     }
-    // Administrator sees all audits - no additional filter
+    // super_admin sees all audits - no additional filter
 
     const result = await getAuditsWithFilters(filters, { page, limit });
 

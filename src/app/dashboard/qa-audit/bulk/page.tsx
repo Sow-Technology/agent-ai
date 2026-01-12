@@ -583,7 +583,7 @@ export default function BulkAuditPage() {
                             Preview
                           </Button>
                         </Link>
-                        {currentUser?.role === "Administrator" ? (
+                        {currentUser?.role === "super_admin" ? (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" size="sm">

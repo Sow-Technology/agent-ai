@@ -21,7 +21,7 @@ const createUserSchema = z.object({
     .max(100, "Full name must be less than 100 characters"),
   role: z.enum(
     [
-      "Administrator",
+      "super_admin",
       "Project Admin",
       "Manager",
       "QA Analyst",
@@ -52,7 +52,7 @@ const updateUserSchema = z.object({
   role: z
     .enum(
       [
-        "Administrator",
+        "super_admin",
         "Project Admin",
         "Manager",
         "QA Analyst",

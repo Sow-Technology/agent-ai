@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           matchQuery.projectId = currentUser.projectId;
         }
       }
-      // Administrator sees all - no additional filter
+      // super_admin sees all - no additional filter
     }
 
     // Run aggregation pipeline for all stats

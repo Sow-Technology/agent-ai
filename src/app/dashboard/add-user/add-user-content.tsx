@@ -66,7 +66,7 @@ const userSchema = z.object({
     .max(30, "Username is too long."),
   role: z.enum(
     [
-      "Administrator",
+      "super_admin",
       "Project Admin",
       "Manager",
       "QA Analyst",
@@ -367,8 +367,8 @@ export default function UserManagementContent() {
                                 <SelectItem value="Project Admin">
                                   Project Admin
                                 </SelectItem>
-                                <SelectItem value="Administrator">
-                                  Administrator
+                                <SelectItem value="super_admin">
+                                  Super Admin
                                 </SelectItem>
                               </SelectContent>
                             </Select>

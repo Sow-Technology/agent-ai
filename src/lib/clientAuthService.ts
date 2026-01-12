@@ -82,5 +82,5 @@ export function clientLogout() {
 // Check if current user has admin role
 export function isAdmin(): boolean {
   const user = getCurrentUser();
-  return user?.role === "Administrator";
+  return user?.role === "super_admin";
 }

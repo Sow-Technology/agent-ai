@@ -39,7 +39,7 @@ const placeholderAvatars = [
 const DEFAULT_FULL_NAME = "AssureQAI User";
 const DEFAULT_EMAIL = "user@example.com";
 const DEFAULT_USERNAME = "assure_qai_user";
-const DEFAULT_ROLE = "Administrator";
+const DEFAULT_ROLE = "super_admin";
 
 const INITIAL_API_KEY = `sk_live_mock_${Array(24)
   .fill(0)

@@ -7,7 +7,7 @@ export interface IUser extends Document {
   email?: string;
   fullName?: string;
   role:
-    | "Administrator"
+    | "super_admin"
     | "Project Admin"
     | "Manager"
     | "QA Analyst"
@@ -43,7 +43,7 @@ const UserSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: [
-        "Administrator",
+        "super_admin",
         "Project Admin",
         "Manager",
         "QA Analyst",

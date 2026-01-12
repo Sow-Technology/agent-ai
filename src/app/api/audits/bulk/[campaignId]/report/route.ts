@@ -43,7 +43,7 @@ export async function GET(
     const includeTokens = searchParams.get("includeTokens") === "true";
 
     // Only Admin can include tokens
-    const shouldIncludeTokens = includeTokens && userRole === "Administrator";
+    const shouldIncludeTokens = includeTokens && userRole === "super_admin";
 
     const rowsData = await getReportRows(params.campaignId);
     

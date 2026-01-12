@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     let projectIds: string[] = [];
 
-    if (role === "Administrator") {
+    if (role === "super_admin") {
       // Admins can see all projects from campaigns and users
       const campaigns = await listCampaigns({ role, userId });
       const campaignProjectIds = campaigns

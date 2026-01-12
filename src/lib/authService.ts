@@ -73,7 +73,7 @@ export async function validateSession(token: string): Promise<User | null> {
       email: result.user.email,
       fullName: undefined, // Not available from JWT
       role: result.user.role as
-        | "Administrator"
+        | "super_admin"
         | "Project Admin"
         | "Manager"
         | "QA Analyst"
