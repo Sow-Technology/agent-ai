@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, company, message, type = 'Contact Form' } = body;
+    const { name, email, company, message, plan, type = 'Contact Form' } = body;
 
     // Validate required fields
     if (!name || !email || !message) {
@@ -24,16 +24,22 @@ export async function POST(req: Request) {
       },
     });
 
+    // Build subject line with plan if available
+    const subjectLine = plan
+      ? `New ${type} Submission from ${name} - ${plan} Plan`
+      : `New ${type} Submission from ${name}`;
+
     const mailOptions = {
       from: process.env.ZOHO_EMAIL,
       to: "sales@assureqai.com",
-      subject: `New ${type} Submission from ${name}`,
+      subject: subjectLine,
       text: `
         New submission received from ${type}:
 
         Name: ${name}
         Email: ${email}
-        Company: ${company || 'N/A'}
+        Company: ${company || 'N/A'}${plan ? `
+        Selected Plan: ${plan}` : ''}
         
         Message:
         ${message}
@@ -42,7 +48,8 @@ export async function POST(req: Request) {
         <h2>New submission received from ${type}</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Company:</strong> ${company || 'N/A'}</p>
+        <p><strong>Company:</strong> ${company || 'N/A'}</p>${plan ? `
+        <p><strong>Selected Plan:</strong> <span style="color: #10b981; font-weight: bold;">${plan}</span></p>` : ''}
         <br/>
         <p><strong>Message:</strong></p>
         <p>${message.replace(/\n/g, '<br>')}</p>
