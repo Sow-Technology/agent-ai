@@ -105,7 +105,7 @@ const createAuditSchema = z
         data.callSummary
       );
     },
-    { message: "At least one audit field is required" }
+    { message: "At least one audit field is required" },
   );
 
 const updateAuditSchema = z.object({
@@ -154,7 +154,8 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const auditTypeParam = searchParams.get("auditType") ?? searchParams.get("type");
+    const auditTypeParam =
+      searchParams.get("auditType") ?? searchParams.get("type");
     const auditType =
       auditTypeParam === "manual" || auditTypeParam === "ai"
         ? (auditTypeParam as "manual" | "ai")
@@ -170,14 +171,14 @@ export async function GET(request: NextRequest) {
     if (!Number.isFinite(pageParam) || pageParam < 1) {
       return NextResponse.json(
         { success: false, error: "Invalid page parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!Number.isFinite(limitParam) || limitParam < 1) {
       return NextResponse.json(
         { success: false, error: "Invalid limit parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -202,7 +203,7 @@ export async function GET(request: NextRequest) {
     } catch (error: any) {
       return NextResponse.json(
         { success: false, error: error?.message || "Invalid date parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -244,7 +245,10 @@ export async function GET(request: NextRequest) {
     } else if (currentUserRole === "Auditor") {
       // Auditor sees audits they performed
       filters.auditedBy = [currentUsername, currentUserId].filter(Boolean);
-    } else if (currentUserRole === "Project Admin" || currentUserRole === "Manager") {
+    } else if (
+      currentUserRole === "Project Admin" ||
+      currentUserRole === "Manager"
+    ) {
       // Project Admin and Manager see all audits within their project
       filters.projectId = currentUser?.projectId;
     }
@@ -252,11 +256,11 @@ export async function GET(request: NextRequest) {
 
     // Check if client wants full transcript data (for export purposes)
     const includeTranscript = searchParams.get("includeTranscript") === "true";
-    
-    const result = await getAuditsWithFilters(filters, { 
-      page, 
+
+    const result = await getAuditsWithFilters(filters, {
+      page,
       limit,
-      excludeTranscript: !includeTranscript // Exclude transcripts by default for large queries
+      excludeTranscript: !includeTranscript, // Exclude transcripts by default for large queries
     });
 
     // For large responses, add appropriate headers
@@ -280,27 +284,29 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error: any) {
     console.error("Error fetching audits:", error);
-    
+
     // Provide more specific error messages for common issues
     let errorMessage = "Failed to fetch audits";
     let statusCode = 500;
-    
+
     if (error?.name === "MongooseError" || error?.name === "MongoError") {
       if (error.message?.includes("buffering timed out")) {
-        errorMessage = "Database query timed out. Please try with a smaller date range or limit.";
+        errorMessage =
+          "Database query timed out. Please try with a smaller date range or limit.";
         statusCode = 504;
       } else if (error.message?.includes("connection")) {
         errorMessage = "Database connection error. Please try again.";
         statusCode = 503;
       }
     } else if (error?.code === "ECONNRESET" || error?.code === "ETIMEDOUT") {
-      errorMessage = "Request timed out. Please try with a smaller limit or date range.";
+      errorMessage =
+        "Request timed out. Please try with a smaller limit or date range.";
       statusCode = 504;
     }
-    
+
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: statusCode }
+      { status: statusCode },
     );
   }
 }
@@ -328,14 +334,14 @@ export async function POST(request: NextRequest) {
 
     console.log(
       "POST /api/audits - Auth header:",
-      authHeader ? "Present" : "Missing"
+      authHeader ? "Present" : "Missing",
     );
 
     if (token) {
       const tokenResult = await validateJWTToken(token);
       console.log(
         "POST /api/audits - Token validation:",
-        tokenResult.valid ? "Valid" : "Invalid"
+        tokenResult.valid ? "Valid" : "Invalid",
       );
       if (tokenResult.valid && tokenResult.user) {
         currentUsername = tokenResult.user.username;
@@ -343,7 +349,7 @@ export async function POST(request: NextRequest) {
         console.log("POST /api/audits - Current username:", currentUsername);
         console.log(
           "POST /api/audits - Current user projectId:",
-          currentUserProjectId
+          currentUserProjectId,
         );
       }
     }
@@ -358,7 +364,7 @@ export async function POST(request: NextRequest) {
           error: "Validation failed",
           details: validationResult.error.errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -372,7 +378,7 @@ export async function POST(request: NextRequest) {
           error: "Missing required fields",
           details: "agentName and interactionId are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -397,7 +403,7 @@ export async function POST(request: NextRequest) {
             maxScore: subParam.weight,
             type: subParam.type,
             comments: subParam.comments,
-          }))
+          })),
         ) || [],
       overallScore: validatedData.overallScore || 0,
       maxPossibleScore: 100, // Assuming max score is 100
@@ -415,14 +421,14 @@ export async function POST(request: NextRequest) {
       "POST /api/audits - Creating audit with auditedBy:",
       currentUsername,
       "projectId:",
-      currentUserProjectId
+      currentUserProjectId,
     );
 
     const newAudit = await createAudit(auditData);
 
     return NextResponse.json(
       { success: true, data: newAudit },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("Error creating audit:", error);
@@ -434,13 +440,13 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Audit with this interaction ID already exists",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     return NextResponse.json(
       { success: false, error: "Failed to create audit" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -456,7 +462,7 @@ export async function PUT(request: NextRequest) {
     if (!auditId) {
       return NextResponse.json(
         { success: false, error: "Audit ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -471,7 +477,7 @@ export async function PUT(request: NextRequest) {
           error: "Validation failed",
           details: validationResult.error.errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -481,7 +487,7 @@ export async function PUT(request: NextRequest) {
     if (!updatedAudit) {
       return NextResponse.json(
         { success: false, error: "Audit not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -496,13 +502,13 @@ export async function PUT(request: NextRequest) {
           success: false,
           error: "Audit with this interaction ID already exists",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     return NextResponse.json(
       { success: false, error: "Failed to update audit" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -518,7 +524,7 @@ export async function DELETE(request: NextRequest) {
     if (!auditId) {
       return NextResponse.json(
         { success: false, error: "Audit ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -527,7 +533,7 @@ export async function DELETE(request: NextRequest) {
     if (!success) {
       return NextResponse.json(
         { success: false, error: "Audit not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -539,7 +545,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting audit:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete audit" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

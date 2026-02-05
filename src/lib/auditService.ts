@@ -121,7 +121,7 @@ export async function createAudit(auditData: {
 // Get audit by audio hash for caching - returns the most recent audit for this audio+campaign
 export async function getAuditByAudioHash(
   audioHash: string,
-  campaignName?: string
+  campaignName?: string,
 ): Promise<AuditDocument | null> {
   try {
     const query: any = { audioHash, auditType: "ai" };
@@ -142,7 +142,7 @@ export async function getAuditByAudioHash(
 }
 
 export async function getAuditById(
-  auditId: string
+  auditId: string,
 ): Promise<AuditDocument | null> {
   try {
     const result = await CallAudit.findById(auditId).lean();
@@ -197,7 +197,7 @@ export interface PaginatedAuditsResult {
 
 export async function getAuditsWithFilters(
   filters: AuditFilters = {},
-  pagination: PaginationOptions = {}
+  pagination: PaginationOptions = {},
 ): Promise<PaginatedAuditsResult> {
   try {
     const query: any = {};
@@ -251,7 +251,7 @@ export async function getAuditsWithFilters(
     const skip = (page - 1) * limit;
     const sortBy = pagination.sortBy || "createdAt";
     const sortOrder = pagination.sortOrder === "asc" ? 1 : -1;
-    
+
     // Use projection to exclude large fields for list views (reduces response size significantly)
     const projection: Record<string, number> = {};
     if (pagination.excludeTranscript || limit > 100) {
@@ -265,12 +265,12 @@ export async function getAuditsWithFilters(
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(limit);
-    
+
     // Apply projection if we have any exclusions
     if (Object.keys(projection).length > 0) {
       queryBuilder.select(projection);
     }
-    
+
     const [results, total] = await Promise.all([
       queryBuilder.lean(),
       CallAudit.countDocuments(query),
@@ -296,7 +296,7 @@ export async function getAuditsWithFilters(
 }
 
 export async function getAuditsByAgent(
-  agentName: string
+  agentName: string,
 ): Promise<AuditDocument[]> {
   try {
     const results = await CallAudit.find({ agentName })
@@ -310,7 +310,7 @@ export async function getAuditsByAgent(
 }
 
 export async function getAuditsByCampaign(
-  campaignId: string
+  campaignId: string,
 ): Promise<AuditDocument[]> {
   try {
     const results = await CallAudit.find({ campaignId })
@@ -325,7 +325,7 @@ export async function getAuditsByCampaign(
 
 export async function getAuditsByDateRange(
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Promise<AuditDocument[]> {
   try {
     const results = await CallAudit.find({
@@ -344,7 +344,7 @@ export async function getAuditsByDateRange(
 }
 
 export async function getAuditsByType(
-  auditType: "manual" | "ai"
+  auditType: "manual" | "ai",
 ): Promise<AuditDocument[]> {
   try {
     const results = await CallAudit.find({ auditType })
@@ -359,13 +359,13 @@ export async function getAuditsByType(
 
 export async function updateAudit(
   auditId: string,
-  updateData: Partial<AuditDocument>
+  updateData: Partial<AuditDocument>,
 ): Promise<AuditDocument | null> {
   try {
     const result = await CallAudit.findByIdAndUpdate(
       auditId,
       { $set: { ...updateData, updatedAt: new Date() } },
-      { new: true }
+      { new: true },
     ).lean();
     if (result) {
       return transformToAuditDocument(result);
@@ -388,7 +388,7 @@ export async function deleteAudit(auditId: string): Promise<boolean> {
 }
 
 export async function searchAudits(
-  searchTerm: string
+  searchTerm: string,
 ): Promise<AuditDocument[]> {
   try {
     const searchRegex = new RegExp(searchTerm, "i");
