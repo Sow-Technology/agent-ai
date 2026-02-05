@@ -7,6 +7,7 @@ import {
   getAuditById,
 } from "@/lib/auditService";
 import { validateJWTToken } from "@/lib/jwtAuthService";
+import connectDB from "@/lib/mongoose";
 
 // Validation schemas
 const subParameterResultSchema = z.object({
@@ -150,15 +151,60 @@ const updateAuditSchema = z.object({
 // GET /api/audits - Get all audits with pagination and filtering
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
+
     const { searchParams } = new URL(request.url);
-    const auditType = searchParams.get("type") as "manual" | "ai" | null;
+    const auditTypeParam = searchParams.get("auditType") ?? searchParams.get("type");
+    const auditType =
+      auditTypeParam === "manual" || auditTypeParam === "ai"
+        ? (auditTypeParam as "manual" | "ai")
+        : null;
     const agentName = searchParams.get("agent");
     const campaignName = searchParams.get("campaignName");
     const qaParameterSetId = searchParams.get("qaParameterSetId");
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "100");
+    const startDateParam = searchParams.get("startDate");
+    const endDateParam = searchParams.get("endDate");
+    const pageParam = parseInt(searchParams.get("page") || "1");
+    const limitParam = parseInt(searchParams.get("limit") || "100");
+
+    if (!Number.isFinite(pageParam) || pageParam < 1) {
+      return NextResponse.json(
+        { success: false, error: "Invalid page parameter" },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isFinite(limitParam) || limitParam < 1) {
+      return NextResponse.json(
+        { success: false, error: "Invalid limit parameter" },
+        { status: 400 }
+      );
+    }
+
+    const MAX_LIMIT = 10000;
+    const page = pageParam;
+    const limit = Math.min(limitParam, MAX_LIMIT);
+
+    const parseDateParam = (value: string | null, label: string) => {
+      if (!value) return null;
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new Error(`Invalid ${label} parameter`);
+      }
+      return parsed;
+    };
+
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
+    try {
+      startDate = parseDateParam(startDateParam, "startDate");
+      endDate = parseDateParam(endDateParam, "endDate");
+    } catch (error: any) {
+      return NextResponse.json(
+        { success: false, error: error?.message || "Invalid date parameter" },
+        { status: 400 }
+      );
+    }
 
     // Get current user from JWT token
     const authHeader = request.headers.get("Authorization");
@@ -188,8 +234,8 @@ export async function GET(request: NextRequest) {
     if (agentName) filters.agentName = agentName;
     if (campaignName) filters.campaignName = campaignName;
     if (qaParameterSetId) filters.qaParameterSetId = qaParameterSetId;
-    if (startDate) filters.startDate = new Date(startDate);
-    if (endDate) filters.endDate = new Date(endDate);
+    if (startDate) filters.startDate = startDate;
+    if (endDate) filters.endDate = endDate;
 
     // Apply role-based filtering at database level
     if (currentUserRole === "Agent") {
@@ -204,23 +250,57 @@ export async function GET(request: NextRequest) {
     }
     // super_admin sees all audits - no additional filter
 
-    const result = await getAuditsWithFilters(filters, { page, limit });
+    // Check if client wants full transcript data (for export purposes)
+    const includeTranscript = searchParams.get("includeTranscript") === "true";
+    
+    const result = await getAuditsWithFilters(filters, { 
+      page, 
+      limit,
+      excludeTranscript: !includeTranscript // Exclude transcripts by default for large queries
+    });
 
-    return NextResponse.json({
+    // For large responses, add appropriate headers
+    const response = NextResponse.json({
       success: true,
       data: result.data,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
       pagination: {
         page: result.page,
         limit: result.limit,
         total: result.total,
         totalPages: result.totalPages,
       },
+      // Indicate if transcripts were excluded
+      transcriptsExcluded: !includeTranscript && limit > 100,
     });
-  } catch (error) {
+
+    return response;
+  } catch (error: any) {
     console.error("Error fetching audits:", error);
+    
+    // Provide more specific error messages for common issues
+    let errorMessage = "Failed to fetch audits";
+    let statusCode = 500;
+    
+    if (error?.name === "MongooseError" || error?.name === "MongoError") {
+      if (error.message?.includes("buffering timed out")) {
+        errorMessage = "Database query timed out. Please try with a smaller date range or limit.";
+        statusCode = 504;
+      } else if (error.message?.includes("connection")) {
+        errorMessage = "Database connection error. Please try again.";
+        statusCode = 503;
+      }
+    } else if (error?.code === "ECONNRESET" || error?.code === "ETIMEDOUT") {
+      errorMessage = "Request timed out. Please try with a smaller limit or date range.";
+      statusCode = 504;
+    }
+    
     return NextResponse.json(
-      { success: false, error: "Failed to fetch audits" },
-      { status: 500 }
+      { success: false, error: errorMessage },
+      { status: statusCode }
     );
   }
 }
@@ -228,6 +308,8 @@ export async function GET(request: NextRequest) {
 // POST /api/audits - Create a new audit
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
+
     let body;
     try {
       body = await request.json();
@@ -366,6 +448,8 @@ export async function POST(request: NextRequest) {
 // PUT /api/audits/[id] - Update an audit
 export async function PUT(request: NextRequest) {
   try {
+    await connectDB();
+
     const url = new URL(request.url);
     const auditId = url.pathname.split("/").pop();
 
@@ -426,6 +510,8 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/audits?id=[id] - Delete an audit
 export async function DELETE(request: NextRequest) {
   try {
+    await connectDB();
+
     const url = new URL(request.url);
     const auditId = url.searchParams.get("id");
 

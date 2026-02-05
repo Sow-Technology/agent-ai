@@ -184,6 +184,7 @@ export interface PaginationOptions {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  excludeTranscript?: boolean; // Exclude large transcript fields for list views
 }
 
 export interface PaginatedAuditsResult {
@@ -250,14 +251,28 @@ export async function getAuditsWithFilters(
     const skip = (page - 1) * limit;
     const sortBy = pagination.sortBy || "createdAt";
     const sortOrder = pagination.sortOrder === "asc" ? 1 : -1;
+    
+    // Use projection to exclude large fields for list views (reduces response size significantly)
+    const projection: Record<string, number> = {};
+    if (pagination.excludeTranscript || limit > 100) {
+      // For large queries, exclude transcript fields to prevent memory/timeout issues
+      projection.transcript = 0;
+      projection.englishTranslation = 0;
+    }
 
-    // Execute query with pagination
+    // Execute query with pagination and projection
+    const queryBuilder = CallAudit.find(query)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit);
+    
+    // Apply projection if we have any exclusions
+    if (Object.keys(projection).length > 0) {
+      queryBuilder.select(projection);
+    }
+    
     const [results, total] = await Promise.all([
-      CallAudit.find(query)
-        .sort({ [sortBy]: sortOrder })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      queryBuilder.lean(),
       CallAudit.countDocuments(query),
     ]);
 
