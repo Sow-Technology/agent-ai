@@ -783,9 +783,8 @@ function DashboardPageContent() {
     if (!isClient) return;
     if (!dateRange?.from) {
       const today = new Date();
-      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      setDateRange({ from: firstDayOfMonth, to: lastDayOfMonth });
+      const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
+      setDateRange({ from: firstDayOfYear, to: today });
     }
   }, [isClient, dateRange?.from]);
 
