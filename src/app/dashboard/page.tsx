@@ -886,9 +886,10 @@ function DashboardPageContent() {
     const loadAudits = async () => {
       setIsLoadingAudits(true);
       try {
-        // Build URL with date range parameters and high limit for stats
+        // Build URL with date range parameters
+        // Use a reasonable limit for display - stats are fetched separately via /api/audits/stats
         const params = new URLSearchParams();
-        params.set("limit", "10000"); // High limit to get all audits for accurate stats
+        params.set("limit", "500"); // Reasonable limit for table display, reduces response size
 
         if (dateRange.from) {
           params.set("startDate", dateRange.from.toISOString());
@@ -900,6 +901,15 @@ function DashboardPageContent() {
         const res = await fetch(`/api/audits?${params.toString()}`, {
           headers: getAuthHeaders(),
         });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error("Failed to load audits:", errorData.error || res.statusText);
+          // Don't throw - just log and continue with empty data
+          setSavedAudits([]);
+          return;
+        }
+        
         const data = await res.json();
         if (data?.success && data.data) {
           const savedAuditsData: SavedAuditItem[] = data.data.map(
@@ -909,6 +919,7 @@ function DashboardPageContent() {
         }
       } catch (e) {
         console.error("Failed to load saved audits from API", e);
+        setSavedAudits([]);
       } finally {
         setIsLoadingAudits(false);
       }
@@ -960,13 +971,25 @@ function DashboardPageContent() {
         const res = await fetch(`/api/audits/stats?${params.toString()}`, {
           headers: getAuthHeaders(),
         });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error("Failed to load stats:", errorData.error || res.statusText);
+          // Reset to default stats on error
+          setDashboardStats(null);
+          return;
+        }
+        
         const data = await res.json();
 
         if (data?.success && data.data) {
           setDashboardStats(data.data);
+        } else {
+          setDashboardStats(null);
         }
       } catch (e) {
         console.error("Failed to load dashboard stats", e);
+        setDashboardStats(null);
       } finally {
         setIsLoadingStats(false);
       }

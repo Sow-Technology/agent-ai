@@ -157,12 +157,14 @@ CallAuditSchema.index({ campaignId: 1, createdAt: -1 });
 CallAuditSchema.index({ auditType: 1, createdAt: -1 });
 CallAuditSchema.index({ projectId: 1, createdAt: -1 });
 CallAuditSchema.index({ auditedBy: 1, createdAt: -1 }); // For role-based filtering
+CallAuditSchema.index({ agentUserId: 1, createdAt: -1 }); // For Agent role filtering
 CallAuditSchema.index({ callDate: 1 });
 CallAuditSchema.index({ createdAt: -1 }); // For default sorting
 CallAuditSchema.index({ audioHash: 1, campaignName: 1 }); // For cache lookups
 // Compound index for common dashboard queries
 CallAuditSchema.index({ auditedBy: 1, auditType: 1, createdAt: -1 });
 CallAuditSchema.index({ projectId: 1, auditType: 1, createdAt: -1 });
+CallAuditSchema.index({ agentUserId: 1, auditType: 1, createdAt: -1 }); // For Agent role dashboard
 
 // Delete cached model in development to pick up schema changes
 if (process.env.NODE_ENV !== "production") {

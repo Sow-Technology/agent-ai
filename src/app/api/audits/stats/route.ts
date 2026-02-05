@@ -64,20 +64,23 @@ export async function GET(request: NextRequest) {
       matchQuery.auditType = auditType;
     }
 
-    // Role-based filtering (matches applyAuditFilters in frontend)
+    // Role-based filtering (matches audits route filtering logic)
     if (currentUser) {
+      const username = currentUser.username;
+      const userId = currentUser.id;
+      
       if (currentUser.role === "Agent") {
-        // Agent sees audits where they are the subject
-        matchQuery.$or = [
-          { agentUserId: currentUser.username },
-          { agentUserId: currentUser.id }
-        ];
+        // Agent sees audits where they are the subject - use $in for better index usage
+        const agentIds = [username, userId].filter(Boolean);
+        if (agentIds.length > 0) {
+          matchQuery.agentUserId = { $in: agentIds };
+        }
       } else if (currentUser.role === "Auditor") {
-        // Auditor sees audits they performed
-        matchQuery.$or = [
-          { auditedBy: currentUser.username },
-          { auditedBy: currentUser.id }
-        ];
+        // Auditor sees audits they performed - use $in for better index usage
+        const auditorIds = [username, userId].filter(Boolean);
+        if (auditorIds.length > 0) {
+          matchQuery.auditedBy = { $in: auditorIds };
+        }
       } else if (currentUser.role === "Project Admin" || currentUser.role === "Manager") {
         // Project Admin and Manager see all audits within their project
         if (currentUser.projectId) {
@@ -87,8 +90,11 @@ export async function GET(request: NextRequest) {
       // super_admin sees all - no additional filter
     }
 
-    // Run aggregation pipeline for all stats
-    const [stats] = await CallAudit.aggregate([
+    // Log the match query for debugging (can remove in production)
+    console.log("Stats API - matchQuery:", JSON.stringify(matchQuery));
+
+    // Run aggregation pipeline for all stats with timeout protection
+    const aggregationPipeline = [
       { $match: matchQuery },
       {
         $facet: {
@@ -322,9 +328,22 @@ export async function GET(request: NextRequest) {
           ]
         }
       }
-    ]);
+    ];
 
-    // Process results
+    // Execute aggregation with timeout protection (30 seconds max)
+    const aggregationResult = await CallAudit.aggregate(aggregationPipeline, {
+      maxTimeMS: 30000, // 30 second timeout to prevent hanging
+      allowDiskUse: true, // Allow using disk for large aggregations
+    });
+    
+    // Handle empty aggregation result
+    const stats = aggregationResult?.[0] || null;
+    
+    // Log for debugging
+    console.log("Stats API - aggregation returned:", stats ? "data" : "empty", 
+      "totalAudits:", stats?.overview?.[0]?.totalAudits || 0);
+
+    // Process results with safe defaults
     const overview = stats?.overview?.[0] || { 
       totalAudits: 0, 
       totalScore: 0, 
@@ -518,11 +537,29 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching audit stats:", error);
+    
+    // Provide more specific error messages
+    let errorMessage = "Failed to fetch audit statistics";
+    let statusCode = 500;
+    
+    if (error?.name === "MongooseError" || error?.name === "MongoError") {
+      if (error.message?.includes("buffering timed out") || error.code === 50) {
+        errorMessage = "Database query timed out. Please try with a smaller date range.";
+        statusCode = 504;
+      } else if (error.message?.includes("connection")) {
+        errorMessage = "Database connection error. Please try again.";
+        statusCode = 503;
+      }
+    } else if (error?.code === "ECONNRESET" || error?.code === "ETIMEDOUT") {
+      errorMessage = "Request timed out. Please try with a smaller date range.";
+      statusCode = 504;
+    }
+    
     return NextResponse.json(
-      { success: false, error: "Failed to fetch audit statistics" },
-      { status: 500 }
+      { success: false, error: errorMessage },
+      { status: statusCode }
     );
   }
 }
