@@ -388,7 +388,7 @@ export async function GET(request: NextRequest) {
     ];
 
     // Execute aggregation with timeout protection (30 seconds max)
-    const aggregationResult = await CallAudit.aggregate(aggregationPipeline, {
+    const aggregationResult = await CallAudit.aggregate(aggregationPipeline as any, {
       maxTimeMS: 30000, // 30 second timeout to prevent hanging
       allowDiskUse: true, // Allow using disk for large aggregations
     });
