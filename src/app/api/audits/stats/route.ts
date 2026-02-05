@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateJWTToken } from "@/lib/jwtAuthService";
 import CallAudit from "@/models/CallAudit";
 import connectDB from "@/lib/mongoose";
-import type { PipelineStage } from "mongodb";
 
 /**
  * GET /api/audits/stats - Get aggregated dashboard statistics
@@ -98,8 +97,8 @@ export async function GET(request: NextRequest) {
     console.log("Stats API - matchQuery:", JSON.stringify(matchQuery));
 
     // Run aggregation pipeline for all stats with timeout protection
-    const aggregationPipeline: PipelineStage[] = [
-      { $match: matchQuery } as PipelineStage,
+    const aggregationPipeline: Array<Record<string, any>> = [
+      { $match: matchQuery },
       {
         $facet: {
           // Basic counts and scores
