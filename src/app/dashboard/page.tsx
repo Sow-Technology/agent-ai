@@ -3182,9 +3182,12 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                           paretoData.map((p) => ({
                             parameter: p.parameter,
                             count: p.count,
-                            percentage: typeof p.percentage === "number"
-                              ? p.percentage.toFixed(1)
-                              : (typeof p.cumulativePercentage === "number" ? p.cumulativePercentage.toFixed(1) : "0.0"),
+                            percentage:
+                              typeof p.percentage === "number"
+                                ? p.percentage.toFixed(1)
+                                : typeof p.cumulativePercentage === "number"
+                                  ? p.cumulativePercentage.toFixed(1)
+                                  : "0.0",
                           })),
                           "pareto_analysis",
                         )

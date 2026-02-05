@@ -533,7 +533,8 @@ export async function GET(request: NextRequest) {
       const frequencyPercentage =
         totalFailures > 0 ? (issue.count / totalFailures) * 100 : 0;
       cumulative += issue.count;
-      const cumulativePct = totalFailures > 0 ? (cumulative / totalFailures) * 100 : 0;
+      const cumulativePct =
+        totalFailures > 0 ? (cumulative / totalFailures) * 100 : 0;
       return {
         parameter: issue.parameter,
         count: issue.count,
