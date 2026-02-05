@@ -148,7 +148,7 @@ const CallAuditSchema = new Schema<ICallAudit>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Create indexes for better query performance

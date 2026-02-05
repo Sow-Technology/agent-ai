@@ -901,15 +901,18 @@ function DashboardPageContent() {
         const res = await fetch(`/api/audits?${params.toString()}`, {
           headers: getAuthHeaders(),
         });
-        
+
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
-          console.error("Failed to load audits:", errorData.error || res.statusText);
+          console.error(
+            "Failed to load audits:",
+            errorData.error || res.statusText,
+          );
           // Don't throw - just log and continue with empty data
           setSavedAudits([]);
           return;
         }
-        
+
         const data = await res.json();
         if (data?.success && data.data) {
           const savedAuditsData: SavedAuditItem[] = data.data.map(
@@ -971,15 +974,18 @@ function DashboardPageContent() {
         const res = await fetch(`/api/audits/stats?${params.toString()}`, {
           headers: getAuthHeaders(),
         });
-        
+
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
-          console.error("Failed to load stats:", errorData.error || res.statusText);
+          console.error(
+            "Failed to load stats:",
+            errorData.error || res.statusText,
+          );
           // Reset to default stats on error
           setDashboardStats(null);
           return;
         }
-        
+
         const data = await res.json();
 
         if (data?.success && data.data) {
