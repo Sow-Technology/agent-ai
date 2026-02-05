@@ -533,15 +533,14 @@ export async function GET(request: NextRequest) {
       const frequencyPercentage =
         totalFailures > 0 ? (issue.count / totalFailures) * 100 : 0;
       cumulative += issue.count;
+      const cumulativePct = totalFailures > 0 ? (cumulative / totalFailures) * 100 : 0;
       return {
         parameter: issue.parameter,
         count: issue.count,
-        frequencyPercentage: parseFloat(frequencyPercentage.toFixed(1)),
-        cumulative,
-        percentage:
-          totalFailures > 0
-            ? parseFloat(((cumulative / totalFailures) * 100).toFixed(1))
-            : 0,
+        frequencyPercentage: parseFloat(frequencyPercentage.toFixed(1)), // percent of total for this parameter
+        cumulativeCount: cumulative, // cumulative raw count up to this parameter
+        percentage: parseFloat(cumulativePct.toFixed(1)), // cumulative percentage (backwards compatible)
+        cumulativePercentage: parseFloat(cumulativePct.toFixed(1)),
       };
     });
 

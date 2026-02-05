@@ -890,6 +890,8 @@ function DashboardPageContent() {
         // Use a reasonable limit for display - stats are fetched separately via /api/audits/stats
         const params = new URLSearchParams();
         params.set("limit", "500"); // Reasonable limit for table display, reduces response size
+        // Explicitly request no transcripts to avoid large payloads
+        params.set("includeTranscript", "false");
 
         if (dateRange.from) {
           params.set("startDate", dateRange.from.toISOString());
@@ -3180,7 +3182,9 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                           paretoData.map((p) => ({
                             parameter: p.parameter,
                             count: p.count,
-                            percentage: p.percentage.toFixed(1),
+                            percentage: typeof p.percentage === "number"
+                              ? p.percentage.toFixed(1)
+                              : (typeof p.cumulativePercentage === "number" ? p.cumulativePercentage.toFixed(1) : "0.0"),
                           })),
                           "pareto_analysis",
                         )
